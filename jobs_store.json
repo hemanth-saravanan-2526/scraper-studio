@@ -1,0 +1,827 @@
+{
+  "aaa79753-8891-42e6-8284-dfa14190da59": {
+    "job_id": "aaa79753-8891-42e6-8284-dfa14190da59",
+    "name": "Subway",
+    "status": "budget_limit_hit",
+    "created_at": "2026-08-20T16:24:08",
+    "target_url": "https://restaurants.subway.com/united-states/al",
+    "result": {
+      "generated_code": "",
+      "requirements_txt": "",
+      "confidence_notes": [
+        "Agent response could not be parsed as JSON or a fenced code block - no usable code was extracted. This is a prompt/parsing issue with this job, not a problem with the target site. Re-running the job often resolves this.",
+        "Job hit its $0.75 budget ceiling before finishing - generated_code (if any) may be incomplete."
+      ],
+      "total_tool_calls": 20,
+      "action_log": [
+        {
+          "ts": "2026-08-20T16:24:17",
+          "tool": "ToolSearch",
+          "input": {
+            "query": "select:mcp__browser__browser_navigate,mcp__browser__browser_snapshot,mcp__browser__browser_click,mcp__browser__browser_network_requests,mcp__browser__browser_evaluate",
+            "max_results": 5
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-20T16:24:19",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al"
+          },
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-20T16:24:34",
+          "tool": "mcp__browser__browser_evaluate",
+          "input": {
+            "function": "() => {\n  const res = {title: document.title, url: location.href};\n  // consent banner detection\n  const banners = [...document.querySelectorAll('[id*=consent i],[class*=consent i],[id*=cookie i],[class*=cookie i],[id*=onetrust i]')].slice(0,10).map(e=>e.tagName+'#'+e.id+'.'+e.className);\n  res.banners = banners;\n  const links = [...document.querySelectorAll('a')].filter(a=>/prattville/i.test(a.href||''));\n  res.prattville = links.map(a=>({href:a.href, text:a.textContent.trim(), cls:a.className, parent:a.parentElement.className}));\n  // sample of directory links\n  const dir = [...document.querySelectorAll('a[href*=\"/united-states/al/\"]')].slice(0,8).map(a=>({href:a.href,text:a.textContent.trim(),cls:a.className}));\n  res.sampleDir = dir;\n  res.dirCount = document.querySelectorAll('a[href*=\"/united-states/al/\"]').length;\n  return res;\n}"
+          },
+          "call_number": 3
+        },
+        {
+          "ts": "2026-08-20T16:24:40",
+          "tool": "Grep",
+          "input": {
+            "pattern": "(?i)prattville",
+            "path": ".playwright-mcp/page-2026-08-20T10-54-29-039Z.yml",
+            "output_mode": "content",
+            "-C": 3,
+            "-n": true
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-08-20T16:24:40",
+          "tool": "PowerShell",
+          "input": {
+            "command": "Get-Content \".playwright-mcp\\page-2026-08-20T10-54-29-039Z.yml\" -TotalCount 60",
+            "description": "Preview snapshot head"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-08-20T16:25:00",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-08-20T16:25:01",
+          "tool": "Grep",
+          "input": {
+            "pattern": "(?i)cookie|consent|accept|privacy|agree",
+            "path": ".playwright-mcp/page-2026-08-20T10-54-29-039Z.yml",
+            "output_mode": "content",
+            "head_limit": 15
+          },
+          "call_number": 7
+        },
+        {
+          "ts": "2026-08-20T16:25:05",
+          "tool": "PowerShell",
+          "input": {
+            "command": "$f=\".playwright-mcp\\page-2026-08-20T10-55-01-753Z.yml\"; Get-Content $f | Select-Object -Skip 25 -First 90",
+            "description": "Show Prattville city page structure"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-08-20T16:25:15",
+          "tool": "Grep",
+          "input": {
+            "pattern": "/url: \\.\\./|link \"",
+            "path": ".playwright-mcp/page-2026-08-20T10-55-01-753Z.yml",
+            "output_mode": "content",
+            "-n": true,
+            "head_limit": 70,
+            "offset": 10
+          },
+          "call_number": 9
+        },
+        {
+          "ts": "2026-08-20T16:25:22",
+          "tool": "PowerShell",
+          "input": {
+            "command": "$r = Invoke-WebRequest -Uri \"https://restaurants.subway.com/united-states/al/prattville\" -UserAgent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36\" -UseBasicParsing; \"STATUS=$($r.StatusCode) LEN=$($r.Content.Length)\"; $r.Content | Select-String -Pattern 'prattville/113-s-memorial-dr' -AllMatches | ForEach-Object { $_.Line.Substring([Math]::Max(0,$_.Matches[0].Index-400), 700) }",
+            "description": "Fetch city page HTML statically"
+          },
+          "call_number": 10
+        },
+        {
+          "ts": "2026-08-20T16:25:32",
+          "tool": "PowerShell",
+          "input": {
+            "command": "Invoke-WebRequest -Uri \"https://restaurants.subway.com/united-states/al/prattville\" -UserAgent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36\" -UseBasicParsing -OutFile \"city.html\"; (Get-Item city.html).Length",
+            "description": "Download city page HTML"
+          },
+          "call_number": 11
+        },
+        {
+          "ts": "2026-08-20T16:25:44",
+          "tool": "PowerShell",
+          "input": {
+            "command": "Invoke-WebRequest -Uri \"https://restaurants.subway.com/united-states/al/prattville\" -UserAgent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36\" -UseBasicParsing -OutFile \"city.html\"; Invoke-WebRequest -Uri \"https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr\" -UserAgent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36\" -UseBasicParsing -OutFile \"detail.html\"; Get-ChildItem city.html,detail.html | Select-Object Name,Length",
+            "description": "Download city and detail HTML"
+          },
+          "call_number": 12
+        },
+        {
+          "ts": "2026-08-20T16:25:58",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr"
+          },
+          "call_number": 13
+        },
+        {
+          "ts": "2026-08-20T16:26:07",
+          "tool": "Grep",
+          "input": {
+            "pattern": ".",
+            "path": ".playwright-mcp/page-2026-08-20T10-56-04-015Z.yml",
+            "output_mode": "content",
+            "-n": true,
+            "head_limit": 120,
+            "offset": 28
+          },
+          "call_number": 14
+        },
+        {
+          "ts": "2026-08-20T16:26:16",
+          "tool": "mcp__browser__browser_evaluate",
+          "input": {
+            "function": "() => {\n  const q = (s) => document.querySelector(s);\n  const out = {};\n  const h2s = [...document.querySelectorAll('h2')].map(h => h.textContent.trim());\n  out.h2s = h2s;\n  const findSection = (name) => {\n    const h = [...document.querySelectorAll('h2')].find(x => x.textContent.trim().toLowerCase().startsWith(name));\n    if (!h) return null;\n    const p = h.parentElement;\n    return {headingClass: h.className, parentClass: p.className, html: p.outerHTML.slice(0, 1800)};\n  };\n  out.contact = findSection('contact');\n  out.hours = findSection('hours');\n  out.services = findSection('services');\n  out.ldjson = [...document.querySelectorAll('script[type=\"application/ld+json\"]')].map(s=>s.textContent.slice(0,600));\n  return out;\n}",
+            "element": "page"
+          },
+          "call_number": 15
+        },
+        {
+          "ts": "2026-08-20T16:26:23",
+          "tool": "PowerShell",
+          "input": {
+            "command": "curl.exe -s -A \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36\" \"https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr\" -o detail.html; curl.exe -s -A \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36\" \"https://restaurants.subway.com/united-states/al/prattville\" -o city.html; Get-ChildItem detail.html,city.html | Select-Object Name,Length",
+            "description": "Download pages with curl"
+          },
+          "call_number": 16
+        },
+        {
+          "ts": "2026-08-20T16:26:34",
+          "tool": "PowerShell",
+          "input": {
+            "command": "curl.exe -s -A \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36\" \"https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr\" -o detail.html; curl.exe -s -A \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36\" \"https://restaurants.subway.com/united-states/al/prattville\" -o city.html; Get-ChildItem *.html",
+            "description": "Download pages with curl"
+          },
+          "call_number": 17
+        },
+        {
+          "ts": "2026-08-20T16:26:45",
+          "tool": "PowerShell",
+          "input": {
+            "command": "curl.exe -s -A \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36\" \"https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr\" -o detail.html; curl.exe -s -A \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36\" \"https://restaurants.subway.com/united-states/al/prattville\" -o city.html; Write-Output done",
+            "description": "Download pages with curl"
+          },
+          "call_number": 18
+        },
+        {
+          "ts": "2026-08-20T16:26:55",
+          "tool": "PowerShell",
+          "input": {
+            "command": "curl.exe -s -A \"Mozilla/5.0 Chrome/124.0 Safari/537.36\" \"https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr\" -o detail.html",
+            "description": "Download detail page HTML"
+          },
+          "call_number": 19
+        },
+        {
+          "ts": "2026-08-20T16:27:11",
+          "tool": "mcp__browser__browser_network_requests",
+          "input": {
+            "static": false,
+            "filter": "(api|json|graphql|yext)"
+          },
+          "call_number": 20
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "aaa79753-8891-42e6-8284-dfa14190da59",
+      "session_id": "bf9b55d5-ff60-4970-a29d-f9228eb272c0",
+      "recorded_at": "2026-08-20T16:29:48",
+      "subtype": "error_max_budget_usd",
+      "is_error": true,
+      "total_cost_usd": 1.075406,
+      "input_tokens": 36,
+      "output_tokens": 5715,
+      "cache_creation_input_tokens": 38637,
+      "cache_read_input_tokens": 529499,
+      "num_turns": 21,
+      "duration_ms": 333364,
+      "duration_api_ms": 113858,
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 2488,
+          "outputTokens": 17,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.002573,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty"
+        },
+        "claude-opus-5[1m]": {
+          "inputTokens": 38,
+          "outputTokens": 20642,
+          "cacheReadInputTokens": 568136,
+          "cacheCreationInputTokens": 43604,
+          "webSearchRequests": 0,
+          "costUSD": 1.072833,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty"
+        }
+      }
+    },
+    "saved_to": null
+  },
+  "976fab0d-b0bf-4f29-a59e-b79eaf8c9cc1": {
+    "job_id": "976fab0d-b0bf-4f29-a59e-b79eaf8c9cc1",
+    "name": "Subway",
+    "status": "budget_limit_hit",
+    "created_at": "2026-08-20T17:15:41",
+    "target_url": "https://restaurants.subway.com/united-states",
+    "result": {
+      "generated_code": "",
+      "requirements_txt": "",
+      "confidence_notes": [
+        "Agent response could not be parsed as JSON or a fenced code block - no usable code was extracted. This is a prompt/parsing issue with this job, not a problem with the target site. Re-running the job often resolves this.",
+        "Job hit its $0.75 budget ceiling before finishing - generated_code (if any) may be incomplete."
+      ],
+      "total_tool_calls": 17,
+      "action_log": [
+        {
+          "ts": "2026-08-20T17:15:47",
+          "tool": "ToolSearch",
+          "input": {
+            "query": "select:mcp__browser__browser_navigate,mcp__browser__browser_snapshot,mcp__browser__browser_click,mcp__browser__browser_network_requests,mcp__browser__browser_evaluate",
+            "max_results": 5
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-20T17:15:49",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states"
+          },
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-20T17:16:03",
+          "tool": "mcp__browser__browser_snapshot",
+          "input": {
+            "depth": 18
+          },
+          "call_number": 3
+        },
+        {
+          "ts": "2026-08-20T17:16:07",
+          "tool": "mcp__browser__browser_click",
+          "input": {
+            "element": "Accept Optional Cookies button",
+            "target": "e196"
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-08-20T17:16:18",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/de"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-08-20T17:16:22",
+          "tool": "mcp__browser__browser_evaluate",
+          "input": {
+            "function": "() => {\n  const links = Array.from(document.querySelectorAll('main a')).map(a => ({t: a.textContent.trim().slice(0,60), h: a.getAttribute('href')}));\n  return JSON.stringify({count: links.length, sample: links.slice(0,25)});\n}"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-08-20T17:16:25",
+          "tool": "mcp__browser__browser_snapshot",
+          "input": {
+            "target": "main",
+            "depth": 10
+          },
+          "call_number": 7
+        },
+        {
+          "ts": "2026-08-20T17:16:29",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/de/dover"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-08-20T17:16:33",
+          "tool": "mcp__browser__browser_snapshot",
+          "input": {
+            "target": "main",
+            "depth": 12
+          },
+          "call_number": 9
+        },
+        {
+          "ts": "2026-08-20T17:16:36",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/de/dover/991-forest-ave"
+          },
+          "call_number": 10
+        },
+        {
+          "ts": "2026-08-20T17:16:39",
+          "tool": "mcp__browser__browser_snapshot",
+          "input": {
+            "target": "main",
+            "depth": 14
+          },
+          "call_number": 11
+        },
+        {
+          "ts": "2026-08-20T17:16:49",
+          "tool": "PowerShell",
+          "input": {
+            "command": "$u='https://restaurants.subway.com/united-states/de/dover/991-forest-ave'\n$r=Invoke-WebRequest -Uri $u -UseBasicParsing -Headers @{'User-Agent'='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'}\n\"STATUS: $($r.StatusCode)  LEN: $($r.Content.Length)\"\n$c=$r.Content\n\"HAS_LDJSON: $($c -match 'application/ld\\+json')\"\n\"HAS_PHONE: $($c -match '724-7767')\"\n\"HAS_FORESTAVE: $($c -match '991 Forest Ave')\"",
+            "description": "Fetch detail page HTML statically"
+          },
+          "call_number": 12
+        },
+        {
+          "ts": "2026-08-20T17:17:03",
+          "tool": "PowerShell",
+          "input": {
+            "command": "$r=Invoke-WebRequest -Uri 'https://restaurants.subway.com/united-states/de/dover/991-forest-ave' -UseBasicParsing -Headers @{'User-Agent'='Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36'}\n$c=$r.Content\nWrite-Output ('STATUS ' + $r.StatusCode)\nWrite-Output ('LEN ' + $c.Length)\nWrite-Output ('LDJSON ' + ($c -match 'application/ld\\+json'))\nWrite-Output ('PHONE ' + ($c -match '724-7767'))\nWrite-Output ('ADDR ' + ($c -match '991 Forest Ave'))\nWrite-Output ('CLS_ADDRESS ' + ($c -match 'Core-address'))\nWrite-Output ('CLS_PHONE ' + ($c -match 'Phone-display'))",
+            "description": "Static fetch of detail page and marker checks"
+          },
+          "call_number": 13
+        },
+        {
+          "ts": "2026-08-20T17:17:21",
+          "tool": "PowerShell",
+          "input": {
+            "command": "$r=Invoke-WebRequest -Uri 'https://restaurants.subway.com/united-states/de/dover/991-forest-ave' -UseBasicParsing -Headers @{'User-Agent'='Mozilla/5.0 Chrome/124.0'}; $c=$r.Content; $c.Length; $c -match 'application/ld\\+json'; $c -match '724-7767'; $c -match 'Core-address'",
+            "description": "Static fetch detail page markers"
+          },
+          "call_number": 14
+        },
+        {
+          "ts": "2026-08-20T17:17:34",
+          "tool": "ToolSearch",
+          "input": {
+            "query": "select:WebFetch",
+            "max_results": 1
+          },
+          "call_number": 15
+        },
+        {
+          "ts": "2026-08-20T17:17:37",
+          "tool": "WebFetch",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/de/dover/991-forest-ave",
+            "prompt": "Does the raw HTML contain the store street address (991 Forest Ave), phone number (302) 724-7767, and weekly hours as text without JavaScript? Answer yes/no for each and quote any JSON-LD schema.org block if present."
+          },
+          "call_number": 16
+        },
+        {
+          "ts": "2026-08-20T17:18:35",
+          "tool": "mcp__browser__browser_network_requests",
+          "input": {
+            "static": false,
+            "filter": "(api|json|graphql|yext|search)"
+          },
+          "call_number": 17
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "976fab0d-b0bf-4f29-a59e-b79eaf8c9cc1",
+      "session_id": "62ef0f34-683c-4f18-9f0d-68d32a90b62f",
+      "recorded_at": "2026-08-20T17:18:36",
+      "subtype": "error_max_budget_usd",
+      "is_error": true,
+      "total_cost_usd": 0.7705685000000002,
+      "input_tokens": 32,
+      "output_tokens": 3436,
+      "cache_creation_input_tokens": 47026,
+      "cache_read_input_tokens": 523124,
+      "num_turns": 17,
+      "duration_ms": 171838,
+      "duration_api_ms": 83028,
+      "model_usage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 2391,
+          "outputTokens": 14,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.002461,
+          "contextWindow": 200000,
+          "maxOutputTokens": 32000,
+          "canonicalModel": "claude-haiku-4-5",
+          "provider": "firstParty"
+        },
+        "claude-opus-5[1m]": {
+          "inputTokens": 34,
+          "outputTokens": 7490,
+          "cacheReadInputTokens": 570150,
+          "cacheCreationInputTokens": 47298,
+          "webSearchRequests": 0,
+          "costUSD": 0.7681075000000002,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 64000,
+          "canonicalModel": "claude-opus-5",
+          "provider": "firstParty"
+        }
+      }
+    },
+    "saved_to": null
+  },
+  "07c8e14e-ba29-4f15-8943-bf2d95f2e1a2": {
+    "job_id": "07c8e14e-ba29-4f15-8943-bf2d95f2e1a2",
+    "name": "Stafford school district",
+    "status": "budget_limit_hit",
+    "created_at": "2026-08-21T00:55:46",
+    "target_url": "https://www.staffordmsd.org/contact/directory",
+    "result": {
+      "generated_code": "",
+      "requirements_txt": "",
+      "confidence_notes": [
+        "Recon phase did not return structured JSON findings (truncated) - passing its raw text through to codegen as a best effort. Treat the generated script's confidence_notes with extra scrutiny for this job.",
+        "Agent response could not be parsed as JSON or a fenced code block - no usable code was extracted. This is a prompt/parsing issue with this job, not a problem with the target site. Re-running the job often resolves this.",
+        "Job hit its $0.75 total budget ceiling (recon $0.52 / codegen $0.23) before finishing - generated_code (if any) may be incomplete."
+      ],
+      "total_tool_calls": 9,
+      "action_log": [
+        {
+          "ts": "2026-08-21T00:55:54",
+          "phase": "recon",
+          "tool": "ToolSearch",
+          "input": {
+            "query": "select:mcp__browser__browser_navigate,mcp__browser__browser_snapshot,mcp__browser__browser_click,mcp__browser__browser_network_requests,mcp__browser__browser_evaluate",
+            "max_results": 5
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-21T00:55:57",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://www.staffordmsd.org/contact/directory"
+          },
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-21T00:56:05",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_snapshot",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-08-21T00:56:12",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_evaluate",
+          "input": {
+            "function": "() => { const c = document.querySelector('.fsConstituentItem, [class*=Constituent]'); const items = document.querySelectorAll('.fsConstituentItem'); return { count: items.length, firstHTML: (items[0]||c)?.outerHTML?.slice(0,1600), containerCls: (items[0]||c)?.parentElement?.className, paging: document.querySelector('[class*=Paging],[class*=paging]')?.outerHTML?.slice(0,600) }; }"
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-08-21T00:56:15",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_network_requests",
+          "input": {
+            "static": false
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-08-21T00:56:20",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_click",
+          "input": {
+            "element": "Maria Abreu name link",
+            "target": "e76"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-08-21T00:56:24",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_snapshot",
+          "input": {
+            "depth": 18,
+            "target": "main"
+          },
+          "call_number": 7
+        },
+        {
+          "ts": "2026-08-21T00:56:30",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://www.staffordmsd.org/contact/directory?const_page=2&"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-08-21T00:56:35",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_snapshot",
+          "input": {
+            "target": "main",
+            "depth": 6
+          },
+          "call_number": 9
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "07c8e14e-ba29-4f15-8943-bf2d95f2e1a2",
+      "session_id": [
+        "ec383bcd-69d8-4211-99fd-b5769740c97d",
+        "unknown"
+      ],
+      "recorded_at": "2026-08-21T01:00:15",
+      "subtype": "recon=error_max_budget_usd; codegen=no_result_message (time_limit_hit)",
+      "is_error": true,
+      "total_cost_usd": 0.47854675,
+      "input_tokens": 18,
+      "output_tokens": 1360,
+      "cache_creation_input_tokens": 36178,
+      "cache_read_input_tokens": 233264,
+      "num_turns": 10,
+      "duration_ms": 79596,
+      "duration_api_ms": 38146,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "07c8e14e-ba29-4f15-8943-bf2d95f2e1a2",
+          "session_id": "ec383bcd-69d8-4211-99fd-b5769740c97d",
+          "recorded_at": "2026-08-21T00:57:10",
+          "subtype": "error_max_budget_usd",
+          "is_error": true,
+          "total_cost_usd": 0.47854675,
+          "input_tokens": 18,
+          "output_tokens": 1360,
+          "cache_creation_input_tokens": 36178,
+          "cache_read_input_tokens": 233264,
+          "num_turns": 10,
+          "duration_ms": 79596,
+          "duration_api_ms": 38146,
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 1852,
+              "outputTokens": 16,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.001932,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty"
+            },
+            "claude-opus-5[1m]": {
+              "inputTokens": 20,
+              "outputTokens": 3680,
+              "cacheReadInputTokens": 269442,
+              "cacheCreationInputTokens": 39967,
+              "webSearchRequests": 0,
+              "costUSD": 0.47661475000000003,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-opus-5",
+              "provider": "firstParty"
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "07c8e14e-ba29-4f15-8943-bf2d95f2e1a2",
+          "session_id": "unknown",
+          "recorded_at": "2026-08-21T01:00:15",
+          "subtype": "no_result_message (time_limit_hit)",
+          "is_error": true,
+          "total_cost_usd": null,
+          "input_tokens": null,
+          "output_tokens": null,
+          "cache_creation_input_tokens": null,
+          "cache_read_input_tokens": null,
+          "num_turns": 0,
+          "duration_ms": 0,
+          "duration_api_ms": 0,
+          "model_usage": null,
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": null
+  },
+  "c596138c-1b89-4a96-bba6-534bef19db33": {
+    "job_id": "c596138c-1b89-4a96-bba6-534bef19db33",
+    "name": "Humble",
+    "status": "budget_limit_hit",
+    "created_at": "2026-08-21T15:38:57",
+    "target_url": "https://www.humbleisd.net/staff",
+    "result": {
+      "generated_code": "",
+      "requirements_txt": "",
+      "confidence_notes": [
+        "Recon phase did not return structured JSON findings (truncated) - passing its raw text through to codegen as a best effort. Treat the generated script's confidence_notes with extra scrutiny for this job.",
+        "Agent response could not be parsed as JSON or a fenced code block - no usable code was extracted. This is a prompt/parsing issue with this job, not a problem with the target site. Re-running the job often resolves this.",
+        "Job hit its $0.75 total budget ceiling (recon $0.52 / codegen $0.23) before finishing - generated_code (if any) may be incomplete."
+      ],
+      "total_tool_calls": 9,
+      "action_log": [
+        {
+          "ts": "2026-08-21T15:39:07",
+          "phase": "recon",
+          "tool": "ToolSearch",
+          "input": {
+            "query": "select:mcp__browser__browser_navigate,mcp__browser__browser_snapshot,mcp__browser__browser_click,mcp__browser__browser_network_requests,mcp__browser__browser_evaluate",
+            "max_results": 5
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-21T15:39:11",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_navigate",
+          "input": {
+            "url": "https://www.humbleisd.net/staff"
+          },
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-21T15:39:22",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_snapshot",
+          "input": {
+            "depth": 25
+          },
+          "call_number": 3
+        },
+        {
+          "ts": "2026-08-21T15:39:27",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_network_requests",
+          "input": {
+            "static": false
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-08-21T15:39:32",
+          "phase": "recon",
+          "tool": "mcp__browser__browser_evaluate",
+          "input": {
+            "function": "() => {\n  const mail = document.querySelector('a[href^=\"mailto:\"]');\n  let card = mail;\n  for (let i=0;i<6 && card;i++) card = card.parentElement;\n  const cls = e => e ? e.tagName.toLowerCase()+'.'+[...e.classList].join('.') : null;\n  // find the repeating card container\n  const mails = [...document.querySelectorAll('a[href^=\"mailto:\"]')];\n  const cards = mails.map(m => m.closest('[class*=\"staff\"],[class*=\"Staff\"],[class*=\"card\"],[class*=\"Card\"]'));\n  const c0 = cards[0];\n  return {\n    mailtoCount: mails.length,\n    cardClass: cls(c0),\n    cardParent: cls(c0 && c0.parentElement),\n    cardHTML: c0 ? c0.outerHTML.slice(0,900) : null,\n    sameClassCount: c0 ? document.querySelectorAll('.'+[...c0.classList].join('.')).length : 0,\n    consentText: document.body.innerText.match(/cookie|consent|GDPR/i) ? 'possible' : 'none'\n  };\n}"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-08-21T15:39:43",
+          "phase": "recon",
+          "tool": "PowerShell",
+          "input": {
+            "command": "$r = Invoke-WebRequest -Uri \"https://www.humbleisd.net/staff?page_no=2\" -UseBasicParsing -UserAgent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/151.0 Safari/537.36\"; \"STATUS: $($r.StatusCode)  LEN: $($r.Content.Length)\"; $h=$r.Content; \"HAS_MAILTO: $([regex]::Matches($h,'mailto:').Count)\"; $i=$h.IndexOf('mailto:'); if($i -gt 0){ \"----SNIPPET----\"; $h.Substring([Math]::Max(0,$i-1400), 1800) }",
+            "description": "Fetch raw staff page HTML and inspect card markup"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-08-21T15:39:58",
+          "phase": "recon",
+          "tool": "PowerShell",
+          "input": {
+            "command": "$r = Invoke-WebRequest -Uri \"https://www.humbleisd.net/staff?page_no=2\" -UseBasicParsing -UserAgent \"Mozilla/5.0 Chrome/151.0\"; $h = $r.Content; Write-Output $r.StatusCode; Write-Output $h.Length; $m = [regex]::Matches($h,'mailto:'); Write-Output $m.Count; $i = $h.IndexOf('mailto:'); if ($i -gt 0) { $s = [Math]::Max(0, $i-1500); $h.Substring($s, 1900) }",
+            "description": "Fetch raw staff page HTML and inspect card markup"
+          },
+          "call_number": 7
+        },
+        {
+          "ts": "2026-08-21T15:40:14",
+          "phase": "recon",
+          "tool": "PowerShell",
+          "input": {
+            "command": "$r = Invoke-WebRequest -Uri \"https://www.humbleisd.net/staff?page_no=2\" -UseBasicParsing -UserAgent \"Mozilla/5.0 Chrome/151.0\"; $h = $r.Content; Write-Output $r.StatusCode; Write-Output $h.Length; if ($h -match '(?s)(.{900})mailto:') { Write-Output \"----CARD----\"; Write-Output $matches[1] }; $c = Select-String -InputObject $h -Pattern 'class=\"[^\"]*(staff|directory|person)[^\"]*\"' -AllMatches; $c.Matches | ForEach-Object { $_.Value } | Select-Object -Unique -First 25",
+            "description": "Inspect raw HTML card markup and staff-related classes"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-08-21T15:40:27",
+          "phase": "recon",
+          "tool": "PowerShell",
+          "input": {
+            "command": "$r = Invoke-WebRequest -Uri \"https://www.humbleisd.net/staff?page_no=2\" -UseBasicParsing -UserAgent \"Mozilla/5.0 Chrome/151.0\"; Write-Output $r.StatusCode; Write-Output $r.Content.Length; if ($r.Content -match '(?s).{800}mailto:') { Write-Output \"----CARD----\"; Write-Output $matches[0] }",
+            "description": "Check server-rendered HTML contains staff cards"
+          },
+          "call_number": 9
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "c596138c-1b89-4a96-bba6-534bef19db33",
+      "session_id": [
+        "5eb3e83f-11f6-41e3-bcbb-e04edc4a464b",
+        "unknown"
+      ],
+      "recorded_at": "2026-08-21T15:44:19",
+      "subtype": "recon=error_max_budget_usd; codegen=no_result_message (time_limit_hit)",
+      "is_error": true,
+      "total_cost_usd": 0.48575225,
+      "input_tokens": 16,
+      "output_tokens": 2761,
+      "cache_creation_input_tokens": 37134,
+      "cache_read_input_tokens": 213627,
+      "num_turns": 10,
+      "duration_ms": 123626,
+      "duration_api_ms": 66508,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "c596138c-1b89-4a96-bba6-534bef19db33",
+          "session_id": "5eb3e83f-11f6-41e3-bcbb-e04edc4a464b",
+          "recorded_at": "2026-08-21T15:41:09",
+          "subtype": "error_max_budget_usd",
+          "is_error": true,
+          "total_cost_usd": 0.48575225,
+          "input_tokens": 16,
+          "output_tokens": 2761,
+          "cache_creation_input_tokens": 37134,
+          "cache_read_input_tokens": 213627,
+          "num_turns": 10,
+          "duration_ms": 123626,
+          "duration_api_ms": 66508,
+          "model_usage": {
+            "claude-haiku-4-5-20251001": {
+              "inputTokens": 1828,
+              "outputTokens": 17,
+              "cacheReadInputTokens": 0,
+              "cacheCreationInputTokens": 0,
+              "webSearchRequests": 0,
+              "costUSD": 0.001913,
+              "contextWindow": 200000,
+              "maxOutputTokens": 32000,
+              "canonicalModel": "claude-haiku-4-5",
+              "provider": "firstParty"
+            },
+            "claude-opus-5[1m]": {
+              "inputTokens": 18,
+              "outputTokens": 4959,
+              "cacheReadInputTokens": 250761,
+              "cacheCreationInputTokens": 37503,
+              "webSearchRequests": 0,
+              "costUSD": 0.48383925000000005,
+              "contextWindow": 1000000,
+              "maxOutputTokens": 64000,
+              "canonicalModel": "claude-opus-5",
+              "provider": "firstParty"
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "c596138c-1b89-4a96-bba6-534bef19db33",
+          "session_id": "unknown",
+          "recorded_at": "2026-08-21T15:44:19",
+          "subtype": "no_result_message (time_limit_hit)",
+          "is_error": true,
+          "total_cost_usd": null,
+          "input_tokens": null,
+          "output_tokens": null,
+          "cache_creation_input_tokens": null,
+          "cache_read_input_tokens": null,
+          "num_turns": 0,
+          "duration_ms": 0,
+          "duration_api_ms": 0,
+          "model_usage": null,
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": null
+  }
+}
