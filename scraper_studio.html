@@ -227,7 +227,7 @@
         <h3>Target</h3>
         <p class="form-hint">One URL — OpenAI figures out whether it's a listing page or a detail page by looking at it.</p>
         <label>Listing / search page URL — or a single item's detail page</label>
-        <input type="text" id="input-target-url" value="https://www.samsung.com/in/smartphones/all-smartphones/">
+        <input type="text" id="input-target-url" placeholder="https://www.example.com/products">
         <label>Sample keyword to test with (optional)</label>
         <input type="text" id="input-keyword" placeholder="e.g. Galaxy F70">
         <p class="form-hint" style="margin:-10px 0 16px;">Used once during live inspection to confirm search works — not a runtime setting. The delivered script reads real keywords/URLs from input.xlsx.</p>
@@ -243,19 +243,19 @@
         <div class="rule-grid">
           <div>
             <label>Search rules</label>
-            <textarea id="input-search-rules">Match products whose title or model slug contains the given keyword, case-insensitive.</textarea>
+            <textarea id="input-search-rules" placeholder="Match products whose title or model slug contains the given keyword, case-insensitive."></textarea>
           </div>
           <div>
             <label>Filter rules</label>
-            <textarea id="input-filter-rules">No additional filters — include every keyword match.</textarea>
+            <textarea id="input-filter-rules" placeholder="No additional filters — include every keyword match."></textarea>
           </div>
           <div>
             <label>Navigation rules</label>
-            <textarea id="input-navigation-rules">From the listing page, collect every product detail-page link, then visit each one.</textarea>
+            <textarea id="input-navigation-rules" placeholder="From the listing page, collect every product detail-page link, then visit each one."></textarea>
           </div>
           <div>
             <label>Extraction rules (data points)</label>
-            <textarea id="input-extraction-rules">All product information as attribute/value pairs from the Specifications block, plus name, model code, price, rating, launch date.</textarea>
+            <textarea id="input-extraction-rules" placeholder="All product information as attribute/value pairs from the Specifications block, plus name, model code, price, rating, launch date."></textarea>
           </div>
         </div>
       </div>

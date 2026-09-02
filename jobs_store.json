@@ -1696,11 +1696,11 @@
     "test_run": {
       "status": "passed",
       "returncode": 0,
-      "stdout_tail": "[2026-08-31T06:53:34Z] Reading input workbook\r\n[2026-08-31T06:53:35Z] Processing input row 2\r\n[2026-08-31T06:53:35Z] Fetching https://books.toscrape.com/\r\n[2026-08-31T06:53:36Z] Found 20 cards on listing page\r\n[2026-08-31T06:53:36Z] Fetching https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html\r\n[2026-08-31T06:53:37Z] Fetching https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html\r\n[2026-08-31T06:53:37Z] Fetching https://books.toscrape.com/catalogue/soumission_998/index.html\r\n[2026-08-31T06:53:37Z] Fetching https://books.toscrape.com/catalogue/sharp-objects_997/index.html\r\n[2026-08-31T06:53:37Z] Fetching https://books.toscrape.com/catalogue/sapiens-a-brief-history-of-humankind_996/index.html\r\n[2026-08-31T06:53:38Z] Following next listing page\r\n[2026-08-31T06:53:38Z] Writing 3 extracted items and 0 flags\r\n[2026-08-31T06:53:38Z] Finished\r\n",
+      "stdout_tail": "[2026-09-02T07:13:31Z] Reading input workbook\r\n[2026-09-02T07:13:33Z] Processing input row 2\r\n[2026-09-02T07:13:33Z] Fetching https://books.toscrape.com/\r\n[2026-09-02T07:13:34Z] Found 20 cards on listing page\r\n[2026-09-02T07:13:34Z] Fetching https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html\r\n[2026-09-02T07:13:34Z] Fetching https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html\r\n[2026-09-02T07:13:35Z] Fetching https://books.toscrape.com/catalogue/soumission_998/index.html\r\n[2026-09-02T07:13:35Z] Fetching https://books.toscrape.com/catalogue/sharp-objects_997/index.html\r\n[2026-09-02T07:13:35Z] Fetching https://books.toscrape.com/catalogue/sapiens-a-brief-history-of-humankind_996/index.html\r\n[2026-09-02T07:13:36Z] Following next listing page\r\n[2026-09-02T07:13:36Z] Writing 3 extracted items and 0 flags\r\n[2026-09-02T07:13:36Z] Finished\r\n",
       "stderr_tail": "",
       "sample_output_ready": true,
       "max_products": 3,
-      "finished_at": "2026-08-31T12:23:38"
+      "finished_at": "2026-09-02T12:43:36"
     }
   },
   "ff948afe-6269-4caf-9436-352e16b69d00": {
@@ -2264,11 +2264,11 @@
     "test_run": {
       "status": "passed",
       "returncode": 0,
-      "stdout_tail": "[2026-08-31T13:26:19] Reading input workbook\r\n[2026-08-31T13:26:20] Crawling supplied listing URL: https://restaurants.subway.com/united-states/al\r\n[2026-08-31T13:26:20] Fetching https://restaurants.subway.com/united-states/al\r\n[2026-08-31T13:26:21] Fetching https://restaurants.subway.com/united-states/al/abbeville/644-ozark-road\r\n[2026-08-31T13:26:21] Fetching https://restaurants.subway.com/united-states/al/alabaster/438-1st-st-sw\r\n[2026-08-31T13:26:21] Fetching https://restaurants.subway.com/united-states/al/albertville/7343-highway-431\r\n[2026-08-31T13:26:22] Writing output workbook\r\n[2026-08-31T13:26:22] Finished: 3 extracted item(s), 6 flag(s)\r\n",
+      "stdout_tail": "[2026-09-02T12:09:28] Reading input workbook\r\n[2026-09-02T12:09:30] Crawling supplied listing URL: https://restaurants.subway.com/united-states/al\r\n[2026-09-02T12:09:30] Fetching https://restaurants.subway.com/united-states/al\r\n[2026-09-02T12:09:31] Fetching https://restaurants.subway.com/united-states/al/abbeville/644-ozark-road\r\n[2026-09-02T12:09:31] Fetching https://restaurants.subway.com/united-states/al/alabaster/438-1st-st-sw\r\n[2026-09-02T12:09:31] Fetching https://restaurants.subway.com/united-states/al/albertville/7343-highway-431\r\n[2026-09-02T12:09:32] Writing output workbook\r\n[2026-09-02T12:09:32] Finished: 3 extracted item(s), 6 flag(s)\r\n",
       "stderr_tail": "",
       "sample_output_ready": true,
       "max_products": 3,
-      "finished_at": "2026-08-31T13:26:22"
+      "finished_at": "2026-09-02T12:09:32"
     }
   },
   "daf09675-b67e-4130-8aa5-c1b577fcefc2": {
@@ -2457,6 +2457,1500 @@
     },
     "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\samsung_smartphones_data_collector_daf09675",
     "anti_bot_marker": null,
-    "test_run": null
+    "test_run": {
+      "status": "failed",
+      "returncode": 1,
+      "stdout_tail": "",
+      "stderr_tail": "  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\samsung_smartphones_data_collector_daf09675\\generated_scraper.py\", line 306\r\n    flag_sheet.append([flag[\"Type\"], flag[\"URL\"], flag[\"Message\"])\r\n                                                                 ^\r\nSyntaxError: closing parenthesis ')' does not match opening parenthesis '['\r\n",
+      "sample_output_ready": false,
+      "max_products": 3,
+      "finished_at": "2026-09-02T12:02:24"
+    }
+  },
+  "b2c9a786-a22a-4d10-8696-d49e5aab76d6": {
+    "job_id": "b2c9a786-a22a-4d10-8696-d49e5aab76d6",
+    "name": "Subway Restaurant Locator",
+    "status": "completed",
+    "created_at": "2026-09-02T12:04:45",
+    "target_url": "https://restaurants.subway.com/united-states/al",
+    "sample_keyword": "Prattville",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport re\nfrom datetime import datetime, timezone\nfrom urllib.parse import urljoin\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\nBASE_URL = \"https://restaurants.subway.com/united-states/al\"\nTIMEOUT = 30\n\n\ndef log(message):\n    print(f\"[{datetime.now().astimezone().isoformat(timespec='seconds')}] {message}\", flush=True)\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError(\"CAPTCHA solving is intentionally not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    \"\"\"Return anti-bot observations for one HTTP response without bypassing them.\"\"\"\n    signals = []\n    body = response.text or \"\"\n    lower = body.lower()\n    if response.status_code == 403:\n        signals.append(\"HTTP 403 Forbidden\")\n    elif response.status_code == 429:\n        signals.append(\"HTTP 429 Too Many Requests\")\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in lower:\n            signals.append(description)\n    if len(body.strip()) < 500:\n        signals.append(f\"Unusually short response body ({len(body.strip())} characters)\")\n    return signals\n\n\ndef clean_text(value):\n    return re.sub(r\"\\\\s+\", \" \", value or \"\").strip()\n\n\ndef value_from_row(row, name):\n    value = row.get(name, \"\")\n    if pd.isna(value):\n        return \"\"\n    return str(value).strip()\n\n\ndef fetch(session, url, flags):\n    log(f\"Fetching {url}\")\n    try:\n        response = session.get(url, timeout=TIMEOUT, allow_redirects=True)\n    except Exception as exc:\n        flags.append({\"timestamp\": datetime.now(timezone.utc).isoformat(), \"type\": \"error\", \"url\": url, \"message\": f\"Request failed: {exc}\"})\n        return None\n    for signal in detect_anti_bot_signals(response):\n        flags.append({\"timestamp\": datetime.now(timezone.utc).isoformat(), \"type\": \"anti-bot\", \"url\": response.url, \"message\": signal})\n    try:\n        response.raise_for_status()\n    except requests.RequestException as exc:\n        flags.append({\"timestamp\": datetime.now(timezone.utc).isoformat(), \"type\": \"error\", \"url\": response.url, \"message\": f\"HTTP error: {exc}\"})\n        return None\n    return response\n\n\ndef parse_address(text):\n    text = text.replace(\"\\\\xa0\", \" \")\n    pattern = re.compile(\n        r\"(?P<street>\\\\d+\\\\s+[A-Za-z0-9][^\\\\n,]{2,90}?)\\\\s*,?\\\\s+\"\n        r\"(?P<city>[A-Za-z][A-Za-z .'-]{1,45})\\\\s*,?\\\\s+\"\n        r\"(?P<state>AL)\\\\s+(?P<postal>\\\\d{5})(?:-\\\\d{4})?\",\n        re.I,\n    )\n    match = pattern.search(text)\n    if not match:\n        return {\"Street Address\": \"\", \"City\": \"\", \"State\": \"\", \"Postal Code\": \"\"}\n    result = {key: clean_text(value) for key, value in match.groupdict().items()}\n    return {\n        \"Street Address\": result[\"street\"],\n        \"City\": result[\"city\"],\n        \"State\": result[\"state\"].upper(),\n        \"Postal Code\": result[\"postal\"],\n    }\n\n\ndef parse_hours(text):\n    lines = [clean_text(line) for line in text.splitlines() if clean_text(line)]\n    matches = []\n    day_pattern = re.compile(r\"\\\\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)(?:day)?\\\\b\", re.I)\n    for line in lines:\n        if day_pattern.search(line) and re.search(r\"\\\\b\\\\d{1,2}(?::\\\\d{2})?\\\\s*(?:AM|PM)\\\\b\", line, re.I):\n            matches.append(line)\n    if matches:\n        return \", \".join(dict.fromkeys(matches))\n    match = re.search(r\"((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[^.!?]{0,300}(?:AM|PM))\", clean_text(text), re.I)\n    return clean_text(match.group(1)) if match else \"\"\n\n\ndef parse_phone(text):\n    match = re.search(r\"(?:\\\\+?1[. -]?)?\\\\(?[2-9]\\\\d{2}\\\\)?[. -]\\\\d{3}[. -]\\\\d{4}\", text)\n    return clean_text(match.group(0)) if match else \"\"\n\n\ndef parse_store_number(text):\n    match = re.search(r\"(?:store|location)\\\\s*(?:number|#|no\\\\.?)\\\\s*[:#]?\\\\s*([A-Za-z0-9-]+)\", text, re.I)\n    return match.group(1) if match else \"\"\n\n\ndef availability(text, terms):\n    lower = text.lower()\n    for term in terms:\n        if re.search(r\"\\\\b(?:available|offer|offers|service|services|yes)\\\\b\", lower) and term in lower:\n            return \"Yes\"\n    return \"\"\n\n\ndef is_excluded(text):\n    lower = clean_text(text).lower()\n    return bool(re.search(r\"\\\\b(?:closed|permanently closed)\\\\b|temporary\\\\s+kiosk|temporary\\\\s+location\", lower))\n\n\ndef candidate_nodes(soup):\n    selectors = [\"article\", \"li\", \"[class*='card']\", \"[class*='location']\", \"[class*='store']\"]\n    nodes = soup.select(\", \".join(selectors))\n    usable = []\n    seen = set()\n    for node in nodes:\n        text = node.get_text(\"\\\\n\", strip=True)\n        if not re.search(r\"\\\\bAL\\\\s+\\\\d{5}\\\\b\", text, re.I):\n            continue\n        if not re.search(r\"\\\\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\", text, re.I):\n            continue\n        signature = clean_text(text)\n        if signature and signature not in seen and len(signature) <= 2500:\n            seen.add(signature)\n            usable.append(node)\n    if not usable:\n        usable = [soup.body or soup]\n    return usable\n\n\ndef extract_item(node, source_url, index, flags):\n    text = node.get_text(\"\\\\n\", strip=True)\n    address = parse_address(text)\n    hours = parse_hours(text)\n    item = {\n        \"Store Number\": parse_store_number(text),\n        **address,\n        \"Phone Number\": parse_phone(text),\n        \"Operating Hours\": hours,\n        \"Drive-Thru Available\": availability(text.lower(), [\"drive-thru\", \"drive thru\"]),\n        \"Delivery Available\": availability(text.lower(), [\"delivery\", \"deliveries\"]),\n        \"Source URL\": source_url,\n    }\n    missing = [key for key, value in item.items() if key != \"Source URL\" and not value]\n    if missing:\n        flags.append({\"timestamp\": datetime.now(timezone.utc).isoformat(), \"type\": \"low-confidence\", \"url\": source_url, \"message\": f\"Item {index}: fields not observed or not confidently parsed: {', '.join(missing)}\"})\n    if not address[\"Postal Code\"] or not address[\"City\"]:\n        flags.append({\"timestamp\": datetime.now(timezone.utc).isoformat(), \"type\": \"low-confidence\", \"url\": source_url, \"message\": f\"Item {index}: address structure could not be confidently matched\"})\n    return item\n\n\ndef extract_listing(response, flags):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    rows = []\n    seen = set()\n    for index, node in enumerate(candidate_nodes(soup), 1):\n        text = node.get_text(\"\\\\n\", strip=True)\n        if is_excluded(text):\n            log(f\"Skipping closed or temporary-kiosk item on {response.url}\")\n            flags.append({\"timestamp\": datetime.now(timezone.utc).isoformat(), \"type\": \"filtered\", \"url\": response.url, \"message\": f\"Item {index} excluded as closed or temporary kiosk\"})\n            continue\n        item = extract_item(node, response.url, index, flags)\n        identity = (item[\"Street Address\"], item[\"City\"], item[\"Postal Code\"])\n        if identity == (\"\", \"\", \"\") or identity in seen:\n            continue\n        seen.add(identity)\n        rows.append(item)\n    log(f\"Extracted {len(rows)} item(s) from {response.url}\")\n    return rows\n\n\ndef matching_city_links(response, keyword):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    needle = keyword.strip().lower()\n    links = []\n    seen = set()\n    for anchor in soup.find_all(\"a\", href=True):\n        label = clean_text(anchor.get_text(\" \", strip=True)).lower()\n        href = urljoin(response.url, anchor[\"href\"])\n        if needle in label or needle in href.lower():\n            if \"/united-states/al/\" in href.lower() and href.rstrip(\"/\") != BASE_URL.rstrip(\"/\") and href not in seen:\n                seen.add(href)\n                links.append(href)\n    return links\n\n\ndef process_row(row, session, flags):\n    keyword = value_from_row(row, \"keyword\")\n    listing_url = value_from_row(row, \"listing_url\")\n    detail_url = value_from_row(row, \"detail_url\")\n    results = []\n    if detail_url:\n        response = fetch(session, detail_url, flags)\n        if response:\n            results.extend(extract_listing(response, flags))\n        return results\n    if listing_url:\n        response = fetch(session, listing_url, flags)\n        if response:\n            results.extend(extract_listing(response, flags))\n        return results\n    if keyword:\n        state_response = fetch(session, BASE_URL, flags)\n        if not state_response:\n            return results\n        city_links = matching_city_links(state_response, keyword)\n        if not city_links:\n            flags.append({\"timestamp\": datetime.now(timezone.utc).isoformat(), \"type\": \"low-confidence\", \"url\": BASE_URL, \"message\": f\"No Alabama city link matched keyword {keyword!r}\"})\n        for city_url in city_links:\n            city_response = fetch(session, city_url, flags)\n            if city_response:\n                results.extend(extract_listing(city_response, flags))\n        return results\n    flags.append({\"timestamp\": datetime.now(timezone.utc).isoformat(), \"type\": \"error\", \"url\": \"\", \"message\": \"Input row had no keyword, listing_url, or detail_url\"})\n    return results\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Scrape Subway Alabama restaurant listings\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(f\"Reading input workbook {args.input}\")\n    try:\n        input_df = pd.read_excel(args.input)\n    except Exception as exc:\n        log(f\"Input read failed: {exc}\")\n        raise\n\n    session = requests.Session()\n    session.headers.update({\"User-Agent\": \"Mozilla/5.0 (compatible; ScraperStudio/1.0)\"})\n    proxy = get_proxy()\n    if proxy:\n        session.proxies.update({\"http\": proxy, \"https\": proxy})\n\n    flags = []\n    extracted = []\n    for row_number, (_, row) in enumerate(input_df.iterrows(), 1):\n        log(f\"Processing input row {row_number}\")\n        extracted.extend(process_row(row, session, flags))\n        if args.max_products is not None and len(extracted) >= args.max_products:\n            extracted = extracted[:args.max_products]\n            log(f\"Reached max-products cap of {args.max_products}\")\n            break\n\n    columns = [\"Store Number\", \"Street Address\", \"City\", \"State\", \"Postal Code\", \"Phone Number\", \"Operating Hours\", \"Drive-Thru Available\", \"Delivery Available\", \"Source URL\"]\n    data_df = pd.DataFrame(extracted, columns=columns)\n    flags_df = pd.DataFrame(flags, columns=[\"timestamp\", \"type\", \"url\", \"message\"])\n    log(f\"Writing {len(data_df)} extracted row(s) and {len(flags_df)} flag(s) to {args.output}\")\n    with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n        data_df.to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        flags_df.to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(\"Run complete\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "requirements_txt": "requests\nbeautifulsoup4\npandas\nopenpyxl\n",
+      "confidence_notes": [
+        "Exact listing CSS selectors were not exposed, so the script uses conservative generic article/list/card/location/store candidates and flags parsing gaps.",
+        "No detail-page URL or detail-page DOM structure was confirmed. The detail_url input is nevertheless implemented as an independent direct HTTP extraction path, as required.",
+        "No network API was observed; this script uses requests plus BeautifulSoup against document HTML.",
+        "Store Number, Phone Number, Drive-Thru Available, and Delivery Available were not visible in the inspection and will normally be blank and flagged as low-confidence unless present in supplied HTML.",
+        "Closed locations and temporary kiosks were not explicitly labeled in the observed content. The script filters only text matching closed/permanently closed or temporary kiosk/location phrases.",
+        "The inspection reported no cookie banner and no confirmed JavaScript requirement, so no browser automation is included.",
+        "The state-directory keyword matching assumes the keyword can occur in a city-link label or URL; exact city-link markup was not confirmed.",
+        "The script assumes Alabama postal/address text follows a recognizable street, city, AL, ZIP pattern. Unusual formatting may produce blank address fields and a flag."
+      ],
+      "total_tool_calls": 12,
+      "action_log": [
+        {
+          "ts": "2026-09-02T12:04:54",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-09-02T12:04:57",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-09-02T12:04:58",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-09-02T12:04:59",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input",
+            "text": "Prattville"
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-09-02T12:05:01",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-09-02T12:05:02",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 6
+        },
+        {
+          "ts": "2026-09-02T12:05:03",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville"
+          },
+          "call_number": 7
+        },
+        {
+          "ts": "2026-09-02T12:05:05",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 8
+        },
+        {
+          "ts": "2026-09-02T12:05:06",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "text=113 S Memorial Dr"
+          },
+          "call_number": 9
+        },
+        {
+          "ts": "2026-09-02T12:05:08",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 10
+        },
+        {
+          "ts": "2026-09-02T12:05:09",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "a[href*='113-s-memorial']"
+          },
+          "call_number": 11
+        },
+        {
+          "ts": "2026-09-02T12:05:10",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 12
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "b2c9a786-a22a-4d10-8696-d49e5aab76d6",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-09-02T12:05:53",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.00839,
+      "input_tokens": 33018,
+      "output_tokens": 5546,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 27048,
+      "num_turns": 14,
+      "duration_ms": 68759,
+      "duration_api_ms": 68759,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "b2c9a786-a22a-4d10-8696-d49e5aab76d6",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T12:05:16",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.002197,
+          "input_tokens": 31406,
+          "output_tokens": 654,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 27048,
+          "num_turns": 13,
+          "duration_ms": 31256,
+          "duration_api_ms": 31256,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 31406,
+              "output_tokens": 654,
+              "cached_tokens": 27048,
+              "cost_usd": 0.002197
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "b2c9a786-a22a-4d10-8696-d49e5aab76d6",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T12:05:53",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.006193,
+          "input_tokens": 1612,
+          "output_tokens": 4892,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 37503,
+          "duration_api_ms": 37503,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1612,
+              "output_tokens": 4892,
+              "cached_tokens": 0,
+              "cost_usd": 0.006193
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_b2c9a786",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "failed",
+      "returncode": 1,
+      "stdout_tail": "[2026-09-02T12:08:00+05:30] Reading input workbook C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_b2c9a786\\sample_input.xlsx\r\n[2026-09-02T12:08:01+05:30] Processing input row 1\r\n[2026-09-02T12:08:01+05:30] Fetching https://restaurants.subway.com/united-states/al\r\n",
+      "stderr_tail": "Traceback (most recent call last):\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_b2c9a786\\generated_scraper.py\", line 281, in <module>\r\n    main()\r\n    ~~~~^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_b2c9a786\\generated_scraper.py\", line 264, in main\r\n    extracted.extend(process_row(row, session, flags))\r\n                     ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_b2c9a786\\generated_scraper.py\", line 222, in process_row\r\n    results.extend(extract_listing(response, flags))\r\n                   ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_b2c9a786\\generated_scraper.py\", line 184, in extract_listing\r\n    item = extract_item(node, response.url, index, flags)\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_b2c9a786\\generated_scraper.py\", line 160, in extract_item\r\n    \"Phone Number\": parse_phone(text),\r\n                    ~~~~~~~~~~~^^^^^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_b2c9a786\\generated_scraper.py\", line 111, in parse_phone\r\n    match = re.search(r\"(?:\\\\+?1[. -]?)?\\\\(?[2-9]\\\\d{2}\\\\)?[. -]\\\\d{3}[. -]\\\\d{4}\", text)\r\n  File \"C:\\Python314\\Lib\\re\\__init__.py\", line 177, in search\r\n    return _compile(pattern, flags).search(string)\r\n           ~~~~~~~~^^^^^^^^^^^^^^^^\r\n  File \"C:\\Python314\\Lib\\re\\__init__.py\", line 350, in _compile\r\n    p = _compiler.compile(pattern, flags)\r\n  File \"C:\\Python314\\Lib\\re\\_compiler.py\", line 762, in compile\r\n    p = _parser.parse(p, flags)\r\n  File \"C:\\Python314\\Lib\\re\\_parser.py\", line 973, in parse\r\n    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)\r\n  File \"C:\\Python314\\Lib\\re\\_parser.py\", line 460, in _parse_sub\r\n    itemsappend(_parse(source, state, verbose, nested + 1,\r\n                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n                       not nested and not items))\r\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Python314\\Lib\\re\\_parser.py\", line 843, in _parse\r\n    raise source.error(\"unknown extension ?\" + char,\r\n                       len(char) + 1)\r\nre.PatternError: unknown extension ?[ at position 19\r\n",
+      "sample_output_ready": false,
+      "max_products": 3,
+      "finished_at": "2026-09-02T12:08:02"
+    }
+  },
+  "fec4d24d-f39e-48f5-bbef-78f2f3c90357": {
+    "job_id": "fec4d24d-f39e-48f5-bbef-78f2f3c90357",
+    "name": "Samsung Smartphones Data Collector",
+    "status": "completed",
+    "created_at": "2026-09-02T12:18:03",
+    "target_url": "https://www.samsung.com/in/smartphones/all-smartphones/",
+    "sample_keyword": "Galaxy S24",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport json\nimport logging\nimport re\nfrom datetime import datetime, timezone\nfrom pathlib import Path\nfrom urllib.parse import urljoin\n\nimport requests\nfrom bs4 import BeautifulSoup\nfrom openpyxl import Workbook, load_workbook\n\nDEFAULT_LISTING_URL = \"https://www.samsung.com/in/smartphones/all-smartphones/\"\nREQUEST_TIMEOUT = 30\n\nDATA_HEADERS = [\n    \"Product Title\",\n    \"Model Code\",\n    \"Price (INR)\",\n    \"Color options\",\n    \"Storage capacity\",\n    \"Display specs\",\n    \"Camera specs\",\n    \"Availability status\",\n    \"Source URL\",\n]\nFLAG_HEADERS = [\"Timestamp\", \"Type\", \"URL\", \"Message\"]\n\n\ndef log(message):\n    timestamp = datetime.now(timezone.utc).astimezone().strftime(\"%Y-%m-%d %H:%M:%S%z\")\n    print(f\"[{timestamp}] {message}\", flush=True)\n\n\ndef get_proxy():\n    \"\"\"Placeholder for proxy configuration; anti-bot bypass is not implemented.\"\"\"\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    \"\"\"Captcha solving is deliberately not implemented.\"\"\"\n    raise NotImplementedError(\"Captcha solving and anti-bot bypass are not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    \"\"\"Return anti-bot observations for a response without attempting any bypass.\"\"\"\n    signals = []\n    body = response.text or \"\"\n    lowered = body.lower()\n    if response.status_code in (403, 429):\n        signals.append(f\"HTTP status {response.status_code}\")\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in lowered:\n            signals.append(description)\n    if len(body) < 500:\n        signals.append(f\"Unusually short response body ({len(body)} bytes)\")\n    return signals\n\n\ndef clean_text(value):\n    if value is None:\n        return None\n    text = str(value).replace(\"\\xa0\", \" \")\n    text = re.sub(r\"\\s+\", \" \", text).strip()\n    return text or None\n\n\ndef fetch(url, session, flags):\n    log(f\"Fetching {url}\")\n    try:\n        response = session.get(url, timeout=REQUEST_TIMEOUT, proxies=get_proxy())\n        for signal in detect_anti_bot_signals(response):\n            flags.append({\n                \"Timestamp\": datetime.now(timezone.utc).isoformat(),\n                \"Type\": \"anti-bot\",\n                \"URL\": url,\n                \"Message\": signal,\n            })\n        response.raise_for_status()\n        return response\n    except requests.RequestException as exc:\n        flags.append({\n            \"Timestamp\": datetime.now(timezone.utc).isoformat(),\n            \"Type\": \"error\",\n            \"URL\": url,\n            \"Message\": f\"Request failed: {exc}\",\n        })\n        log(f\"Request failed for {url}: {exc}\")\n        return None\n\n\ndef load_json_ld(soup):\n    objects = []\n    for script in soup.find_all(\"script\", type=\"application/ld+json\"):\n        raw = script.string or script.get_text(\"\\n\", strip=True)\n        if not raw:\n            continue\n        try:\n            parsed = json.loads(raw)\n            if isinstance(parsed, list):\n                objects.extend(parsed)\n            else:\n                objects.append(parsed)\n        except (json.JSONDecodeError, TypeError):\n            continue\n    return objects\n\n\ndef walk_json(value):\n    if isinstance(value, dict):\n        yield value\n        for child in value.values():\n            yield from walk_json(child)\n    elif isinstance(value, list):\n        for child in value:\n            yield from walk_json(child)\n\n\ndef first_value(data, keys):\n    for obj in walk_json(data):\n        for key in keys:\n            value = obj.get(key)\n            if value not in (None, \"\", []):\n                if isinstance(value, dict):\n                    value = value.get(\"name\") or value.get(\"value\") or value.get(\"@id\")\n                return clean_text(value)\n    return None\n\n\ndef product_objects(json_ld):\n    products = []\n    for obj in walk_json(json_ld):\n        obj_type = obj.get(\"@type\")\n        types = obj_type if isinstance(obj_type, list) else [obj_type]\n        if \"Product\" in types:\n            products.append(obj)\n    return products\n\n\ndef is_excluded(title, url):\n    combined = f\"{title or ''} {url or ''}\".casefold()\n    return any(term in combined for term in (\"accessor\", \"case\", \"refurbished\"))\n\n\ndef listing_items(soup, base_url):\n    items = []\n    seen = set()\n    json_ld = load_json_ld(soup)\n    for obj in walk_json(json_ld):\n        if obj.get(\"@type\") == \"ListItem\" or \"ListItem\" in (obj.get(\"@type\") or [] if isinstance(obj.get(\"@type\"), list) else []):\n            item = obj.get(\"item\")\n            if isinstance(item, dict):\n                item_url = item.get(\"url\") or item.get(\"@id\")\n                title = item.get(\"name\")\n            else:\n                item_url = item\n                title = obj.get(\"name\")\n            if item_url:\n                absolute = urljoin(base_url, str(item_url))\n                key = (absolute, clean_text(title))\n                if absolute not in seen:\n                    seen.add(absolute)\n                    items.append({\"url\": absolute, \"title\": clean_text(title)})\n    if items:\n        return items\n\n    for anchor in soup.find_all(\"a\", href=True):\n        href = anchor.get(\"href\")\n        title = clean_text(anchor.get_text(\"\\n\", strip=True))\n        absolute = urljoin(base_url, href)\n        haystack = f\"{title or ''} {absolute}\".casefold()\n        if absolute in seen or not title:\n            continue\n        if any(term in haystack for term in (\"galaxy\", \"smartphone\", \"phone\")):\n            seen.add(absolute)\n            items.append({\"url\": absolute, \"title\": title})\n    return items\n\n\ndef find_labeled_text(soup, labels):\n    label_pattern = re.compile(\"|\".join(re.escape(label) for label in labels), re.IGNORECASE)\n    for node in soup.find_all(string=label_pattern):\n        parent = node.parent\n        if parent is None:\n            continue\n        text = clean_text(parent.parent.get_text(\"\\n\", strip=True) if parent.parent else parent.get_text(\"\\n\", strip=True))\n        if not text:\n            continue\n        match = re.search(r\"(?:\" + \"|\".join(re.escape(label) for label in labels) + r\")\\s*[:\\-]?\\s*(.+)\", text, re.IGNORECASE)\n        if match:\n            value = clean_text(match.group(1))\n            if value and value.casefold() not in {label.casefold() for label in labels}:\n                return value\n    return None\n\n\ndef extract_product(response, source_url, listing_title=None):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    json_ld = load_json_ld(soup)\n    products = product_objects(json_ld)\n    product = products[0] if products else {}\n    page_text = clean_text(soup.get_text(\"\\n\", strip=True)) or \"\"\n\n    title = clean_text(product.get(\"name\")) or listing_title\n    if not title:\n        title_node = soup.find(\"h1\")\n        title = clean_text(title_node.get_text(\"\\n\", strip=True)) if title_node else None\n    model = first_value(product, [\"mpn\", \"model\", \"sku\"])\n    price = None\n    offers = product.get(\"offers\") if isinstance(product, dict) else None\n    if isinstance(offers, list):\n        offers = offers[0] if offers else None\n    if isinstance(offers, dict):\n        price = clean_text(offers.get(\"price\"))\n    price = price or find_labeled_text(soup, [\"Price\", \"MRP\", \"Starting at\"])\n    if price and not re.search(r\"\\d\", price):\n        price = None\n\n    color = clean_text(product.get(\"color\")) if isinstance(product, dict) else None\n    storage = find_labeled_text(soup, [\"Storage\", \"Internal memory\", \"Memory\"])\n    display = find_labeled_text(soup, [\"Display\", \"Screen size\", \"Resolution\"])\n    camera = find_labeled_text(soup, [\"Camera\", \"Main camera\", \"Front camera\"])\n    availability = None\n    if isinstance(offers, dict):\n        availability = clean_text(offers.get(\"availability\"))\n    availability = availability or find_labeled_text(soup, [\"Availability\", \"In stock\", \"Out of stock\"])\n    if availability and \"/\" in availability:\n        availability = availability.rsplit(\"/\", 1)[-1]\n\n    return {\n        \"Product Title\": title,\n        \"Model Code\": model,\n        \"Price (INR)\": price,\n        \"Color options\": color,\n        \"Storage capacity\": storage,\n        \"Display specs\": display,\n        \"Camera specs\": camera,\n        \"Availability status\": availability,\n        \"Source URL\": source_url,\n    }\n\n\ndef add_low_confidence_flags(item, flags):\n    missing = [key for key in DATA_HEADERS[:-1] if not item.get(key)]\n    if missing:\n        flags.append({\n            \"Timestamp\": datetime.now(timezone.utc).isoformat(),\n            \"Type\": \"low-confidence extraction\",\n            \"URL\": item.get(\"Source URL\"),\n            \"Message\": \"Unverified or missing fields: \" + \", \".join(missing),\n        })\n\n\ndef read_input(path):\n    workbook = load_workbook(path, read_only=True, data_only=True)\n    sheet = workbook.active\n    rows = list(sheet.iter_rows(values_only=True))\n    if not rows:\n        return []\n    headers = [str(value).strip().casefold() if value is not None else \"\" for value in rows[0]]\n    result = []\n    for values in rows[1:]:\n        row = {headers[index]: (values[index] if index < len(values) else None) for index in range(len(headers))}\n        result.append(row)\n    return result\n\n\ndef write_output(path, data, flags):\n    workbook = Workbook()\n    data_sheet = workbook.active\n    data_sheet.title = \"Extracted Data\"\n    data_sheet.append(DATA_HEADERS)\n    for item in data:\n        data_sheet.append([item.get(header) for header in DATA_HEADERS])\n    flag_sheet = workbook.create_sheet(\"Flags\")\n    flag_sheet.append(FLAG_HEADERS)\n    for flag in flags:\n        flag_sheet.append([flag.get(header) for header in FLAG_HEADERS])\n    workbook.save(path)\n    log(f\"Wrote {len(data)} extracted item(s) and {len(flags)} flag(s) to {path}\")\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Samsung smartphone listing scraper\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(\"Starting scraper\")\n    rows = read_input(args.input)\n    session = requests.Session()\n    session.headers.update({\n        \"User-Agent\": \"Mozilla/5.0 (compatible; ScraperStudio/1.0)\",\n        \"Accept-Language\": \"en-IN,en;q=0.9\",\n    })\n    extracted = []\n    flags = []\n    processed = 0\n\n    for row_number, row in enumerate(rows, start=2):\n        if args.max_products is not None and processed >= args.max_products:\n            break\n        keyword = clean_text(row.get(\"keyword\"))\n        detail_url = clean_text(row.get(\"detail_url\"))\n        listing_url = clean_text(row.get(\"listing_url\")) or DEFAULT_LISTING_URL\n\n        if detail_url:\n            log(f\"Row {row_number}: using independent detail_url fast path\")\n            response = fetch(detail_url, session, flags)\n            if response is None:\n                continue\n            item = extract_product(response, detail_url)\n            if is_excluded(item.get(\"Product Title\"), detail_url):\n                continue\n            if keyword and keyword.casefold() not in f\"{item.get('Product Title') or ''} {detail_url}\".casefold():\n                continue\n            extracted.append(item)\n            add_low_confidence_flags(item, flags)\n            processed += 1\n            continue\n\n        log(f\"Row {row_number}: crawling listing {listing_url}\")\n        response = fetch(listing_url, session, flags)\n        if response is None:\n            continue\n        soup = BeautifulSoup(response.text, \"html.parser\")\n        candidates = listing_items(soup, listing_url)\n        if not candidates:\n            flags.append({\n                \"Timestamp\": datetime.now(timezone.utc).isoformat(),\n                \"Type\": \"low-confidence extraction\",\n                \"URL\": listing_url,\n                \"Message\": \"No concrete product links were exposed; listing selectors were not verified.\",\n            })\n        for candidate in candidates:\n            if args.max_products is not None and processed >= args.max_products:\n                break\n            candidate_text = f\"{candidate.get('title') or ''} {candidate.get('url') or ''}\".casefold()\n            if keyword and keyword.casefold() not in candidate_text:\n                continue\n            if is_excluded(candidate.get(\"title\"), candidate.get(\"url\")):\n                continue\n            detail_response = fetch(candidate[\"url\"], session, flags)\n            if detail_response is None:\n                continue\n            item = extract_product(detail_response, candidate[\"url\"], candidate.get(\"title\"))\n            if is_excluded(item.get(\"Product Title\"), candidate[\"url\"]):\n                continue\n            extracted.append(item)\n            add_low_confidence_flags(item, flags)\n            processed += 1\n\n    write_output(args.output, extracted, flags)\n    log(\"Scraper finished\")\n\n\nif __name__ == \"__main__\":\n    main()",
+      "requirements_txt": "requests==2.32.3\nbeautifulsoup4==4.12.3\nopenpyxl==3.1.5\n",
+      "confidence_notes": [
+        "The listing is confidently a smartphone listing page, but concrete product-item selectors were not exposed by inspection.",
+        "No network API was observed, so this script uses requests and BeautifulSoup against listing and detail HTML; it does not use a browser because the findings did not prove that browser rendering is required.",
+        "The listing is discovered primarily from ItemList JSON-LD, with a generic anchor fallback because detail links were not exposed in the snapshot. The fallback may require manual verification.",
+        "The keyword search control was attempted but did not visibly filter the page. This script therefore applies the requested title-or-slug match locally to discovered listing links and independently supplied detail URLs.",
+        "Detail-page selectors and all requested product fields were unverified. Extraction uses Product JSON-LD plus generic labeled-text heuristics, so missing fields are recorded in the Flags sheet.",
+        "No cookie banner was observed. No browser path is used, so dismiss_cookie_banner is not required by the contract.",
+        "The exclusion rule uses case-insensitive URL/title text matching for accessories, cases, and refurbished products; this is an assumption because site taxonomy was not inspected.",
+        "The script does not bypass or solve anti-bot challenges. It only records status, marker, and short-body signals in the Flags sheet."
+      ],
+      "total_tool_calls": 10,
+      "action_log": [
+        {
+          "ts": "2026-09-02T12:18:12",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.samsung.com/in/smartphones/all-smartphones/"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-09-02T12:18:13",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-09-02T12:18:15",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-09-02T12:18:15",
+          "phase": "recon",
+          "tool": "browser_take_screenshot",
+          "input": {},
+          "call_number": 4
+        },
+        {
+          "ts": "2026-09-02T12:18:17",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 5
+        },
+        {
+          "ts": "2026-09-02T12:18:18",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input[type='search']",
+            "text": "Galaxy S24"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-09-02T12:18:20",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 7
+        },
+        {
+          "ts": "2026-09-02T12:18:21",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 8
+        },
+        {
+          "ts": "2026-09-02T12:18:23",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "text=Galaxy S24"
+          },
+          "call_number": 9
+        },
+        {
+          "ts": "2026-09-02T12:18:24",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 10
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "fec4d24d-f39e-48f5-bbef-78f2f3c90357",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-09-02T12:19:01",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.007495,
+      "input_tokens": 25655,
+      "output_tokens": 5004,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 20229,
+      "num_turns": 11,
+      "duration_ms": 57955,
+      "duration_api_ms": 57955,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "fec4d24d-f39e-48f5-bbef-78f2f3c90357",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T12:18:28",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.001699,
+          "input_tokens": 23797,
+          "output_tokens": 484,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 20229,
+          "num_turns": 10,
+          "duration_ms": 25477,
+          "duration_api_ms": 25477,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 23797,
+              "output_tokens": 484,
+              "cached_tokens": 20229,
+              "cost_usd": 0.001699
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "fec4d24d-f39e-48f5-bbef-78f2f3c90357",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T12:19:01",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005796,
+          "input_tokens": 1858,
+          "output_tokens": 4520,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 32478,
+          "duration_api_ms": 32478,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1858,
+              "output_tokens": 4520,
+              "cached_tokens": 0,
+              "cost_usd": 0.005796
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\samsung_smartphones_data_collector_fec4d24d",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "[2026-09-02 12:20:23+0530] Starting scraper\r\n[2026-09-02 12:20:23+0530] Row 2: crawling listing https://www.samsung.com/in/smartphones/all-smartphones/\r\n[2026-09-02 12:20:23+0530] Fetching https://www.samsung.com/in/smartphones/all-smartphones/\r\n[2026-09-02 12:20:24+0530] Wrote 0 extracted item(s) and 1 flag(s) to C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\samsung_smartphones_data_collector_fec4d24d\\sample_output.xlsx\r\n[2026-09-02 12:20:24+0530] Scraper finished\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-09-02T12:20:24"
+    }
+  },
+  "3a02edd7-1f7c-4b48-beda-35395daf6647": {
+    "job_id": "3a02edd7-1f7c-4b48-beda-35395daf6647",
+    "name": "Subway Restaurant Locator",
+    "status": "completed",
+    "created_at": "2026-09-02T12:22:25",
+    "target_url": "https://restaurants.subway.com/united-states/al",
+    "sample_keyword": "Prattville",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport re\nfrom datetime import datetime\nfrom urllib.parse import urljoin, urlparse\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\nBASE_URL = \"https://restaurants.subway.com/united-states/al\"\nUSER_AGENT = \"Mozilla/5.0 (compatible; SubwayLocationScraper/1.0)\"\n\nDATA_COLUMNS = [\n    \"Store Number\",\n    \"Street Address\",\n    \"City\",\n    \"State\",\n    \"Postal Code\",\n    \"Phone Number\",\n    \"Operating Hours\",\n    \"Drive-Thru Available\",\n    \"Delivery Available\",\n    \"Detail URL\",\n]\nFLAG_COLUMNS = [\"Timestamp\", \"Type\", \"URL\", \"Message\"]\n\n\ndef log(message):\n    print(f\"[{datetime.now().isoformat(timespec='seconds')}] {message}\", flush=True)\n\n\ndef get_proxy():\n    \"\"\"Placeholder for proxy configuration; bypass behavior is intentionally absent.\"\"\"\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    \"\"\"CAPTCHA solving is intentionally not implemented.\"\"\"\n    raise NotImplementedError(\"CAPTCHA solving is not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    \"\"\"Return signal messages for one HTTP response without attempting any bypass.\"\"\"\n    signals = []\n    body = response.text or \"\"\n    lowered = body.lower()\n    if response.status_code == 403:\n        signals.append(\"HTTP 403 response\")\n    elif response.status_code == 429:\n        signals.append(\"HTTP 429 response\")\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, message in markers.items():\n        if marker in lowered:\n            signals.append(message)\n    if len(body.strip()) < 500:\n        signals.append(\"Unusually short HTTP response body\")\n    return signals\n\n\ndef clean(value):\n    if value is None:\n        return \"\"\n    return re.sub(r\"\\s+\", \" \", str(value).replace(\"\\xa0\", \" \")).strip()\n\n\ndef add_flags(flags, flag_type, url, message):\n    flags.append({\n        \"Timestamp\": datetime.now().isoformat(timespec=\"seconds\"),\n        \"Type\": flag_type,\n        \"URL\": url or \"\",\n        \"Message\": message,\n    })\n\n\ndef fetch(session, url, flags):\n    log(f\"Fetching {url}\")\n    try:\n        response = session.get(\n            url,\n            headers={\"User-Agent\": USER_AGENT, \"Accept-Language\": \"en-US,en;q=0.9\"},\n            timeout=30,\n            proxies=get_proxy(),\n        )\n        for signal in detect_anti_bot_signals(response):\n            add_flags(flags, \"Anti-bot signal\", url, signal)\n        response.raise_for_status()\n        return response\n    except requests.RequestException as exc:\n        add_flags(flags, \"Error\", url, f\"HTTP request failed: {exc}\")\n        log(f\"Request failed: {url}: {exc}\")\n        return None\n\n\ndef soup_for(response):\n    return BeautifulSoup(response.text, \"html.parser\")\n\n\ndef path_parts(url):\n    return [part for part in urlparse(url).path.strip(\"/\").split(\"/\") if part]\n\n\ndef is_alabama_city_url(url):\n    parts = path_parts(url)\n    return len(parts) == 3 and parts[:2] == [\"united-states\", \"al\"]\n\n\ndef is_location_url(url):\n    parts = path_parts(url)\n    return len(parts) >= 4 and parts[:2] == [\"united-states\", \"al\"]\n\n\ndef unique_urls(urls):\n    seen = set()\n    result = []\n    for url in urls:\n        normalized = url.split(\"#\", 1)[0].rstrip(\"/\")\n        if normalized not in seen:\n            seen.add(normalized)\n            result.append(normalized)\n    return result\n\n\ndef city_links(soup, base_url, keyword):\n    matches = []\n    needle = clean(keyword).lower()\n    for anchor in soup.select(\"a[href]\"):\n        href = urljoin(base_url, anchor.get(\"href\", \"\"))\n        if not is_alabama_city_url(href):\n            continue\n        label = clean(anchor.get_text(\" \", strip=True)).lower()\n        slug = path_parts(href)[-1].replace(\"-\", \" \").lower()\n        if needle and (needle in label or needle in slug):\n            matches.append(href)\n    return unique_urls(matches)\n\n\ndef location_links(soup, base_url):\n    matches = []\n    for anchor in soup.select(\"a[href]\"):\n        href = urljoin(base_url, anchor.get(\"href\", \"\"))\n        if is_location_url(href):\n            matches.append(href)\n    return unique_urls(matches)\n\n\ndef text_lines(soup):\n    return [clean(line) for line in soup.get_text(\"\\n\", strip=True).splitlines() if clean(line)]\n\n\ndef label_value(lines, labels):\n    for index, line in enumerate(lines):\n        lowered = line.lower()\n        for label in labels:\n            if lowered.startswith(label.lower()):\n                value = line[len(label):].lstrip(\" :#-\")\n                if value:\n                    return clean(value)\n                if index + 1 < len(lines):\n                    return clean(lines[index + 1])\n    return \"\"\n\n\ndef extract_hours(lines):\n    day_pattern = re.compile(\n        r\"(?:mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\",\n        re.IGNORECASE,\n    )\n    hour_lines = []\n    for line in lines:\n        if day_pattern.search(line) and re.search(r\"\\d{1,2}:\\d{2}\", line):\n            hour_lines.append(line)\n    return \"; \".join(unique_urls(hour_lines)) if hour_lines else \"\"\n\n\ndef availability(text, terms):\n    lowered = text.lower()\n    for term in terms:\n        pattern = re.compile(\n            rf\"{re.escape(term)}\\s*[:\\-]?\\s*(yes|no|available|unavailable|not available)\",\n            re.IGNORECASE,\n        )\n        match = pattern.search(lowered)\n        if match:\n            value = match.group(1).lower()\n            if value in {\"yes\", \"available\"}:\n                return \"Yes\"\n            return \"No\"\n    return \"\"\n\n\ndef extract_item(soup, url, flags):\n    lines = text_lines(soup)\n    full_text = \"\\n\".join(lines)\n    lowered = full_text.lower()\n    status_terms = [\"temporarily closed\", \"closed\", \"temporary kiosk\", \"kiosk\"]\n    if any(term in lowered for term in status_terms):\n        add_flags(flags, \"Filtered location\", url, \"Location appears closed or to be a temporary kiosk\")\n        return None\n\n    address_match = re.search(\n        r\"\\b(\\d+[^\\n,]*?)\\s+([A-Za-z .'-]+),\\s*([A-Z]{2})\\s+(\\d{5}(?:-\\d{4})?)\\b\",\n        full_text,\n    )\n    street = label_value(lines, [\"Street Address\", \"Address\"])\n    city = label_value(lines, [\"City\"])\n    state = label_value(lines, [\"State\"])\n    postal = label_value(lines, [\"Postal Code\", \"Zip Code\", \"ZIP\"])\n    if address_match:\n        street = street or clean(address_match.group(1))\n        city = city or clean(address_match.group(2))\n        state = state or address_match.group(3)\n        postal = postal or address_match.group(4)\n\n    store_number = label_value(lines, [\"Store Number\", \"Store #\", \"Store No.\"])\n    phone = label_value(lines, [\"Phone\", \"Phone Number\", \"Telephone\"])\n    if not phone:\n        phone_match = re.search(r\"\\(?[2-9]\\d{2}\\)?[\\s.-]+\\d{3}[\\s.-]+\\d{4}\", full_text)\n        phone = phone_match.group(0) if phone_match else \"\"\n\n    name = \"\"\n    for line in lines[:8]:\n        if \"subway\" in line.lower() and len(line) > len(\"subway\"):\n            name = line\n            break\n\n    item = {\n        \"Store Number\": store_number,\n        \"Street Address\": street,\n        \"City\": city,\n        \"State\": state,\n        \"Postal Code\": postal,\n        \"Phone Number\": phone,\n        \"Operating Hours\": extract_hours(lines),\n        \"Drive-Thru Available\": availability(full_text, [\"drive-thru\", \"drive thru\", \"drive through\"]),\n        \"Delivery Available\": availability(full_text, [\"delivery\"]),\n        \"Detail URL\": url,\n    }\n    missing = [field for field in DATA_COLUMNS if field != \"Detail URL\" and not item[field]]\n    if missing:\n        add_flags(flags, \"Low-confidence extraction\", url, \"Fields not exposed or not confidently detected: \" + \", \".join(missing))\n    if not name:\n        add_flags(flags, \"Low-confidence extraction\", url, \"Store heading/name was not confidently detected\")\n    return item\n\n\ndef collect_from_listing(session, listing_url, flags, detail_urls):\n    response = fetch(session, listing_url, flags)\n    if not response:\n        return\n    soup = soup_for(response)\n    found = location_links(soup, listing_url)\n    if not found:\n        add_flags(flags, \"Low-confidence extraction\", listing_url, \"No individual location links detected; exact production selector is uncertain\")\n    detail_urls.extend(found)\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Scrape Subway Alabama locations\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(\"Starting scraper\")\n    flags = []\n    records = []\n    session = requests.Session()\n    try:\n        input_df = pd.read_excel(args.input)\n    except Exception as exc:\n        log(f\"Unable to read input workbook: {exc}\")\n        add_flags(flags, \"Error\", args.input, f\"Unable to read input workbook: {exc}\")\n        input_df = pd.DataFrame(columns=[\"keyword\", \"listing_url\", \"detail_url\"])\n\n    detail_urls = []\n    for _, row in input_df.iterrows():\n        detail_url = clean(row.get(\"detail_url\", \"\"))\n        listing_url = clean(row.get(\"listing_url\", \"\"))\n        keyword = clean(row.get(\"keyword\", \"\"))\n        if detail_url:\n            log(f\"Using independent detail URL fast path: {detail_url}\")\n            detail_urls.append(detail_url)\n        elif listing_url:\n            collect_from_listing(session, listing_url, flags, detail_urls)\n        elif keyword:\n            log(f\"Searching Alabama city links for keyword: {keyword}\")\n            response = fetch(session, BASE_URL, flags)\n            if response:\n                matches = city_links(soup_for(response), BASE_URL, keyword)\n                if not matches:\n                    add_flags(flags, \"Low-confidence extraction\", BASE_URL, f\"No city link matched keyword {keyword!r}\")\n                for city_url in matches:\n                    collect_from_listing(session, city_url, flags, detail_urls)\n        else:\n            add_flags(flags, \"Error\", \"\", \"Input row has no keyword, listing_url, or detail_url\")\n\n    detail_urls = unique_urls(detail_urls)\n    if args.max_products is not None:\n        detail_urls = detail_urls[:max(0, args.max_products)]\n    log(f\"Extracting {len(detail_urls)} detail page(s)\")\n    for url in detail_urls:\n        response = fetch(session, url, flags)\n        if not response:\n            continue\n        item = extract_item(soup_for(response), url, flags)\n        if item:\n            records.append(item)\n\n    output_df = pd.DataFrame(records, columns=DATA_COLUMNS)\n    flags_df = pd.DataFrame(flags, columns=FLAG_COLUMNS)\n    log(f\"Writing {len(output_df)} extracted row(s) and {len(flags_df)} flag(s)\")\n    try:\n        with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n            output_df.to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n            flags_df.to_excel(writer, sheet_name=\"Flags\", index=False)\n    except Exception as exc:\n        log(f\"Unable to write output workbook: {exc}\")\n        raise\n    log(\"Scraper finished\")\n\n\nif __name__ == \"__main__\":\n    main()",
+      "requirements_txt": "pandas\nopenpyxl\nrequests\nbeautifulsoup4\n",
+      "confidence_notes": [
+        "No network API was observed, so this script uses requests and BeautifulSoup rather than a browser; the inspected pages were rendered in a browser, and production verification is needed if required content is JavaScript-only.",
+        "Exact listing and detail CSS selectors were not exposed. The script uses conservative URL and visible-text heuristics and flags pages where no location links are found.",
+        "The keyword input did not visibly filter the state page during inspection; this implementation matches Alabama city links by anchor text or URL slug.",
+        "Store number, phone number, drive-thru availability, delivery availability, and detailed hours markup were not reliably visible in the snapshot, so missing values are left blank and flagged as low-confidence.",
+        "Closed locations and temporary kiosks were not conclusively identifiable from the captured text. The script filters pages containing broad closed/kiosk terms, which may require refinement after DOM inspection.",
+        "The address parser assumes a conventional US address ending in city, two-letter state, and ZIP code when field-specific markup is unavailable.",
+        "The requested navigation path is represented by resolving city links from the state page and location links from city pages; detail_url rows intentionally use an independent direct-fetch fast path.",
+        "No CAPTCHA or anti-bot block was encountered during inspection. Anti-bot signals are only recorded in the Flags sheet; no bypass or solving is attempted."
+      ],
+      "total_tool_calls": 11,
+      "action_log": [
+        {
+          "ts": "2026-09-02T12:22:35",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-09-02T12:22:38",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-09-02T12:22:39",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-09-02T12:22:41",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input",
+            "text": "Prattville"
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-09-02T12:22:43",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-09-02T12:22:44",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 6
+        },
+        {
+          "ts": "2026-09-02T12:22:47",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville"
+          },
+          "call_number": 7
+        },
+        {
+          "ts": "2026-09-02T12:22:50",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 8
+        },
+        {
+          "ts": "2026-09-02T12:22:53",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 9
+        },
+        {
+          "ts": "2026-09-02T12:22:55",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr"
+          },
+          "call_number": 10
+        },
+        {
+          "ts": "2026-09-02T12:22:59",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 11
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "3a02edd7-1f7c-4b48-beda-35395daf6647",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-09-02T12:23:37",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.007608,
+      "input_tokens": 28365,
+      "output_tokens": 5032,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 22800,
+      "num_turns": 13,
+      "duration_ms": 71675,
+      "duration_api_ms": 71675,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "3a02edd7-1f7c-4b48-beda-35395daf6647",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T12:23:05",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.00205,
+          "input_tokens": 26269,
+          "output_tokens": 750,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 22800,
+          "num_turns": 12,
+          "duration_ms": 39491,
+          "duration_api_ms": 39491,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 26269,
+              "output_tokens": 750,
+              "cached_tokens": 22800,
+              "cost_usd": 0.00205
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "3a02edd7-1f7c-4b48-beda-35395daf6647",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T12:23:37",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005558,
+          "input_tokens": 2096,
+          "output_tokens": 4282,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 32184,
+          "duration_api_ms": 32184,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 2096,
+              "output_tokens": 4282,
+              "cached_tokens": 0,
+              "cost_usd": 0.005558
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_3a02edd7",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "[2026-09-02T12:30:40] Starting scraper\r\n[2026-09-02T12:30:41] Using independent detail URL fast path: nan\r\n[2026-09-02T12:30:41] Extracting 1 detail page(s)\r\n[2026-09-02T12:30:41] Fetching nan\r\n[2026-09-02T12:30:41] Request failed: nan: Invalid URL 'nan': No scheme supplied. Perhaps you meant https://nan?\r\n[2026-09-02T12:30:41] Writing 0 extracted row(s) and 1 flag(s)\r\n[2026-09-02T12:30:41] Scraper finished\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-09-02T12:30:41"
+    }
+  },
+  "99dd7a48-699b-4056-9b15-6d374dc74902": {
+    "job_id": "99dd7a48-699b-4056-9b15-6d374dc74902",
+    "name": "Subway Restaurant Locator",
+    "status": "completed",
+    "created_at": "2026-09-02T12:38:40",
+    "target_url": "https://restaurants.subway.com/united-states/al",
+    "sample_keyword": "Prattville",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport asyncio\nimport re\nfrom datetime import datetime, timezone\nfrom urllib.parse import urljoin, urlparse\n\nimport pandas as pd\nfrom bs4 import BeautifulSoup\nfrom playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError\n\nTARGET_URL = \"https://restaurants.subway.com/united-states/al\"\nOUTPUT_COLUMNS = [\n    \"Store Number\",\n    \"Street Address\",\n    \"City\",\n    \"State\",\n    \"Postal Code\",\n    \"Phone Number\",\n    \"Operating Hours\",\n    \"Drive-Thru Available\",\n    \"Delivery Available\",\n]\n\nflags = []\n\n\ndef log(message):\n    print(f\"[{datetime.now().astimezone().isoformat(timespec='seconds')}] {message}\", flush=True)\n\n\ndef add_flag(flag_type, message, url=\"\"):\n    flags.append({\n        \"Timestamp\": datetime.now(timezone.utc).isoformat(),\n        \"Type\": flag_type,\n        \"Message\": message,\n        \"URL\": url,\n    })\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError(\"CAPTCHA solving is intentionally not implemented\")\n\n\nasync def detect_anti_bot_signals(response):\n    \"\"\"Flag anti-bot responses without attempting to bypass them.\"\"\"\n    url = response.url\n    status = response.status\n    resource_type = response.request.resource_type\n    if status in (403, 429):\n        add_flag(\"anti-bot\", f\"HTTP status {status}\", url)\n    if resource_type != \"document\":\n        return\n    try:\n        body = await response.text()\n    except Exception as exc:\n        add_flag(\"response-check\", f\"Could not inspect response body: {exc}\", url)\n        return\n    marker_pattern = re.compile(\n        r\"captcha|cloudflare|perimeterx|datadome|verify you are human|access denied\",\n        re.IGNORECASE,\n    )\n    if marker_pattern.search(body):\n        add_flag(\"anti-bot\", \"Possible CAPTCHA, WAF, or bot-verification marker\", url)\n    if len(body.strip()) < 500:\n        add_flag(\"anti-bot\", \"Unusually short HTML document body\", url)\n\n\nasync def dismiss_cookie_banner(page):\n    \"\"\"Try common consent labels; absence of a banner is treated as non-fatal.\"\"\"\n    labels = [\"Accept all\", \"Accept\", \"I agree\", \"Allow all\", \"Agree\"]\n    for label in labels:\n        try:\n            locator = page.get_by_text(label, exact=True).first\n            await locator.wait_for(state=\"visible\", timeout=700)\n            await locator.click(timeout=700)\n            log(f\"Dismissed a possible cookie banner using '{label}'\")\n            return\n        except Exception:\n            continue\n    log(\"Cookie-banner dismissal was attempted, but no consent button matched\")\n    add_flag(\"layout-change\", \"Cookie-banner dismissal attempted but no consent button matched\", page.url)\n\n\nasync def goto_with_dismissal(page, url):\n    log(f\"Opening {url}\")\n    await page.goto(url, wait_until=\"domcontentloaded\", timeout=30000)\n    await dismiss_cookie_banner(page)\n    await page.wait_for_timeout(1000)\n\n\ndef clean_text(value):\n    return re.sub(r\"\\s+\", \" \", value.replace(\"\\xa0\", \" \")).strip()\n\n\ndef yes_no_from_text(text, terms):\n    lower = text.lower()\n    for term in terms:\n        if term in lower:\n            window_start = max(0, lower.find(term) - 20)\n            window = lower[window_start:lower.find(term) + len(term) + 35]\n            if re.search(r\"\\b(no|not available|unavailable|false)\\b\", window):\n                return \"No\"\n            if re.search(r\"\\b(yes|available|true)\\b\", window):\n                return \"Yes\"\n    return None\n\n\ndef extract_records(html, source_url):\n    soup = BeautifulSoup(html, \"html.parser\")\n    zip_nodes = soup.find_all(string=re.compile(r\"\\bAL\\s+\\d{5}(?:-\\d{4})?\\b\", re.IGNORECASE))\n    records = []\n    seen = set()\n    for node in zip_nodes:\n        ancestor = node.parent\n        chosen = None\n        for _ in range(7):\n            if ancestor is None:\n                break\n            text = ancestor.get_text(\"\\n\", strip=True)\n            lower = text.lower()\n            if re.search(r\"\\bAL\\s+\\d{5}(?:-\\d{4})?\\b\", text, re.IGNORECASE) and re.search(\n                r\"\\b(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\\b.*?\\b(?:am|pm)\\b\",\n                text,\n                re.IGNORECASE | re.DOTALL,\n            ):\n                chosen = text\n                if len(text) < 1800:\n                    break\n            ancestor = ancestor.parent\n        if not chosen:\n            continue\n        normalized = clean_text(chosen)\n        if re.search(r\"\\b(?:closed|temporar(?:y|ily)|kiosk)\\b\", normalized, re.IGNORECASE):\n            add_flag(\"filtered\", \"Possible closed location or temporary kiosk was skipped\", source_url)\n            continue\n        match = re.search(\n            r\"(?P<street>\\d+\\s+[^,\\n]+?)\\s+(?P<city>[A-Za-z][A-Za-z .'-]*),\\s*AL\\s+(?P<postal>\\d{5}(?:-\\d{4})?)\",\n            chosen,\n            re.IGNORECASE,\n        )\n        if not match:\n            add_flag(\"low-confidence\", \"Could not reliably parse an Alabama street address\", source_url)\n            continue\n        street = clean_text(match.group(\"street\"))\n        city = clean_text(match.group(\"city\"))\n        postal = match.group(\"postal\")\n        key = (street.lower(), city.lower(), postal)\n        if key in seen:\n            continue\n        seen.add(key)\n        lines = [clean_text(x) for x in chosen.split(\"\\n\") if clean_text(x)]\n        hour_lines = [\n            line for line in lines\n            if re.search(r\"\\b(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*\\b\", line, re.IGNORECASE)\n            and re.search(r\"\\b(?:am|pm)\\b\", line, re.IGNORECASE)\n        ]\n        phone_match = re.search(r\"\\(?[2-9]\\d{2}\\)?[-.\\s]\\d{3}[-.\\s]\\d{4}\", chosen)\n        store_match = re.search(r\"(?:store\\s*(?:number|no\\.?|#)|location\\s*(?:number|no\\.?|#))\\s*[:#]?\\s*([A-Za-z0-9-]+)\", chosen, re.IGNORECASE)\n        record = {\n            \"Store Number\": store_match.group(1) if store_match else None,\n            \"Street Address\": street,\n            \"City\": city,\n            \"State\": \"AL\",\n            \"Postal Code\": postal,\n            \"Phone Number\": phone_match.group(0) if phone_match else None,\n            \"Operating Hours\": \", \".join(hour_lines) if hour_lines else None,\n            \"Drive-Thru Available\": yes_no_from_text(chosen, [\"drive-thru\", \"drive thru\", \"drive-through\"]),\n            \"Delivery Available\": yes_no_from_text(chosen, [\"delivery\"]),\n        }\n        if any(record[field] is None for field in [\"Store Number\", \"Phone Number\", \"Drive-Thru Available\", \"Delivery Available\"]):\n            add_flag(\"low-confidence\", \"Some requested fields were not visible or could not be inferred\", source_url)\n        records.append(record)\n    return records\n\n\nasync def extract_current_page(page):\n    html = await page.content()\n    return extract_records(html, page.url)\n\n\nasync def discover_city_links(page, keyword):\n    links = await page.locator(\"a\").evaluate_all(\n        \"els => els.map(a => ({text: (a.innerText || '').trim(), href: a.href}))\"\n    )\n    result = []\n    wanted = (keyword or \"\").strip().lower()\n    for item in links:\n        href = item.get(\"href\", \"\")\n        text = item.get(\"text\", \"\")\n        path = urlparse(href).path.rstrip(\"/\").lower()\n        if \"/united-states/al/\" not in path:\n            continue\n        if not text or path.count(\"/\") != 4:\n            continue\n        if wanted and wanted not in f\"{text} {path.rsplit('/', 1)[-1]}`\".lower():\n            continue\n        if href not in [x[1] for x in result]:\n            result.append((text, href))\n    return result\n\n\nasync def crawl_listing(page, listing_url, keyword, max_products):\n    records = []\n    await goto_with_dismissal(page, listing_url)\n    city_links = await discover_city_links(page, keyword)\n    if not city_links:\n        add_flag(\"low-confidence\", \"No matching Alabama city links were exposed in the rendered listing\", listing_url)\n        records.extend(await extract_current_page(page))\n        return records[:max_products] if max_products else records\n    for city_name, city_url in city_links:\n        if max_products and len(records) >= max_products:\n            break\n        log(f\"Selecting city link: {city_name}\")\n        before = page.url\n        try:\n            await page.locator(\"a\").filter(has_text=city_name).first.click(timeout=5000)\n            await page.wait_for_timeout(700)\n        except Exception as exc:\n            add_flag(\"navigation\", f\"City-link click failed: {exc}\", city_url)\n        if page.url == before or \"/united-states/al/\" not in urlparse(page.url).path:\n            await goto_with_dismissal(page, city_url)\n        records.extend(await extract_current_page(page))\n        if max_products:\n            records = records[:max_products]\n    return records\n\n\nasync def run(input_path, output_path, max_products):\n    log(\"Reading input workbook\")\n    frame = pd.read_excel(input_path)\n    for column in [\"keyword\", \"listing_url\", \"detail_url\"]:\n        if column not in frame.columns:\n            frame[column] = \"\"\n    records = []\n    proxy = get_proxy()\n    if proxy is not None:\n        log(\"A proxy was supplied by get_proxy, but proxy use is not implemented\")\n    async with async_playwright() as playwright:\n        browser = await playwright.chromium.launch(headless=True)\n        context = await browser.new_context()\n        page = await context.new_page()\n\n        async def response_handler(response):\n            asyncio.create_task(detect_anti_bot_signals(response))\n\n        page.on(\"response\", response_handler)\n        rows = frame.to_dict(\"records\")\n        if not rows:\n            rows = [{\"keyword\": \"\", \"listing_url\": TARGET_URL, \"detail_url\": \"\"}]\n        for row in rows:\n            if max_products and len(records) >= max_products:\n                break\n            detail_url = str(row.get(\"detail_url\") or \"\").strip()\n            listing_url = str(row.get(\"listing_url\") or \"\").strip() or TARGET_URL\n            keyword = str(row.get(\"keyword\") or \"\").strip()\n            if detail_url:\n                log(f\"Using independent detail URL fast path: {detail_url}\")\n                await goto_with_dismissal(page, detail_url)\n                records.extend(await extract_current_page(page))\n            else:\n                records.extend(await crawl_listing(page, listing_url, keyword, max_products))\n            if max_products:\n                records = records[:max_products]\n        await page.wait_for_timeout(500)\n        await browser.close()\n    log(f\"Writing {len(records)} extracted records\")\n    extracted = pd.DataFrame(records, columns=OUTPUT_COLUMNS)\n    flag_frame = pd.DataFrame(flags, columns=[\"Timestamp\", \"Type\", \"Message\", \"URL\"])\n    with pd.ExcelWriter(output_path, engine=\"openpyxl\") as writer:\n        extracted.to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        flag_frame.to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(\"Run complete\")\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Scrape Subway Alabama listings\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n    asyncio.run(run(args.input, args.output, args.max_products))\n\n\nif __name__ == \"__main__\":\n    main()",
+      "requirements_txt": "pandas\nopenpyxl\nbeautifulsoup4\nplaywright\n",
+      "confidence_notes": [
+        "The inspection found no network API and did not expose exact DOM selectors, so this script uses Playwright for rendered JavaScript content and conservative address/text heuristics rather than site-specific selectors.",
+        "The Alabama state snapshot did not expose city links in its structured output. The script flags the absence of matching rendered city links instead of inventing selectors.",
+        "Individual detail-page selectors and behavior were not verified. The required independent detail_url path is implemented, but extraction on such pages uses the same generic rendered-text parser.",
+        "Store numbers, phone numbers, drive-thru availability, and delivery availability were not visible in the samples; missing values are left blank and flagged as low-confidence.",
+        "Closed-location and temporary-kiosk markers were not observed. The script skips cards whose rendered text contains closed, temporary, or kiosk markers, but this filtering requires manual verification.",
+        "Cookie-banner presence was reported as none observed. Per the contract, the browser helper attempts common consent labels after every goto and flags a possible layout change when none matches.",
+        "The script requires a Playwright browser installation in addition to pip dependencies, typically via `playwright install chromium`."
+      ],
+      "total_tool_calls": 11,
+      "action_log": [
+        {
+          "ts": "2026-09-02T12:38:53",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-09-02T12:39:01",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-09-02T12:39:04",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-09-02T12:39:04",
+          "phase": "recon",
+          "tool": "browser_take_screenshot",
+          "input": {},
+          "call_number": 4
+        },
+        {
+          "ts": "2026-09-02T12:39:05",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input",
+            "text": "Prattville"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-09-02T12:39:07",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-09-02T12:39:08",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 7
+        },
+        {
+          "ts": "2026-09-02T12:39:10",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-09-02T12:39:11",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 9
+        },
+        {
+          "ts": "2026-09-02T12:39:13",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "text=113 S Memorial Dr"
+          },
+          "call_number": 10
+        },
+        {
+          "ts": "2026-09-02T12:39:14",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 11
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "99dd7a48-699b-4056-9b15-6d374dc74902",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-09-02T12:40:16",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.008243,
+      "input_tokens": 25784,
+      "output_tokens": 5588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 20109,
+      "num_turns": 12,
+      "duration_ms": 95515,
+      "duration_api_ms": 95515,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "99dd7a48-699b-4056-9b15-6d374dc74902",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T12:39:20",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.00194,
+          "input_tokens": 23767,
+          "output_tokens": 672,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 20109,
+          "num_turns": 11,
+          "duration_ms": 39181,
+          "duration_api_ms": 39181,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 23767,
+              "output_tokens": 672,
+              "cached_tokens": 20109,
+              "cost_usd": 0.00194
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "99dd7a48-699b-4056-9b15-6d374dc74902",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T12:40:16",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.006303,
+          "input_tokens": 2017,
+          "output_tokens": 4916,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 56334,
+          "duration_api_ms": 56334,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 2017,
+              "output_tokens": 4916,
+              "cached_tokens": 0,
+              "cost_usd": 0.006303
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "failed",
+      "returncode": 1,
+      "stdout_tail": "[2026-09-02T12:42:19+05:30] Reading input workbook\r\n[2026-09-02T12:42:22+05:30] Using independent detail URL fast path: nan\r\n[2026-09-02T12:42:22+05:30] Opening nan\r\n",
+      "stderr_tail": "Traceback (most recent call last):\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48\\generated_scraper.py\", line 289, in <module>\r\n    main()\r\n    ~~~~^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48\\generated_scraper.py\", line 285, in main\r\n    asyncio.run(run(args.input, args.output, args.max_products))\r\n    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Python314\\Lib\\asyncio\\runners.py\", line 205, in run\r\n    return runner.run(main)\r\n           ~~~~~~~~~~^^^^^^\r\n  File \"C:\\Python314\\Lib\\asyncio\\runners.py\", line 128, in run\r\n    return self._loop.run_until_complete(task)\r\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^\r\n  File \"C:\\Python314\\Lib\\asyncio\\base_events.py\", line 719, in run_until_complete\r\n    return future.result()\r\n           ~~~~~~~~~~~~~^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48\\generated_scraper.py\", line 262, in run\r\n    await goto_with_dismissal(page, detail_url)\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48\\generated_scraper.py\", line 90, in goto_with_dismissal\r\n    await page.goto(url, wait_until=\"domcontentloaded\", timeout=30000)\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48\\.venv\\Lib\\site-packages\\playwright\\async_api\\_generated.py\", line 9869, in goto\r\n    await self._impl_obj.goto(\r\n    ...<4 lines>...\r\n    )\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48\\.venv\\Lib\\site-packages\\playwright\\_impl\\_page.py\", line 560, in goto\r\n    return await self._main_frame.goto(**locals_to_params(locals()))\r\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48\\.venv\\Lib\\site-packages\\playwright\\_impl\\_frame.py\", line 156, in goto\r\n    await self._channel.send(\r\n        \"goto\", self._navigation_timeout, locals_to_params(locals())\r\n    )\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48\\.venv\\Lib\\site-packages\\playwright\\_impl\\_connection.py\", line 76, in send\r\n    return await self._connection.wrap_api_call(\r\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n    ...<3 lines>...\r\n    )\r\n    ^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_99dd7a48\\.venv\\Lib\\site-packages\\playwright\\_impl\\_connection.py\", line 632, in wrap_api_call\r\n    raise rewrite_error(error, f\"{parsed_st['apiName']}: {error}\") from None\r\nplaywright._impl._errors.Error: Page.goto: Protocol error (Page.navigate): Cannot navigate to invalid URL\r\nCall log:\r\n  - navigating to \"nan\", waiting until \"domcontentloaded\"\r\n\r\n",
+      "sample_output_ready": false,
+      "max_products": 3,
+      "finished_at": "2026-09-02T12:42:22"
+    }
+  },
+  "2ff3faee-6e19-455c-b78e-47a08d73915c": {
+    "job_id": "2ff3faee-6e19-455c-b78e-47a08d73915c",
+    "name": "Subway Restaurant Locator",
+    "status": "completed",
+    "created_at": "2026-09-02T13:13:20",
+    "target_url": " https://restaurants.subway.com/united-states/al",
+    "sample_keyword": "Prattville",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport re\nfrom datetime import datetime, timezone\nfrom urllib.parse import urljoin, urlparse\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\nTARGET_URL = 'https://restaurants.subway.com/united-states/al'\nUSER_AGENT = 'Mozilla/5.0 (compatible; SubwayDirectoryScraper/1.0)'\n\n\ndef log(message):\n    print(f'[{datetime.now().astimezone().isoformat(timespec=\"seconds\")}] {message}', flush=True)\n\n\ndef clean(value):\n    if value is None or pd.isna(value) or str(value).strip().lower() in (\"\", \"nan\", \"none\", \"null\"):\n        return \"\"\n    try:\n        if pd.isna(value):\n            return ''\n    except (TypeError, ValueError):\n        pass\n    text = str(value).strip()\n    if text.lower() in {'nan', 'none', 'null'}:\n        return ''\n    return text\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError('CAPTCHA solving is intentionally not implemented')\n\n\ndef detect_anti_bot_signals(response):\n    signals = []\n    body = response.text or ''\n    lower = body.lower()\n    if response.status_code in {403, 429}:\n        signals.append(f'HTTP anti-bot status {response.status_code}')\n    markers = {\n        'captcha': 'CAPTCHA marker',\n        'cloudflare': 'Cloudflare marker',\n        'perimeterx': 'PerimeterX marker',\n        'datadome': 'DataDome marker',\n    }\n    for marker, description in markers.items():\n        if marker in lower:\n            signals.append(description)\n    if len(body.strip()) < 500:\n        signals.append(f'unusually short HTTP body ({len(body.strip())} characters)')\n    return signals\n\n\ndef request_page(session, url, flags):\n    log(f'Requesting {url}')\n    try:\n        response = session.get(\n            url,\n            headers={'User-Agent': USER_AGENT, 'Accept-Language': 'en-US,en;q=0.9'},\n            timeout=30,\n            proxies=get_proxy(),\n        )\n    except requests.RequestException as exc:\n        flags.append(flag('error', url, f'HTTP request failed: {exc}'))\n        return None\n    for signal in detect_anti_bot_signals(response):\n        flags.append(flag('anti-bot', url, signal))\n    if response.status_code >= 400:\n        flags.append(flag('error', url, f'HTTP status {response.status_code}'))\n        return None\n    return response\n\n\ndef flag(kind, url, message):\n    return {\n        'Timestamp': datetime.now(timezone.utc).isoformat(),\n        'Type': kind,\n        'URL': url,\n        'Message': message,\n    }\n\n\ndef absolute_links(soup, base_url):\n    links = []\n    for anchor in soup.find_all('a', href=True):\n        href = clean(anchor.get('href'))\n        if not href or href.startswith(('javascript:', 'mailto:', 'tel:', '#')):\n            continue\n        links.append((urljoin(base_url, href), anchor.get_text(' ', strip=True)))\n    return links\n\n\ndef path_parts(url):\n    return [part for part in urlparse(url).path.split('/') if part]\n\n\ndef is_alabama_url(url):\n    parts = [part.lower() for part in path_parts(url)]\n    return len(parts) >= 2 and parts[0] == 'united-states' and parts[1] == 'al'\n\n\ndef is_detail_url(url):\n    return is_alabama_url(url) and len(path_parts(url)) >= 4\n\n\ndef is_city_url(url):\n    return is_alabama_url(url) and len(path_parts(url)) == 3\n\n\ndef city_links(soup, base_url, keyword):\n    matches = []\n    wanted = clean(keyword).lower()\n    for url, text in absolute_links(soup, base_url):\n        if not is_city_url(url):\n            continue\n        haystack = f'{text} {url}'.lower()\n        if wanted and wanted not in haystack:\n            continue\n        matches.append(url)\n    return list(dict.fromkeys(matches))\n\n\ndef detail_links(soup, base_url):\n    matches = []\n    for url, _ in absolute_links(soup, base_url):\n        if is_detail_url(url):\n            matches.append(url)\n    return list(dict.fromkeys(matches))\n\n\ndef page_is_excluded(text):\n    lower = text.lower()\n    return bool(re.search(r'\\b(?:temporary|temporarily closed|permanently closed|kiosk)\\b', lower))\n\n\ndef extract_detail(response, flags):\n    url = response.url\n    soup = BeautifulSoup(response.text, 'html.parser')\n    text = soup.get_text('\\n', strip=True).replace('\\xa0', ' ')\n    lines = [re.sub(r'\\s+', ' ', line).strip() for line in text.split('\\n') if line.strip()]\n    if page_is_excluded(text):\n        flags.append(flag('filtered', url, 'Location appears closed or temporary/kiosk; skipped'))\n        return None\n\n    record = {\n        'Store Number': '',\n        'Street Address': '',\n        'City': '',\n        'State': '',\n        'Postal Code': '',\n        'Phone Number': '',\n        'Operating Hours': '',\n        'Drive-Thru Available': '',\n        'Delivery Available': '',\n        'Source URL': url,\n    }\n\n    address_match = re.search(\n        r'(?im)([0-9][^\\n]{2,100}?)\\s*,\\s*([A-Za-z][A-Za-z .\\'-]{1,50}),\\s*(AL)\\s+(\\d{5}(?:-\\d{4})?)\\b',\n        text,\n    )\n    if address_match:\n        record['Street Address'] = address_match.group(1).strip(' ,')\n        record['City'] = address_match.group(2).strip()\n        record['State'] = address_match.group(3)\n        record['Postal Code'] = address_match.group(4)\n    else:\n        for index, line in enumerate(lines):\n            match = re.search(r'\\b(AL)\\s+(\\d{5}(?:-\\d{4})?)\\b', line)\n            if match:\n                record['State'] = match.group(1)\n                record['Postal Code'] = match.group(2)\n                if index:\n                    record['Street Address'] = lines[index - 1]\n                break\n\n    phone_match = re.search(r'(?<!\\d)(?:\\(?[2-9]\\d{2}\\)?[-.\\s])\\d{3}[-.\\s]\\d{4}(?!\\d)', text)\n    if phone_match:\n        record['Phone Number'] = phone_match.group(0)\n\n    store_match = re.search(r'(?i)(?:store|restaurant)\\s*(?:number|#|no\\.?)[\\s:#-]*([A-Za-z0-9-]+)', text)\n    if store_match:\n        record['Store Number'] = store_match.group(1)\n\n    hour_lines = []\n    for line in lines:\n        if re.search(r'(?i)\\b(?:mon|monday|tue|tuesday|wed|wednesday|thu|thursday|fri|friday|sat|saturday|sun|sunday)\\b', line) and re.search(r'(?i)\\d{1,2}(?::\\d{2})?\\s*[ap]m', line):\n            hour_lines.append(line)\n    if hour_lines:\n        record['Operating Hours'] = '; '.join(dict.fromkeys(hour_lines))\n\n    lower = text.lower()\n    for field, terms in {\n        'Drive-Thru Available': ('drive-thru', 'drive thru', 'drive through'),\n        'Delivery Available': ('delivery',),\n    }.items():\n        relevant = [line.lower() for line in lines if any(term in line.lower() for term in terms)]\n        if relevant:\n            joined = ' '.join(relevant)\n            if re.search(r'\\b(?:not available|unavailable|no|false)\\b', joined):\n                record[field] = 'No'\n            elif re.search(r'\\b(?:available|yes|true)\\b', joined):\n                record[field] = 'Yes'\n            else:\n                record[field] = relevant[0]\n\n    required = ['Street Address', 'City', 'State', 'Postal Code', 'Operating Hours']\n    missing = [field for field in required if not record[field]]\n    if missing:\n        flags.append(flag('low-confidence', url, 'Could not confidently extract: ' + ', '.join(missing)))\n    if not record['Store Number']:\n        flags.append(flag('low-confidence', url, 'Store number was not exposed in the inspected markup'))\n    if not record['Phone Number']:\n        flags.append(flag('low-confidence', url, 'Phone number was not confidently found'))\n    if not record['Drive-Thru Available'] or not record['Delivery Available']:\n        flags.append(flag('low-confidence', url, 'One or more service availability values were not exposed'))\n    return record\n\n\ndef crawl_listing(session, listing_url, keyword, flags, seen, max_products):\n    response = request_page(session, listing_url, flags)\n    if response is None:\n        return []\n    soup = BeautifulSoup(response.text, 'html.parser')\n    if is_city_url(listing_url):\n        urls = detail_links(soup, listing_url)\n    else:\n        urls = city_links(soup, listing_url, keyword) if clean(keyword) else detail_links(soup, listing_url)\n        if clean(keyword) and not urls:\n            flags.append(flag('low-confidence', listing_url, 'No matching Alabama city links found; selectors were not exposed during inspection'))\n        if clean(keyword):\n            expanded = []\n            for city_url in urls:\n                city_response = request_page(session, city_url, flags)\n                if city_response is not None:\n                    expanded.extend(detail_links(BeautifulSoup(city_response.text, 'html.parser'), city_url))\n            urls = expanded\n    results = []\n    for detail_url in list(dict.fromkeys(urls)):\n        if max_products is not None and len(seen) >= max_products:\n            break\n        if detail_url in seen:\n            continue\n        seen.add(detail_url)\n        detail_response = request_page(session, detail_url, flags)\n        if detail_response is not None:\n            item = extract_detail(detail_response, flags)\n            if item is not None:\n                results.append(item)\n    return results\n\n\ndef main():\n    parser = argparse.ArgumentParser(description='Scrape Subway Alabama locations')\n    parser.add_argument('--input', default='input.xlsx')\n    parser.add_argument('--output', default='output.xlsx')\n    parser.add_argument('--max-products', type=int, default=None)\n    args = parser.parse_args()\n\n    log('Reading input workbook')\n    input_df = pd.read_excel(args.input).fillna('')\n    session = requests.Session()\n    results = []\n    flags = []\n    seen = set()\n\n    for _, row in input_df.iterrows():\n        keyword = clean(row.get('keyword', ''))\n        listing_url = clean(row.get('listing_url', ''))\n        detail_url = clean(row.get('detail_url', ''))\n        if args.max_products is not None and len(results) >= args.max_products:\n            break\n        if detail_url:\n            log(f'Using independent detail URL path: {detail_url}')\n            if detail_url in seen:\n                continue\n            seen.add(detail_url)\n            response = request_page(session, detail_url, flags)\n            if response is not None:\n                item = extract_detail(response, flags)\n                if item is not None:\n                    results.append(item)\n            continue\n        if listing_url or keyword:\n            url = listing_url or TARGET_URL\n            log(f'Crawling listing flow from {url}')\n            results.extend(crawl_listing(session, url, keyword, flags, seen, args.max_products))\n\n    if args.max_products is not None:\n        results = results[:args.max_products]\n    columns = ['Store Number', 'Street Address', 'City', 'State', 'Postal Code', 'Phone Number', 'Operating Hours', 'Drive-Thru Available', 'Delivery Available', 'Source URL']\n    data_df = pd.DataFrame(results, columns=columns)\n    flags_df = pd.DataFrame(flags, columns=['Timestamp', 'Type', 'URL', 'Message'])\n    log(f'Writing {len(data_df)} extracted rows and {len(flags_df)} flags')\n    with pd.ExcelWriter(args.output, engine='openpyxl') as writer:\n        data_df.to_excel(writer, sheet_name='Extracted Data', index=False)\n        flags_df.to_excel(writer, sheet_name='Flags', index=False)\n    log('Completed')\n\n\nif __name__ == '__main__':\n    main()",
+      "requirements_txt": "pandas\nopenpyxl\nrequests\nbeautifulsoup4\n",
+      "confidence_notes": [
+        "The Alabama page's city-link list was not exposed in the snapshot, so exact listing-item selectors and all matching Prattville city links should be manually verified.",
+        "The typed keyword did not visibly alter the state page; the working city path was confirmed by direct navigation.",
+        "Closed locations and temporary kiosks were not explicitly identified in the inspected snapshot; the script uses text-based filtering for closed, temporary, and kiosk terms and should be verified against status/type markup.",
+        "The detail page was reached by the observed address slug, but its full contact, store number, services, and hours markup should be manually checked.",
+        "No CAPTCHA or anti-bot block was encountered during inspection.",
+        "No network API was observed, so this script uses requests and BeautifulSoup against HTML documents. If the live directory requires client-side rendering, a browser-based implementation may be necessary.",
+        "Because concrete CSS selectors were not exposed, extraction uses conservative text and regular-expression heuristics and records missing or uncertain fields in Flags.",
+        "The script does not implement anti-bot bypassing or CAPTCHA solving; detected signals are only recorded in the Flags sheet."
+      ],
+      "total_tool_calls": 12,
+      "action_log": [
+        {
+          "ts": "2026-09-02T13:13:30",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-09-02T13:13:32",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-09-02T13:13:33",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-09-02T13:13:35",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input",
+            "text": "Prattville"
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-09-02T13:13:37",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-09-02T13:13:38",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 6
+        },
+        {
+          "ts": "2026-09-02T13:13:40",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville"
+          },
+          "call_number": 7
+        },
+        {
+          "ts": "2026-09-02T13:13:41",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 8
+        },
+        {
+          "ts": "2026-09-02T13:13:42",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 9
+        },
+        {
+          "ts": "2026-09-02T13:13:44",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr"
+          },
+          "call_number": 10
+        },
+        {
+          "ts": "2026-09-02T13:13:46",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 11
+        },
+        {
+          "ts": "2026-09-02T13:13:47",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 12
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "2ff3faee-6e19-455c-b78e-47a08d73915c",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-09-02T13:14:24",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.007638,
+      "input_tokens": 32352,
+      "output_tokens": 4946,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 26485,
+      "num_turns": 14,
+      "duration_ms": 63866,
+      "duration_api_ms": 63866,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "2ff3faee-6e19-455c-b78e-47a08d73915c",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T13:13:53",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.002078,
+          "input_tokens": 30232,
+          "output_tokens": 666,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 26485,
+          "num_turns": 13,
+          "duration_ms": 32761,
+          "duration_api_ms": 32761,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 30232,
+              "output_tokens": 666,
+              "cached_tokens": 26485,
+              "cost_usd": 0.002078
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "2ff3faee-6e19-455c-b78e-47a08d73915c",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T13:14:24",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.00556,
+          "input_tokens": 2120,
+          "output_tokens": 4280,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 31105,
+          "duration_api_ms": 31105,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 2120,
+              "output_tokens": 4280,
+              "cached_tokens": 0,
+              "cost_usd": 0.00556
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_2ff3faee",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "[2026-09-02T13:20:44+05:30] Reading input workbook\r\n[2026-09-02T13:20:46+05:30] Crawling listing flow from https://restaurants.subway.com/united-states/al\r\n[2026-09-02T13:20:46+05:30] Requesting https://restaurants.subway.com/united-states/al\r\n[2026-09-02T13:20:51+05:30] Requesting https://restaurants.subway.com/united-states/al/prattville\r\n[2026-09-02T13:20:51+05:30] Requesting https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr\r\n[2026-09-02T13:20:51+05:30] Requesting https://restaurants.subway.com/united-states/al/prattville/1670-hwy-31-n\r\n[2026-09-02T13:20:51+05:30] Requesting https://restaurants.subway.com/united-states/al/prattville/258-interstate-commercial-park\r\n[2026-09-02T13:20:52+05:30] Writing 3 extracted rows and 12 flags\r\n[2026-09-02T13:20:52+05:30] Completed\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-09-02T13:20:52"
+    }
+  },
+  "7fdcef61-c166-40c5-9295-ad4e06f53c40": {
+    "job_id": "7fdcef61-c166-40c5-9295-ad4e06f53c40",
+    "name": "Naukri Recent Developer Jobs Scraper",
+    "status": "completed",
+    "created_at": "2026-09-02T13:30:34",
+    "target_url": "https://www.naukri.com/developer-jobs?k=developer&jobAge=1",
+    "sample_keyword": "AI developer",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport re\nfrom datetime import datetime, timezone\nfrom urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\nTARGET_URL = \"https://www.naukri.com/developer-jobs?k=developer&jobAge=1\"\nOUTPUT_COLUMNS = [\n    \"Job Title\",\n    \"Company Name\",\n    \"Experience Required\",\n    \"Salary Range\",\n    \"Job Location\",\n    \"Key Skills\",\n    \"Posted Date\",\n    \"Job Detail URL\",\n]\n\n\ndef log(message):\n    timestamp = datetime.now(timezone.utc).astimezone().strftime(\"%Y-%m-%d %H:%M:%S%z\")\n    print(f\"[{timestamp}] {message}\", flush=True)\n\n\ndef clean(value):\n    if value is None or pd.isna(value) or str(value).strip().lower() in (\"\", \"nan\", \"none\", \"null\"):\n        return \"\"\n    try:\n        if pd.isna(value):\n            return \"\"\n    except (TypeError, ValueError):\n        pass\n    text = str(value).replace(\"\\xa0\", \" \").strip()\n    if text.lower() in {\"nan\", \"none\", \"null\"}:\n        return \"\"\n    return re.sub(r\"\\s+\", \" \", text).strip()\n\n\ndef value_from_row(row, column):\n    if column not in row:\n        return \"\"\n    return clean(row[column])\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError(\" CAPTCHA solving and anti-bot bypass are not implemented.\")\n\n\ndef detect_anti_bot_signals(response):\n    signals = []\n    body = response.text or \"\"\n    lowered = body.lower()\n    if response.status_code in {403, 429}:\n        signals.append(f\"HTTP status {response.status_code}\")\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in lowered:\n            signals.append(description)\n    if len(body.strip()) < 500:\n        signals.append(f\"Unusually short response body ({len(body.strip())} characters)\")\n    return signals\n\n\ndef add_flag(flags, kind, message, url=\"\"):\n    flags.append({\n        \"Timestamp\": datetime.now(timezone.utc).isoformat(),\n        \"Type\": clean(kind),\n        \"Message\": clean(message),\n        \"URL\": clean(url),\n    })\n\n\ndef request_page(session, url, flags):\n    log(f\"Requesting {url}\")\n    try:\n        response = session.get(url, timeout=30, allow_redirects=True)\n    except requests.RequestException as exc:\n        add_flag(flags, \"error\", f\"Request failed: {exc}\", url)\n        return None\n    for signal in detect_anti_bot_signals(response):\n        add_flag(flags, \"anti-bot\", signal, response.url or url)\n    if response.status_code >= 400:\n        add_flag(flags, \"error\", f\"HTTP status {response.status_code}\", response.url or url)\n        return None\n    return response\n\n\ndef text_of(node):\n    if node is None:\n        return \"\"\n    return clean(node.get_text(\"\\n\", strip=True))\n\n\ndef first_text(soup, selectors):\n    for selector in selectors:\n        node = soup.select_one(selector)\n        value = text_of(node)\n        if value:\n            return value\n    return \"\"\n\n\ndef labeled_value(text, labels):\n    if not text:\n        return \"\"\n    label_pattern = \"|\".join(re.escape(label) for label in labels)\n    match = re.search(\n        rf\"(?:{label_pattern})\\s*[:\\-]?\\s*([^\\n|]+)\",\n        text,\n        flags=re.IGNORECASE,\n    )\n    return clean(match.group(1)) if match else \"\"\n\n\ndef normalize_url(url, base_url):\n    absolute = urljoin(base_url, clean(url))\n    parsed = urlparse(absolute)\n    if parsed.scheme not in {\"http\", \"https\"}:\n        return \"\"\n    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, \"\", parsed.query, \"\"))\n\n\ndef extract_detail(response, flags):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    page_text = text_of(soup)\n    title = first_text(soup, [\n        \"h1\",\n        \"[class*='jobTitle']\",\n        \"[class*='job-title']\",\n        \"meta[property='og:title']\",\n    ])\n    if not title:\n        meta = soup.select_one(\"meta[property='og:title']\")\n        title = clean(meta.get(\"content\", \"\")) if meta else \"\"\n    company = first_text(soup, [\n        \"[class*='companyName']\",\n        \"[class*='company-name']\",\n        \"[class*='companyInfo']\",\n        \"[class*='company-info']\",\n    ]) or labeled_value(page_text, [\"Company\", \"Company Name\", \"Employer\"])\n    experience = first_text(soup, [\n        \"[class*='experience']\",\n        \"[class*='exp']\",\n    ]) or labeled_value(page_text, [\"Experience\", \"Experience Required\", \"Exp\"])\n    salary = first_text(soup, [\n        \"[class*='salary']\",\n        \"[class*='Salary']\",\n    ]) or labeled_value(page_text, [\"Salary\", \"Salary Range\", \"CTC\"])\n    location = first_text(soup, [\n        \"[class*='location']\",\n        \"[class*='Location']\",\n    ]) or labeled_value(page_text, [\"Location\", \"Job Location\"])\n    skills = first_text(soup, [\n        \"[class*='skills']\",\n        \"[class*='Skills']\",\n        \"[class*='key-skill']\",\n    ]) or labeled_value(page_text, [\"Key Skills\", \"Skills\", \"Key skill\"])\n    posted = first_text(soup, [\n        \"[class*='posted']\",\n        \"[class*='datePosted']\",\n        \"time\",\n    ]) or labeled_value(page_text, [\"Posted\", \"Posted Date\", \"Date Posted\"])\n    if not title:\n        add_flag(flags, \"low-confidence\", \"Could not identify a job title with the fallback selectors.\", response.url)\n    if not company:\n        add_flag(flags, \"low-confidence\", \"Company extraction was not verified by the inspection findings.\", response.url)\n    if not any((experience, salary, location, skills, posted)):\n        add_flag(flags, \"low-confidence\", \"No labeled job fields were found; live detail selectors were not inspected.\", response.url)\n    return {\n        \"Job Title\": title,\n        \"Company Name\": company,\n        \"Experience Required\": experience,\n        \"Salary Range\": salary,\n        \"Job Location\": location,\n        \"Key Skills\": skills,\n        \"Posted Date\": posted,\n        \"Job Detail URL\": response.url,\n        \"_page_text\": page_text,\n    }\n\n\ndef is_sponsored_course(item):\n    text = clean(\" \".join(str(item.get(key, \"\")) for key in OUTPUT_COLUMNS)).lower()\n    return bool(re.search(r\"\\b(course|courses|training|learn|certification|academy)\\b\", text))\n\n\ndef appears_full_time(item):\n    text = clean(item.get(\"_page_text\", \"\")).lower()\n    if re.search(r\"\\b(part[- ]time|contract|internship|freelance|temporary)\\b\", text):\n        return False\n    return True\n\n\ndef listing_links(soup, base_url):\n    links = []\n    for anchor in soup.select(\"a[href]\"):\n        href = normalize_url(anchor.get(\"href\", \"\"), base_url)\n        label = clean(anchor.get_text(\" \", strip=True)).lower()\n        if not href:\n            continue\n        if (re.search(r\"(?:page[-_=]?\\d+|[?&]page=\\d+)\", href, re.IGNORECASE)\n                or label in {\"next\", \">\", \"\u203a\", \"next page\"}):\n            links.append(href)\n    return list(dict.fromkeys(links))\n\n\ndef extract_listing_items(response, keyword, flags):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    anchors = []\n    for anchor in soup.select(\"a[href]\"):\n        href = normalize_url(anchor.get(\"href\", \"\"), response.url)\n        if href and (\"job\" in href.lower() or \"naukri\" in href.lower()):\n            anchors.append((anchor, href))\n    if not anchors:\n        add_flag(flags, \"low-confidence\", \"No listing elements were found; the rendered page may require JavaScript or access may be limited.\", response.url)\n    items = []\n    seen = set()\n    keyword_pattern = re.compile(rf\"\\b{re.escape(keyword)}\\b\", re.IGNORECASE) if keyword else None\n    for anchor, href in anchors:\n        container = anchor\n        for _ in range(4):\n            if container.parent is None:\n                break\n            container = container.parent\n            candidate_text = text_of(container)\n            if len(candidate_text) >= 40:\n                break\n        title = clean(anchor.get_text(\" \", strip=True))\n        block_text = text_of(container)\n        if len(title) < 3:\n            title = first_text(container, [\"h1\", \"h2\", \"h3\", \"h4\", \"[class*='title']\"])\n        if not title or is_sponsored_course({\"_page_text\": block_text, \"Job Title\": title}):\n            continue\n        if keyword_pattern and not keyword_pattern.search(f\"{title} {block_text}\"):\n            continue\n        key = href.split(\"?\", 1)[0].lower()\n        if key in seen:\n            continue\n        seen.add(key)\n        items.append({\"Job Title\": title, \"Job Detail URL\": href, \"_listing_text\": block_text})\n    return items\n\n\ndef with_keyword(url, keyword):\n    if not keyword:\n        return url\n    parsed = urlparse(url)\n    query = dict(parse_qsl(parsed.query, keep_blank_values=True))\n    query[\"k\"] = keyword\n    query.setdefault(\"jobAge\", \"1\")\n    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, urlencode(query), parsed.fragment))\n\n\ndef crawl_listing(session, listing_url, keyword, max_products, flags):\n    queue = [with_keyword(listing_url, keyword)]\n    visited_pages = set()\n    records = []\n    seen_jobs = set()\n    while queue and len(records) < max_products:\n        page_url = queue.pop(0)\n        if page_url in visited_pages:\n            continue\n        visited_pages.add(page_url)\n        response = request_page(session, page_url, flags)\n        if response is None:\n            continue\n        log(f\"Parsing listing page {page_url}\")\n        candidates = extract_listing_items(response, keyword, flags)\n        for candidate in candidates:\n            detail_url = candidate[\"Job Detail URL\"]\n            if detail_url in seen_jobs:\n                continue\n            seen_jobs.add(detail_url)\n            detail_response = request_page(session, detail_url, flags)\n            if detail_response is None:\n                continue\n            item = extract_detail(detail_response, flags)\n            if not item[\"Job Title\"]:\n                item[\"Job Title\"] = candidate[\"Job Title\"]\n            if not appears_full_time(item):\n                continue\n            item.pop(\"_page_text\", None)\n            item.pop(\"_listing_text\", None)\n            records.append(item)\n            if len(records) >= max_products:\n                break\n        for next_url in listing_links(BeautifulSoup(response.text, \"html.parser\"), response.url):\n            if next_url not in visited_pages and next_url not in queue:\n                queue.append(next_url)\n    return records\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Naukri developer job scraper\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(\"Starting scraper\")\n    input_df = pd.read_excel(args.input).fillna(\"\")\n    session = requests.Session()\n    session.headers.update({\n        \"User-Agent\": \"Mozilla/5.0 (compatible; ScraperStudio/1.0)\",\n        \"Accept-Language\": \"en-US,en;q=0.9\",\n    })\n    records = []\n    flags = []\n    cap = args.max_products if args.max_products and args.max_products > 0 else 10**9\n\n    for row_number, row in input_df.iterrows():\n        keyword = value_from_row(row, \"keyword\")\n        listing_url = value_from_row(row, \"listing_url\")\n        detail_url = value_from_row(row, \"detail_url\")\n        if detail_url:\n            log(f\"Processing independent detail URL from input row {row_number + 2}\")\n            response = request_page(session, detail_url, flags)\n            if response is not None:\n                item = extract_detail(response, flags)\n                item.pop(\"_page_text\", None)\n                if not is_sponsored_course(item) and appears_full_time({\"_page_text\": \"\", **item}):\n                    records.append({key: item.get(key, \"\") for key in OUTPUT_COLUMNS})\n            continue\n        if listing_url or keyword:\n            target = listing_url or TARGET_URL\n            log(f\"Processing listing flow from input row {row_number + 2}\")\n            records.extend(crawl_listing(session, target, keyword, max(0, cap - len(records)), flags))\n        else:\n            add_flag(flags, \"error\", \"Input row has no usable keyword, listing_url, or detail_url.\")\n        if len(records) >= cap:\n            break\n\n    records = records[:cap]\n    log(f\"Writing {len(records)} extracted records and {len(flags)} flags\")\n    output_df = pd.DataFrame(records, columns=OUTPUT_COLUMNS)\n    flags_df = pd.DataFrame(flags, columns=[\"Timestamp\", \"Type\", \"Message\", \"URL\"])\n    with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n        output_df.to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        flags_df.to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(\"Scraper finished\")\n\n\nif __name__ == \"__main__\":\n    main()",
+      "requirements_txt": "pandas\nrequests\nbeautifulsoup4\nopenpyxl\n",
+      "confidence_notes": [
+        "The inspection found no listing cards, detail links, selectors, headings, JSON-LD, or API requests, despite HTTP 200; this script therefore uses requests plus conservative generic BeautifulSoup fallbacks and flags missing or low-confidence extraction.",
+        "The page may require client-side JavaScript or may be access-limited. No browser dependency was added because browser rendering was not verified in the findings; a production run should manually verify whether Playwright/Selenium is required.",
+        "Pagination, job-card structure, detail-page selectors, active-status representation, and full-time representation were not verified. Pagination uses generic next/page URL discovery, and unknown employment type is retained unless an explicitly non-full-time term is found.",
+        "Keyword matching is applied to listing candidate text using a whole-word case-insensitive match for the supplied keyword. Direct detail_url rows intentionally bypass listing discovery and are scraped independently.",
+        "Sponsored-course exclusion uses generic course/training/certification terms because the inspection exposed no verified sponsored-course marker.",
+        "The unusually short-body anti-bot threshold is intentionally conservative and may flag legitimate minimal responses; signals are recorded only and no bypass or CAPTCHA solving is attempted.",
+        "The target default uses jobAge=1 as supplied. jobAge=7 can be provided through listing_url or by changing the URL/query externally; no unverified search-control interaction is attempted."
+      ],
+      "total_tool_calls": 4,
+      "action_log": [
+        {
+          "ts": "2026-09-02T13:30:44",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.naukri.com/developer-jobs?k=developer&jobAge=1"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-09-02T13:30:46",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-09-02T13:30:48",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-09-02T13:30:49",
+          "phase": "recon",
+          "tool": "browser_take_screenshot",
+          "input": {},
+          "call_number": 4
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "7fdcef61-c166-40c5-9295-ad4e06f53c40",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-09-02T13:31:41",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.006691,
+      "input_tokens": 9673,
+      "output_tokens": 4867,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6025,
+      "num_turns": 6,
+      "duration_ms": 66737,
+      "duration_api_ms": 66737,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "7fdcef61-c166-40c5-9295-ad4e06f53c40",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T13:30:53",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.000809,
+          "input_tokens": 7733,
+          "output_tokens": 289,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 6025,
+          "num_turns": 5,
+          "duration_ms": 19019,
+          "duration_api_ms": 19019,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 7733,
+              "output_tokens": 289,
+              "cached_tokens": 6025,
+              "cost_usd": 0.000809
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "7fdcef61-c166-40c5-9295-ad4e06f53c40",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T13:31:41",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005882,
+          "input_tokens": 1940,
+          "output_tokens": 4578,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 47718,
+          "duration_api_ms": 47718,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1940,
+              "output_tokens": 4578,
+              "cached_tokens": 0,
+              "cost_usd": 0.005882
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\naukri_recent_developer_jobs_scraper_7fdcef61",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "[2026-09-02 13:35:30+0530] Starting scraper\r\n[2026-09-02 13:35:31+0530] Processing listing flow from input row 2\r\n[2026-09-02 13:35:31+0530] Requesting https://www.naukri.com/developer-jobs?k=AI+developer&jobAge=1\r\n[2026-09-02 13:35:31+0530] Writing 0 extracted records and 3 flags\r\n[2026-09-02 13:35:31+0530] Scraper finished\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-09-02T13:35:31"
+    }
+  },
+  "5714ecc0-548c-4cc1-96ab-b63f6f47610e": {
+    "job_id": "5714ecc0-548c-4cc1-96ab-b63f6f47610e",
+    "name": "Samsung Galaxy Smartphones Collector",
+    "status": "completed",
+    "created_at": "2026-09-02T14:56:04",
+    "target_url": "https://www.samsung.com/in/smartphones/all-smartphones/",
+    "sample_keyword": "Galaxy S24",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport json\nimport re\nimport sys\nfrom datetime import datetime, timezone\nfrom pathlib import Path\nfrom urllib.parse import urljoin\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\nTARGET_URL = \"https://www.samsung.com/in/smartphones/all-smartphones/\"\nUSER_AGENT = \"Mozilla/5.0 (compatible; ScraperStudio/1.0)\"\n\n\ndef log(message):\n    timestamp = datetime.now(timezone.utc).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n    print(f\"[{timestamp}] {message}\", flush=True)\n\n\ndef clean(value):\n    if value is None or pd.isna(value) or str(value).strip().lower() in (\"\", \"nan\", \"none\", \"null\"):\n        return \"\"\n    try:\n        if pd.isna(value):\n            return \"\"\n    except (TypeError, ValueError):\n        pass\n    text = str(value).strip()\n    if text.lower() in {\"nan\", \"none\", \"null\"}:\n        return \"\"\n    return text\n\n\ndef value_from_row(row, column):\n    return clean(row[column]) if column in row else \"\"\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError(\"CAPTCHA solving and anti-bot bypass are not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    signals = []\n    body = response.text or \"\"\n    lowered = body.lower()\n    if response.status_code in {403, 429}:\n        signals.append(f\"HTTP status {response.status_code}\")\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in lowered:\n            signals.append(description)\n    if len(body.strip()) < 500:\n        signals.append(\"Unusually short HTTP response body\")\n    return signals\n\n\ndef request_page(session, url, flags):\n    log(f\"Requesting {url}\")\n    try:\n        response = session.get(url, timeout=30)\n        for signal in detect_anti_bot_signals(response):\n            flags.append({\n                \"Signal\": signal,\n                \"URL\": url,\n                \"Message\": \"Anti-bot signal detected; no bypass attempted.\",\n            })\n        response.raise_for_status()\n        return response\n    except requests.RequestException as exc:\n        flags.append({\"Signal\": \"Request error\", \"URL\": url, \"Message\": str(exc)})\n        log(f\"Request failed for {url}: {exc}\")\n        return None\n\n\ndef jsonld_objects(soup):\n    objects = []\n    for node in soup.find_all(\"script\", type=\"application/ld+json\"):\n        raw = node.string or node.get_text(\"\\n\", strip=True)\n        if not raw.strip():\n            continue\n        try:\n            parsed = json.loads(raw)\n        except (json.JSONDecodeError, TypeError):\n            continue\n        if isinstance(parsed, list):\n            objects.extend(parsed)\n        else:\n            objects.append(parsed)\n    return objects\n\n\ndef listing_links(soup, base_url):\n    links = []\n    for obj in jsonld_objects(soup):\n        if not isinstance(obj, dict):\n            continue\n        if obj.get(\"@type\") == \"ItemList\" or \"itemListElement\" in obj:\n            for entry in obj.get(\"itemListElement\", []):\n                item = entry.get(\"item\", entry) if isinstance(entry, dict) else entry\n                href = \"\"\n                if isinstance(item, str):\n                    href = item\n                elif isinstance(item, dict):\n                    href = item.get(\"url\") or item.get(\"@id\") or \"\"\n                if href:\n                    links.append(urljoin(base_url, href))\n    unique = []\n    seen = set()\n    for link in links:\n        if link not in seen:\n            seen.add(link)\n            unique.append(link)\n    return unique\n\n\ndef recursive_products(value):\n    found = []\n    if isinstance(value, dict):\n        kind = value.get(\"@type\", \"\")\n        types = kind if isinstance(kind, list) else [kind]\n        if any(str(item) in {\"Product\", \"ProductGroup\"} for item in types):\n            found.append(value)\n        for child in value.values():\n            found.extend(recursive_products(child))\n    elif isinstance(value, list):\n        for child in value:\n            found.extend(recursive_products(child))\n    return found\n\n\ndef first_product_jsonld(soup):\n    products = []\n    for obj in jsonld_objects(soup):\n        products.extend(recursive_products(obj))\n    return products[0] if products else {}\n\n\ndef text_lines(soup):\n    text = soup.get_text(\"\\n\", strip=True).replace(\"\\xa0\", \" \")\n    return [re.sub(r\"\\s+\", \" \", line).strip() for line in text.split(\"\\n\") if line.strip()]\n\n\ndef value_after_label(lines, labels):\n    wanted = {label.lower() for label in labels}\n    for index, line in enumerate(lines):\n        normalized = line.strip().lower().rstrip(\":\")\n        if normalized in wanted and index + 1 < len(lines):\n            return lines[index + 1]\n    return \"\"\n\n\ndef property_values(product, terms):\n    values = []\n    for prop in product.get(\"additionalProperty\", []) if isinstance(product, dict) else []:\n        if not isinstance(prop, dict):\n            continue\n        name = clean(prop.get(\"name\")).lower()\n        if any(term in name for term in terms):\n            value = clean(prop.get(\"value\"))\n            if value:\n                values.append(value)\n    return values\n\n\ndef variant_values(product, terms):\n    values = []\n    variants = product.get(\"hasVariant\", []) if isinstance(product, dict) else []\n    if isinstance(variants, dict):\n        variants = [variants]\n    for variant in variants:\n        if not isinstance(variant, dict):\n            continue\n        for key, value in variant.items():\n            if any(term in str(key).lower() for term in terms):\n                if isinstance(value, list):\n                    values.extend(clean(item) for item in value)\n                else:\n                    values.append(clean(value))\n        name = clean(variant.get(\"name\"))\n        if name:\n            values.append(name)\n    return values\n\n\ndef unique_join(values):\n    result = []\n    seen = set()\n    for value in values:\n        value = clean(value)\n        if value and value not in seen:\n            seen.add(value)\n            result.append(value)\n    return \", \".join(result)\n\n\ndef extract_price(product, lines):\n    offers = product.get(\"offers\", {}) if isinstance(product, dict) else {}\n    if isinstance(offers, list):\n        offers = offers[0] if offers else {}\n    if isinstance(offers, dict):\n        price = clean(offers.get(\"price\"))\n        currency = clean(offers.get(\"priceCurrency\"))\n        if price:\n            return f\"{currency} {price}\".strip()\n    for line in lines:\n        if re.search(r\"(?:\u20b9|INR)\\s*[\\d,]+\", line, re.I):\n            return line\n    return \"\"\n\n\ndef excluded_item(name, url):\n    combined = f\"{name} {url}\".lower()\n    terms = [\"accessory\", \"tablet cover\", \"charger\", \"refurbished\"]\n    return any(term in combined for term in terms)\n\n\ndef extract_detail(session, url, flags):\n    response = request_page(session, url, flags)\n    if response is None:\n        return None\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    product = first_product_jsonld(soup)\n    lines = text_lines(soup)\n    name = clean(product.get(\"name\")) or clean(soup.find(\"h1\").get_text(\" \", strip=True) if soup.find(\"h1\") else \"\")\n    model_code = clean(product.get(\"model\")) or clean(product.get(\"mpn\")) or clean(product.get(\"sku\"))\n    colors = unique_join(property_values(product, [\"color\", \"colour\"]) + variant_values(product, [\"color\", \"colour\"]))\n    storage = unique_join(property_values(product, [\"storage\", \"capacity\"]) + variant_values(product, [\"storage\", \"capacity\"]))\n    colors = colors or value_after_label(lines, [\"Colour\", \"Color\", \"Available Colors\"])\n    storage = storage or value_after_label(lines, [\"Storage\", \"Storage Variants\"])\n    display = value_after_label(lines, [\"Display\", \"Display Specs\", \"Screen\"])\n    camera = value_after_label(lines, [\"Camera\", \"Camera Specs\"])\n    battery = value_after_label(lines, [\"Battery\", \"Battery Capacity\"])\n    fields = {\n        \"Product Name\": name,\n        \"Model Code\": model_code,\n        \"Price in INR\": extract_price(product, lines),\n        \"Available Colors\": colors,\n        \"Storage Variants\": storage,\n        \"Display Specs\": display,\n        \"Camera Specs\": camera,\n        \"Battery Capacity\": battery,\n        \"Source URL\": url,\n    }\n    required = list(fields)[:-1]\n    for field in required:\n        if not fields[field]:\n            flags.append({\n                \"Signal\": \"Low-confidence extraction\",\n                \"URL\": url,\n                \"Message\": f\"Field not verified or not exposed in the inspected HTML: {field}\",\n            })\n    if not name:\n        flags.append({\"Signal\": \"Low-confidence extraction\", \"URL\": url, \"Message\": \"Product name not found\"})\n    return fields\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Samsung India smartphone scraper\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(\"Starting scraper\")\n    input_df = pd.read_excel(args.input).fillna(\"\")\n    session = requests.Session()\n    session.headers.update({\"User-Agent\": USER_AGENT, \"Accept-Language\": \"en-IN,en;q=0.9\"})\n    flags = []\n    extracted = []\n    processed = set()\n\n    for _, row in input_df.iterrows():\n        if args.max_products is not None and len(extracted) >= args.max_products:\n            break\n        keyword = value_from_row(row, \"keyword\")\n        listing_url = value_from_row(row, \"listing_url\")\n        detail_url = value_from_row(row, \"detail_url\")\n        if detail_url:\n            urls = [detail_url]\n        else:\n            listing_url = listing_url or TARGET_URL\n            response = request_page(session, listing_url, flags)\n            if response is None:\n                continue\n            soup = BeautifulSoup(response.text, \"html.parser\")\n            urls = listing_links(soup, listing_url)\n            log(f\"Found {len(urls)} JSON-LD listing links\")\n\n        for url in urls:\n            if args.max_products is not None and len(extracted) >= args.max_products:\n                break\n            if url in processed:\n                continue\n            processed.add(url)\n            if keyword and keyword.lower() not in url.lower() and not detail_url:\n                pass\n            item = extract_detail(session, url, flags)\n            if not item:\n                continue\n            if excluded_item(item[\"Product Name\"], url):\n                flags.append({\"Signal\": \"Excluded item\", \"URL\": url, \"Message\": \"Matched accessory, tablet cover, charger, or refurbished exclusion\"})\n                continue\n            if keyword and keyword.lower() not in item[\"Product Name\"].lower():\n                continue\n            extracted.append(item)\n            log(f\"Extracted {item['Product Name'] or url}\")\n\n    output_path = Path(args.output)\n    log(f\"Writing {len(extracted)} extracted rows and {len(flags)} flags\")\n    with pd.ExcelWriter(output_path, engine=\"openpyxl\") as writer:\n        data_columns = [\"Product Name\", \"Model Code\", \"Price in INR\", \"Available Colors\", \"Storage Variants\", \"Display Specs\", \"Camera Specs\", \"Battery Capacity\", \"Source URL\"]\n        pd.DataFrame(extracted, columns=data_columns).to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        pd.DataFrame(flags, columns=[\"Signal\", \"URL\", \"Message\"]).to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(\"Scraper completed\")\n\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except Exception as exc:\n        log(f\"Fatal error: {exc}\")\n        sys.exit(1)",
+      "requirements_txt": "pandas\nrequests\nbeautifulsoup4\nopenpyxl",
+      "confidence_notes": [
+        "Listing page and detail page classification was verified.",
+        "The listing contains an ItemList with 50 items, so the scraper uses JSON-LD ItemList entries for product URLs because concrete product-card selectors were not exposed.",
+        "No network API was observed; this script uses requests and BeautifulSoup against HTML and JSON-LD only.",
+        "The inspection did not verify whether the listing page's global search input actually filters results. Keyword matching is therefore applied to the extracted product title after crawling.",
+        "The Galaxy S24 detail URL was inspected, but requested technical values and model codes were not visible in the structured snapshot.",
+        "Buying-tool sections named Device, Storage, and Colour were observed, but their values were not verified. The script attempts JSON-LD properties and simple label-following HTML extraction, and flags missing values as low confidence.",
+        "Technical specification selectors were not exposed, so Display Specs, Camera Specs, and Battery Capacity extraction may be incomplete.",
+        "The script assumes JSON-LD product links and product metadata remain present in server-delivered HTML; if these values require JavaScript rendering, a browser-based implementation will be necessary.",
+        "Exclusion matching is based on case-insensitive terms in the product name or URL: accessory, tablet cover, charger, and refurbished.",
+        "No cookie banner was observed during inspection, and this static requests implementation does not require cookie-banner dismissal.",
+        "Anti-bot signals are only recorded in the Flags sheet; no CAPTCHA solving or bypass behavior is implemented."
+      ],
+      "total_tool_calls": 10,
+      "action_log": [
+        {
+          "ts": "2026-09-02T14:56:14",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.samsung.com/in/smartphones/all-smartphones/"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-09-02T14:56:20",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-09-02T14:56:22",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-09-02T14:56:23",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input[type='search'], input[placeholder*='Search' i]",
+            "text": "Galaxy S24"
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-09-02T14:56:25",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-09-02T14:56:26",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 6
+        },
+        {
+          "ts": "2026-09-02T14:56:28",
+          "phase": "recon",
+          "tool": "browser_take_screenshot",
+          "input": {},
+          "call_number": 7
+        },
+        {
+          "ts": "2026-09-02T14:56:30",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.samsung.com/in/smartphones/galaxy-s24/buy/"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-09-02T14:56:31",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 9
+        },
+        {
+          "ts": "2026-09-02T14:56:34",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 10
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "5714ecc0-548c-4cc1-96ab-b63f6f47610e",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-09-02T14:57:09",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.0071319999999999995,
+      "input_tokens": 27030,
+      "output_tokens": 4684,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 21639,
+      "num_turns": 12,
+      "duration_ms": 64733,
+      "duration_api_ms": 64733,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "5714ecc0-548c-4cc1-96ab-b63f6f47610e",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T14:56:38",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.001788,
+          "input_tokens": 24928,
+          "output_tokens": 581,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 21639,
+          "num_turns": 11,
+          "duration_ms": 34032,
+          "duration_api_ms": 34032,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 24928,
+              "output_tokens": 581,
+              "cached_tokens": 21639,
+              "cost_usd": 0.001788
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "5714ecc0-548c-4cc1-96ab-b63f6f47610e",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T14:57:09",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005344,
+          "input_tokens": 2102,
+          "output_tokens": 4103,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 30701,
+          "duration_api_ms": 30701,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 2102,
+              "output_tokens": 4103,
+              "cached_tokens": 0,
+              "cost_usd": 0.005344
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\samsung_galaxy_smartphones_collector_5714ecc0",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "M-S938BAKBINS\r\n[2026-09-02T09:30:50Z] Requesting https://www.samsung.com/in/smartphones/galaxy-z-fold7/buy/?modelCode=SM-F966BLGDINS\r\n[2026-09-02T09:30:55Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a36-5g-awesome-lavender-128gb-sm-a366elvjins/\r\n[2026-09-02T09:30:57Z] Requesting https://www.samsung.com/in/smartphones/galaxy-z-fold7/buy/?modelCode=SM-F966BZKDINS\r\n[2026-09-02T09:31:01Z] Requesting https://www.samsung.com/in/smartphones/galaxy-m/galaxy-m17-5g-moonlight-silver-128gb-sm-m176bzsbins/\r\n[2026-09-02T09:31:01Z] Requesting https://www.samsung.com/in/smartphones/galaxy-s/galaxy-s25-icyblue-256gb-sm-s931blbcins/\r\n[2026-09-02T09:31:03Z] Requesting https://www.samsung.com/in/smartphones/galaxy-m/galaxy-m17-5g-black-128gb-sm-m176bzkains/\r\n[2026-09-02T09:31:04Z] Requesting https://www.samsung.com/in/smartphones/galaxy-s25-ultra/buy/?modelCode=SM-S938BZTBINS\r\n[2026-09-02T09:31:06Z] Requesting https://www.samsung.com/in/smartphones/galaxy-s/galaxy-s25-icyblue-256gb-certified-re-newed-sm5s931blbcins/\r\n[2026-09-02T09:31:07Z] Requesting https://www.samsung.com/in/smartphones/galaxy-s/galaxy-s25-ultra-titanium-silverblue-256gb-certified-re-newed-sm5s938bzbbins/\r\n[2026-09-02T09:31:07Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a17-5g-blue-128gb-sm-a176bzbmins/\r\n[2026-09-02T09:31:07Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a17-5g-black-128gb-sm-a176bzklins/\r\n[2026-09-02T09:31:08Z] Requesting https://www.samsung.com/in/smartphones/galaxy-m/galaxy-m17-5g-moonlight-silver-128gb-sm-m176bzsdins/\r\n[2026-09-02T09:31:08Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a07-light-violet-64gb-sm-a075flvdins/\r\n[2026-09-02T09:31:09Z] Requesting https://www.samsung.com/in/smartphones/galaxy-f/galaxy-f17-5g-black-128gb-sm-e176bzkbins/\r\n[2026-09-02T09:31:09Z] Requesting https://www.samsung.com/in/smartphones/galaxy-f/galaxy-f17-5g-black-128gb-sm-e176bzkains/\r\n[2026-09-02T09:31:09Z] Requesting https://www.samsung.com/in/smartphones/galaxy-z-flip7/buy/?modelCode=SM-F766BZREINS\r\n[2026-09-02T09:31:13Z] Requesting https://www.samsung.com/in/smartphones/galaxy-z-flip7/buy/?modelCode=SM-F766BLGAINS\r\n[2026-09-02T09:31:15Z] Requesting https://www.samsung.com/in/smartphones/galaxy-z-flip7-fe/buy/?modelCode=SM-F761BZKAINS\r\n[2026-09-02T09:31:17Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a56-5g-awesome-violet-glow-128gb-sm-a566elvzins/\r\n[2026-09-02T09:31:19Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a06-5g-light-gray-128gb-sm-a066bzagins/\r\n[2026-09-02T09:31:19Z] Requesting https://www.samsung.com/in/smartphones/galaxy-f/galaxy-f70-pro-5g-alpha-black-128gb-sm-e476bzkbins/\r\n[2026-09-02T09:31:20Z] Requesting https://www.samsung.com/in/smartphones/galaxy-m/galaxy-m17e-5g-blitz-blue-128gb-sm-m076blbains/\r\n[2026-09-02T09:31:20Z] Requesting https://www.samsung.com/in/smartphones/galaxy-s25/buy/?modelCode=SM-S931BZKCINS\r\n[2026-09-02T09:31:21Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a56-5g-awesome-graphite-256gb-sm-a566ezkhins/\r\n[2026-09-02T09:31:23Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a36-5g-awesome-lavender-128gb-certified-re-newed-sm5a366elvjins/\r\n[2026-09-02T09:31:23Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a56-5g-awesome-olive-256gb-certified-re-newed-sm5a566ezggins/\r\n[2026-09-02T09:31:23Z] Requesting https://www.samsung.com/in/smartphones/galaxy-a/galaxy-a56-5g-awesome-olive-256gb-certified-re-newed-sm5a566ezghins/\r\n[2026-09-02T09:31:24Z] Requesting https://www.samsung.com/in/smartphones/galaxy-m/galaxy-m07-black-64gb-sm-m075fzkdins/\r\n[2026-09-02T09:31:24Z] Requesting https://www.samsung.com/in/\r\n[2026-09-02T09:31:24Z] Requesting https://www.samsung.com/in/mobile/\r\n[2026-09-02T09:31:24Z] Requesting https://www.samsung.com/in/smartphones\r\n[2026-09-02T09:31:24Z] Writing 0 extracted rows and 224 flags\r\n[2026-09-02T09:31:25Z] Scraper completed\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-09-02T15:01:25"
+    }
+  },
+  "153dc88c-8fdf-4484-b4a1-ad7d757bb896": {
+    "job_id": "153dc88c-8fdf-4484-b4a1-ad7d757bb896",
+    "name": "Samsung Galaxy Smartphones Collector",
+    "status": "completed",
+    "created_at": "2026-09-02T15:10:08",
+    "target_url": "https://www.samsung.com/in/smartphones/all-smartphones/",
+    "sample_keyword": "Galaxy S26",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport json\nimport re\nfrom datetime import datetime, timezone\nfrom urllib.parse import urljoin\n\nimport pandas as pd\nfrom bs4 import BeautifulSoup\nfrom playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError\n\nDEFAULT_LISTING_URL = \"https://www.samsung.com/in/smartphones/all-smartphones/\"\n\n\ndef log(message):\n    timestamp = datetime.now(timezone.utc).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n    print(f\"[{timestamp}] {message}\", flush=True)\n\n\ndef clean(value):\n    if value is None or pd.isna(value) or str(value).strip().lower() in (\"\", \"nan\", \"none\", \"null\"):\n        return \"\"\n    try:\n        if pd.isna(value):\n            return \"\"\n    except (TypeError, ValueError):\n        pass\n    text = str(value).strip()\n    if text.lower() in {\"nan\", \"none\", \"null\"}:\n        return \"\"\n    return text\n\n\ndef value_from_row(row, column):\n    return clean(row[column]) if column in row else \"\"\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError(\"CAPTCHA solving is intentionally not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    signals = []\n    try:\n        status = response.status\n        url = response.url\n    except Exception:\n        return [\"Unable to inspect an HTTP response\"]\n\n    if status == 403:\n        signals.append(\"HTTP 403 Forbidden\")\n    elif status == 429:\n        signals.append(\"HTTP 429 Too Many Requests\")\n\n    body = \"\"\n    try:\n        body = response.body().decode(\"utf-8\", errors=\"ignore\")\n    except Exception:\n        body = \"\"\n\n    combined = f\"{url}\\n{body}\".lower()\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in combined:\n            signals.append(description)\n\n    try:\n        content_type = response.headers.get(\"content-type\", \"\").lower()\n    except Exception:\n        content_type = \"\"\n    if status == 200 and (\"text/html\" in content_type or not content_type) and body and len(body) < 500:\n        signals.append(\"Unusually short HTML response body\")\n    return signals\n\n\ndef dismiss_cookie_banner(page):\n    consent_texts = [\"Accept all\", \"Accept\", \"I agree\", \"Allow all\", \"Agree\"]\n    attempted = False\n    for text in consent_texts:\n        try:\n            locator = page.get_by_text(text, exact=True).first\n            if locator.count() > 0:\n                attempted = True\n                locator.click(timeout=700)\n                log(f\"Cookie consent dismissal clicked: {text}\")\n                return True\n        except Exception:\n            continue\n    log(\"Cookie consent dismissal attempted, but no matching consent button was found\")\n    return False\n\n\ndef add_flag(flags, url, message, severity=\"warning\"):\n    flags.append({\n        \"Timestamp\": datetime.now(timezone.utc).isoformat(),\n        \"URL\": clean(url),\n        \"Severity\": severity,\n        \"Flag\": message,\n    })\n\n\ndef text_of(soup):\n    return soup.get_text(\"\\n\", strip=True).replace(\"\\xa0\", \" \")\n\n\ndef first_nonempty(values):\n    for value in values:\n        value = clean(value)\n        if value:\n            return value\n    return \"\"\n\n\ndef jsonld_objects(soup):\n    objects = []\n    for node in soup.find_all(\"script\", attrs={\"type\": \"application/ld+json\"}):\n        try:\n            parsed = json.loads(node.string or node.get_text())\n            if isinstance(parsed, list):\n                objects.extend(parsed)\n            else:\n                objects.append(parsed)\n        except (TypeError, ValueError, json.JSONDecodeError):\n            continue\n    return objects\n\n\ndef product_jsonld(soup):\n    for obj in jsonld_objects(soup):\n        if isinstance(obj, dict):\n            if obj.get(\"@type\") == \"Product\" or \"offers\" in obj or \"sku\" in obj:\n                return obj\n            graph = obj.get(\"@graph\")\n            if isinstance(graph, list):\n                for child in graph:\n                    if isinstance(child, dict) and (child.get(\"@type\") == \"Product\" or \"offers\" in child):\n                        return child\n    return {}\n\n\ndef extract_near_label(text, labels):\n    label_pattern = \"|\".join(re.escape(label) for label in labels)\n    pattern = re.compile(rf\"(?:{label_pattern})\\s*[:\\-]?\\s*([^\\n]{{1,240}})\", re.IGNORECASE)\n    match = pattern.search(text)\n    return clean(match.group(1)) if match else \"\"\n\n\ndef extract_detail(html, url):\n    soup = BeautifulSoup(html, \"html.parser\")\n    text = text_of(soup)\n    data = product_jsonld(soup)\n    offers = data.get(\"offers\", {}) if isinstance(data, dict) else {}\n    if isinstance(offers, list):\n        offers = offers[0] if offers else {}\n    if not isinstance(offers, dict):\n        offers = {}\n\n    title = first_nonempty([\n        data.get(\"name\") if isinstance(data, dict) else \"\",\n        soup.find(\"h1\").get_text(\" \", strip=True) if soup.find(\"h1\") else \"\",\n        soup.title.get_text(\" \", strip=True) if soup.title else \"\",\n    ])\n    price = first_nonempty([\n        offers.get(\"price\"),\n        extract_near_label(text, [\"Price\", \"MRP\", \"\u20b9\", \"INR\"]),\n    ])\n    if price:\n        price = re.sub(r\"\\s+\", \" \", str(price)).strip()\n        if re.fullmatch(r\"[\\d,]+(?:\\.\\d+)?\", price):\n            price = f\"INR {price}\"\n\n    model_code = first_nonempty([\n        data.get(\"sku\") if isinstance(data, dict) else \"\",\n        extract_near_label(text, [\"Model Code\", \"Model number\", \"Model Number\", \"SKU\"]),\n    ])\n    colors = first_nonempty([\n        data.get(\"color\") if isinstance(data, dict) else \"\",\n        extract_near_label(text, [\"Available Colors\", \"Colors\", \"Colour\", \"Color\"]),\n    ])\n    storage = extract_near_label(text, [\"Storage Variants\", \"Storage\", \"Internal Storage\", \"Memory\"])\n    display = extract_near_label(text, [\"Display Specs\", \"Display\", \"Screen size\", \"Screen\"])\n    camera = extract_near_label(text, [\"Camera Specs\", \"Camera\", \"Rear Camera\", \"Front Camera\"])\n    battery = extract_near_label(text, [\"Battery Capacity\", \"Battery\", \"Battery capacity\"])\n\n    return {\n        \"Product Name\": title,\n        \"Model Code\": model_code,\n        \"Price in INR\": price,\n        \"Available Colors\": colors,\n        \"Storage Variants\": storage,\n        \"Display Specs\": display,\n        \"Camera Specs\": camera,\n        \"Battery Capacity\": battery,\n        \"Source URL\": url,\n    }\n\n\ndef listing_links(html, listing_url, keyword):\n    soup = BeautifulSoup(html, \"html.parser\")\n    keyword_lower = clean(keyword).lower()\n    candidates = []\n    for obj in jsonld_objects(soup):\n        if not isinstance(obj, dict) or obj.get(\"@type\") != \"ItemList\":\n            continue\n        for item in obj.get(\"itemListElement\", []):\n            if not isinstance(item, dict):\n                continue\n            item_url = item.get(\"url\")\n            item_data = item.get(\"item\") if isinstance(item.get(\"item\"), dict) else {}\n            item_url = item_url or item_data.get(\"url\")\n            item_name = item.get(\"name\") or item_data.get(\"name\") or \"\"\n            if item_url and (not keyword_lower or keyword_lower in clean(item_name).lower()):\n                candidates.append((urljoin(listing_url, item_url), item_name))\n\n    for anchor in soup.find_all(\"a\", href=True):\n        href = urljoin(listing_url, anchor[\"href\"])\n        name = anchor.get_text(\" \", strip=True)\n        if not name:\n            continue\n        if keyword_lower and keyword_lower not in name.lower():\n            continue\n        if any(token in href.lower() for token in [\"smartphone\", \"galaxy\", \"/in/\"]):\n            candidates.append((href, name))\n\n    result = []\n    seen = set()\n    for href, name in candidates:\n        if href not in seen:\n            seen.add(href)\n            result.append((href, name))\n    return result\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Samsung India smartphone scraper\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(\"Reading input workbook\")\n    input_df = pd.read_excel(args.input).fillna(\"\")\n    extracted = []\n    flags = []\n    proxy = get_proxy()\n\n    with sync_playwright() as playwright:\n        browser = playwright.chromium.launch(headless=True, proxy=proxy)\n        context = browser.new_context()\n        page = context.new_page()\n\n        def on_response(response):\n            for signal in detect_anti_bot_signals(response):\n                add_flag(flags, response.url, signal)\n\n        page.on(\"response\", on_response)\n\n        for row_number, row in input_df.iterrows():\n            keyword = value_from_row(row, \"keyword\")\n            listing_url = value_from_row(row, \"listing_url\")\n            detail_url = value_from_row(row, \"detail_url\")\n            if detail_url:\n                targets = [(detail_url, \"direct detail URL\")]\n            else:\n                listing_url = listing_url or DEFAULT_LISTING_URL\n                log(f\"Row {row_number + 1}: loading listing {listing_url}\")\n                try:\n                    page.goto(listing_url, wait_until=\"domcontentloaded\", timeout=45000)\n                    dismissed = dismiss_cookie_banner(page)\n                    if not dismissed:\n                        add_flag(flags, listing_url, \"Possible cookie-banner layout change; no consent button matched\")\n                    page.wait_for_timeout(1500)\n                    targets = listing_links(page.content(), listing_url, keyword)\n                    if not targets:\n                        add_flag(flags, listing_url, \"No high-confidence product links found in listing HTML\", \"low-confidence\")\n                except Exception as exc:\n                    add_flag(flags, listing_url, f\"Listing error: {exc}\", \"error\")\n                    targets = []\n\n            for target_url, target_name in targets:\n                if args.max_products is not None and len(extracted) >= args.max_products:\n                    break\n                log(f\"Extracting product {len(extracted) + 1}: {target_url}\")\n                try:\n                    page.goto(target_url, wait_until=\"domcontentloaded\", timeout=45000)\n                    dismissed = dismiss_cookie_banner(page)\n                    if not dismissed:\n                        add_flag(flags, target_url, \"Possible cookie-banner layout change; no consent button matched\")\n                    page.wait_for_timeout(1200)\n                    item = extract_detail(page.content(), target_url)\n                    if keyword and keyword.lower() not in item[\"Product Name\"].lower() and not detail_url:\n                        continue\n                    missing = [key for key in [\"Product Name\", \"Model Code\", \"Price in INR\", \"Available Colors\", \"Storage Variants\", \"Display Specs\", \"Camera Specs\", \"Battery Capacity\"] if not item.get(key)]\n                    if missing:\n                        add_flag(flags, target_url, \"Low-confidence or missing fields: \" + \", \".join(missing), \"low-confidence\")\n                    extracted.append(item)\n                except Exception as exc:\n                    add_flag(flags, target_url, f\"Detail extraction error: {exc}\", \"error\")\n            if args.max_products is not None and len(extracted) >= args.max_products:\n                break\n        browser.close()\n\n    log(f\"Writing {len(extracted)} extracted rows and {len(flags)} flags\")\n    data_columns = [\"Product Name\", \"Model Code\", \"Price in INR\", \"Available Colors\", \"Storage Variants\", \"Display Specs\", \"Camera Specs\", \"Battery Capacity\", \"Source URL\"]\n    flag_columns = [\"Timestamp\", \"URL\", \"Severity\", \"Flag\"]\n    with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n        pd.DataFrame(extracted, columns=data_columns).to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        pd.DataFrame(flags, columns=flag_columns).to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(\"Scrape complete\")\n\n\nif __name__ == \"__main__\":\n    main()",
+      "requirements_txt": "pandas\nopenpyxl\nbeautifulsoup4\nplaywright\n",
+      "confidence_notes": [
+        "The inspection found no reliable product-card selectors, so the script primarily uses ItemList JSON-LD and generic anchor fallback links.",
+        "The site appeared to require or benefit from browser rendering; this script therefore uses Playwright and does not assume a discovered API.",
+        "Search success was unverified during inspection. Keyword filtering is applied to ItemList names, anchor text, and the extracted detail title, but the site's search UI is not used.",
+        "No detail page was reached during inspection. Model code, INR price, colors, storage, display, camera, and battery selectors were not verified; generic labels and Product JSON-LD are used as low-confidence fallbacks and missing values are flagged.",
+        "Navigation from listing to product details was not reliably exposed in the snapshot. Direct detail_url rows are intentionally independent and navigate directly to the supplied URL.",
+        "No cookie banner was observed. The required consent helper still attempts common buttons after every navigation and records a possible layout-change flag when none matches.",
+        "No network API was observed; no API endpoint is invented.",
+        "The requested exclusion categories are not reliably represented by inspected fields. Because only smartphone listing links are followed and no verified accessory/refurbished markers were available, explicit category exclusion could not be implemented confidently; this limitation is flagged here.",
+        "Playwright browsers must also be installed separately, typically with `playwright install chromium` after pip installation."
+      ],
+      "total_tool_calls": 9,
+      "action_log": [
+        {
+          "ts": "2026-09-02T15:10:17",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.samsung.com/in/smartphones/all-smartphones/"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-09-02T15:10:19",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-09-02T15:10:21",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-09-02T15:10:21",
+          "phase": "recon",
+          "tool": "browser_take_screenshot",
+          "input": {},
+          "call_number": 4
+        },
+        {
+          "ts": "2026-09-02T15:10:22",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input[type='search'], input[placeholder*='Search'], input[aria-label*='Search']",
+            "text": "Galaxy S26"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-09-02T15:10:23",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-09-02T15:10:25",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 7
+        },
+        {
+          "ts": "2026-09-02T15:10:26",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "a[href*='/in/smartphones/galaxy-s26']"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-09-02T15:10:27",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 9
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "153dc88c-8fdf-4484-b4a1-ad7d757bb896",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-09-02T15:11:06",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.007241,
+      "input_tokens": 21271,
+      "output_tokens": 4911,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16145,
+      "num_turns": 10,
+      "duration_ms": 57376,
+      "duration_api_ms": 57376,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "153dc88c-8fdf-4484-b4a1-ad7d757bb896",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T15:10:31",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.001523,
+          "input_tokens": 19307,
+          "output_tokens": 473,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 16145,
+          "num_turns": 9,
+          "duration_ms": 22620,
+          "duration_api_ms": 22620,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 19307,
+              "output_tokens": 473,
+              "cached_tokens": 16145,
+              "cost_usd": 0.001523
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "153dc88c-8fdf-4484-b4a1-ad7d757bb896",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T15:11:06",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005718,
+          "input_tokens": 1964,
+          "output_tokens": 4438,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 34756,
+          "duration_api_ms": 34756,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1964,
+              "output_tokens": 4438,
+              "cached_tokens": 0,
+              "cost_usd": 0.005718
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\samsung_galaxy_smartphones_collector_153dc88c",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "[2026-09-02T09:43:46Z] Reading input workbook\r\n[2026-09-02T09:43:50Z] Row 1: loading listing https://www.samsung.com/in/smartphones/all-smartphones/\r\n[2026-09-02T09:43:57Z] Cookie consent dismissal clicked: Accept\r\n[2026-09-02T09:43:59Z] Extracting product 1: https://www.samsung.com/in/smartphones/galaxy-s26-ultra/buy/?modelCode=SM-S948BZVBINS\r\n[2026-09-02T09:44:07Z] Cookie consent dismissal attempted, but no matching consent button was found\r\n[2026-09-02T09:44:12Z] Extracting product 2: https://www.samsung.com/in/smartphones/galaxy-s26/buy/?modelCode=SM-S942BZVQINS\r\n[2026-09-02T09:44:22Z] Cookie consent dismissal attempted, but no matching consent button was found\r\n[2026-09-02T09:44:27Z] Extracting product 3: https://www.samsung.com/in/smartphones/galaxy-s26-ultra/buy/?modelCode=SM-S948BZDCINS\r\n[2026-09-02T09:44:36Z] Cookie consent dismissal attempted, but no matching consent button was found\r\n[2026-09-02T09:44:42Z] Writing 3 extracted rows and 25 flags\r\n[2026-09-02T09:44:42Z] Scrape complete\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-09-02T15:14:43"
+    }
   }
 }

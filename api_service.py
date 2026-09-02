@@ -35,7 +35,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
-from inspection_agent_service import InspectionJob, InspectionResult, run_inspection_job
+from inspection_agent_service import InspectionJob, InspectionResult, run_inspection_job, sanitize_generated_code
 from auth_config import require_credentials_at_startup, CredentialError
 from cost_metering import JSONLCostSink
 
@@ -142,7 +142,8 @@ def write_generated_files_to_disk(job_id: str, name: str, generated_code: str, r
     folder = GENERATED_SCRIPTS_DIR / _safe_folder_name(name, job_id)
     folder.mkdir(parents=True, exist_ok=True)
 
-    (folder / "generated_scraper.py").write_text(generated_code, encoding="utf-8")
+    clean_code, _ = sanitize_generated_code(generated_code)
+    (folder / "generated_scraper.py").write_text(clean_code, encoding="utf-8")
     (folder / "requirements.txt").write_text(
         requirements_txt or "# agent did not return requirements.txt\n",
         encoding="utf-8",

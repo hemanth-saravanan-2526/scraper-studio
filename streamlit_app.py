@@ -324,10 +324,6 @@ if nav_selection == "⚡ Builder":
             <h1 class="app-title">Scraper Studio</h1>
             <div class="app-subtitle">Describe what to collect in plain English. OpenAI (GPT-5.6 Luna) inspects the live site with Playwright and generates production-ready Python scrapers.</div>
             <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-                <span class="badge pill-blue">REPAIR: GPT-5.6-LUNA</span>
-                <span class="badge pill-purple">INSPECT: GPT-4O-SEARCH-PREVIEW</span>
-                <span class="badge pill-green">SELF-HEALING</span>
-                <span class="badge pill-orange">ZERO-DOWNTIME</span>
             </div>
         </div>
     </div>
@@ -336,23 +332,23 @@ if nav_selection == "⚡ Builder":
     with st.form("builder_form"):
         col1, col2 = st.columns([2, 1])
         with col1:
-            job_name = st.text_input("Scraper Name", value="Samsung Smartphones Data Collector", placeholder="e.g. Samsung India Smartphone Collector")
-            target_url = st.text_input("Target URL (Listing or Detail Page)", value="https://www.samsung.com/in/smartphones/all-smartphones/")
+            job_name = st.text_input("Scraper Name", placeholder="e.g. Samsung Smartphones Data Collector")
+            target_url = st.text_input("Target URL (Listing or Detail Page)", placeholder="https://www.example.com/products")
         with col2:
-            sample_keyword = st.text_input("Sample Keyword (Optional)", value="Galaxy S24", placeholder="e.g. Galaxy S24")
+            sample_keyword = st.text_input("Sample Keyword (Optional)", placeholder="e.g. Galaxy S24")
             uploaded_excel = st.file_uploader("Sample Input Excel (.xlsx)", type=["xlsx", "xls"], help="Upload an Excel file with keyword/listing_url columns to test with.")
         
         st.markdown("### Natural Language Rules")
         tab_search, tab_filter, tab_nav, tab_extract = st.tabs(["🔎 Search Rules", "🎯 Filter Rules", "🧭 Navigation Rules", "📦 Extraction Rules"])
         
         with tab_search:
-            search_rules = st.text_area("Search Rules", value="Match products whose title or slug contains the search keyword.", height=90)
+            search_rules = st.text_area("Search Rules", placeholder="Describe search rules (e.g. Match products whose title or slug contains the search keyword)...", height=90)
         with tab_filter:
-            filter_rules = st.text_area("Filter Rules", value="Ignore accessories, cases, and refurbished products.", height=90)
+            filter_rules = st.text_area("Filter Rules", placeholder="Describe filter rules (e.g. Ignore accessories, cases, and refurbished products)...", height=90)
         with tab_nav:
-            navigation_rules = st.text_area("Navigation Rules", value="Listing page -> click through to each product detail page to inspect specs.", height=90)
+            navigation_rules = st.text_area("Navigation Rules", placeholder="Describe navigation rules (e.g. Listing page -> click through to each product detail page to inspect specs)...", height=90)
         with tab_extract:
-            extraction_rules = st.text_area("Extraction Rules (Fields to capture)", value="Product Title, Model Code, Price (INR), Color options, Storage capacity, Display specs, Camera specs, and Availability status.", height=90)
+            extraction_rules = st.text_area("Extraction Rules (Fields to capture)", placeholder="Describe extraction rules (e.g. Product Title, Model Code, Price, Color, Specs, Availability)...", height=90)
         
         with st.expander("⚙️ Advanced Settings (Models, Limits, & Budget)"):
             c1, c2, c3 = st.columns(3)
@@ -369,17 +365,18 @@ if nav_selection == "⚡ Builder":
         submit_btn = st.form_submit_button("🚀 Generate Scraper")
 
     if submit_btn:
-        if not target_url:
+        if not target_url or not target_url.strip():
             st.error("Please provide a valid Target URL.")
         else:
+            effective_job_name = job_name.strip() if job_name and job_name.strip() else "Custom Scraper"
             job_req = InspectionJob(
                 job_id=str(time.time()).replace(".", "-"),
-                target_url=target_url,
-                sample_keyword=sample_keyword or None,
-                search_rules=search_rules,
-                filter_rules=filter_rules,
-                navigation_rules=navigation_rules,
-                extraction_rules=extraction_rules,
+                target_url=target_url.strip(),
+                sample_keyword=sample_keyword.strip() if sample_keyword else None,
+                search_rules=search_rules.strip() if search_rules else "",
+                filter_rules=filter_rules.strip() if filter_rules else "",
+                navigation_rules=navigation_rules.strip() if navigation_rules else "",
+                extraction_rules=extraction_rules.strip() if extraction_rules else "",
                 max_steps=max_steps,
                 max_seconds=max_seconds,
                 max_budget_usd=max_budget,
@@ -391,13 +388,13 @@ if nav_selection == "⚡ Builder":
             # Create Job Record
             async def _run_job_flow():
                 record = await store.create(api_service.CreateJobRequest(
-                    name=job_name,
-                    target_url=target_url,
-                    sample_keyword=sample_keyword or None,
-                    search_rules=search_rules,
-                    filter_rules=filter_rules,
-                    navigation_rules=navigation_rules,
-                    extraction_rules=extraction_rules,
+                    name=effective_job_name,
+                    target_url=target_url.strip(),
+                    sample_keyword=sample_keyword.strip() if sample_keyword else None,
+                    search_rules=search_rules.strip() if search_rules else "",
+                    filter_rules=filter_rules.strip() if filter_rules else "",
+                    navigation_rules=navigation_rules.strip() if navigation_rules else "",
+                    extraction_rules=extraction_rules.strip() if extraction_rules else "",
                     max_steps=max_steps,
                     max_seconds=max_seconds,
                     max_budget_usd=max_budget,
@@ -418,7 +415,7 @@ if nav_selection == "⚡ Builder":
                     )
                     log_placeholder.markdown(f"<div class='log-container'>{log_html}</div>", unsafe_allow_html=True)
                 
-                status_placeholder.info(f"⏳ Running autonomous agent inspection for **{job_name}**...")
+                status_placeholder.info(f"⏳ Running autonomous agent inspection for **{effective_job_name}**...")
                 
                 job_req.job_id = record.job_id
                 res = await run_inspection_job(job_req, on_log_entry=_on_log)

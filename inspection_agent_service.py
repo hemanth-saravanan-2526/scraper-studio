@@ -19,6 +19,7 @@ Architectural highlights:
   - Real-time anti-bot detection for fast failover.
 """
 
+import ast
 import asyncio
 import json
 import os
@@ -214,7 +215,24 @@ out how to call it:
     don't need this - they don't render overlays.
   - Print a timestamped log line for each major step (mirroring a
     `log()` helper), so a person running it from the command line can see
-    progress."""
+    progress.
+  - REGEX & CODE SYNTAX RULES (CRITICAL):
+    * In raw strings (r"..." or r'...'), use SINGLE backslashes for regex tokens:
+      r"\\d+", r"\\s+", r"\\b", r"\\w+", r"\\(?[2-9]\\d{2}\\)?", r"\\.com".
+      NEVER double-escape inside raw strings (do NOT write r"\\\\d", r"\\\\s", r"\\\\b", r"\\\\(").
+    * Double backslashes in raw strings create literal backslash characters which
+      break regex parsing (e.g. r"\\\\(?" causes Python's re parser to fail with
+      "PatternError: unknown extension ?[").
+    * When escaping literal parentheses in regex, use r"\\(" and r"\\)" (or re.escape).
+    * For HTML string cleaning with BeautifulSoup, use "\\n" as separator (e.g.
+      node.get_text("\\n", strip=True)) and "\\xa0" for non-breaking space replacement.
+    * The script must be syntactically valid Python 3 and compile with zero errors.
+  - INPUT EXCEL & NAN HANDLING RULES (CRITICAL):
+    * When reading Excel with pandas, always sanitize missing values:
+      `input_df = pd.read_excel(args.input).fillna("")`
+    * Any helper function (e.g. `clean()`, `value_from_row()`) MUST treat `pd.isna(val)`, `None`,
+      and the string `"nan"` / `"none"` / `"null"` as empty string `""`.
+    * NEVER allow `"nan"` to be treated as a valid `detail_url`, `listing_url`, or `keyword`."""
 
 
 def build_recon_prompt(job: InspectionJob) -> str:
@@ -313,6 +331,11 @@ Use requests+BeautifulSoup for static/API-backed content per the findings'
 clearly in the delivered script) where the findings indicate the page
 requires JS rendering.
 
+- REGEX & STRING ESCAPING (CRITICAL):
+  When writing regex patterns, use standard Python raw string literals with single backslashes,
+  e.g. r"\\d{3}", r"\\s+", r"\\b", r"\\([2-9]\\d{2}\\)". Never double-escape backslashes in raw strings
+  (do NOT write r"\\\\d+" or r"\\\\("). Use "\\n" for get_text separator and "\\xa0" for non-breaking spaces.
+
 {SCRIPT_CONTRACT}
 
 Return your final answer as a single JSON object with exactly these keys:
@@ -344,12 +367,13 @@ RECON_SYSTEM_PROMPT = (
 )
 
 CODEGEN_SYSTEM_PROMPT = (
-    "You are a careful Python code-generation agent for Scraper Studio, "
-    "writing a scraper from a prior live-site inspection's findings. You "
-    "have no browser or filesystem access in this step - work only from "
-    "the findings and rules given to you. Where the findings are "
-    "incomplete or ambiguous, say so explicitly in confidence_notes rather "
-    "than guessing at page structure you weren't shown."
+    "You are an expert Python code-generation agent for Scraper Studio, "
+    "writing a clean, production-grade scraper from a prior live-site inspection's findings. "
+    "You have no browser or filesystem access in this step - work only from "
+    "the findings and rules given to you. Follow the mandatory SCRIPT CONTRACT strictly. "
+    "Use standard Python 3 syntax with properly formatted raw strings for regex patterns "
+    "(single backslashes like r'\\d+', r'\\s+', r'\\b', r'\\('), avoiding invalid double-escapes. "
+    "Where findings are incomplete or ambiguous, note them in confidence_notes rather than guessing."
 )
 
 CODEGEN_MAX_TURNS = 6
@@ -357,46 +381,171 @@ CODEGEN_MAX_SECONDS = 180
 
 
 # --------------------------------------------------------------------------
-# Output Parsing
+# Output Parsing & Code Sanitization
 # --------------------------------------------------------------------------
 
+def sanitize_regex_in_raw_string(content: str) -> str:
+    """
+    In raw strings (r"..." or r'...'), LLMs often mistakenly double-escape backslashes,
+    e.g. r"\\\\d+" instead of r"\\d+", r"\\\\(" instead of r"\\(", r"\\\\s+" instead of r"\\s+",
+    r"\\\\b" instead of r"\\b".
+    In Python raw strings, '\\\\' is two literal backslash characters.
+    When compiled as regex, '\\\\(' becomes a literal backslash followed by '(', which causes
+    '(?' to be parsed as a regex extension like '(?[', throwing PatternError.
+    
+    This function replaces double-backslashes before regex tokens in raw strings with single backslashes.
+    """
+    pattern = r"\\\\([bBdDsSwW\(\)\[\]\{\}\+\*\?\.\-\/\^\|\$\\\'\"]|[nrt]|xa0|[ux][0-9a-fA-F]+|[0-9])"
+    
+    def replacer(m):
+        return "\\" + m.group(1)
+        
+    return re.sub(pattern, replacer, content)
+
+
+def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
+    """Sanitizes, auto-repairs, and validates LLM-generated Python scraper code."""
+    notes = []
+    if not code or not code.strip():
+        return code, notes
+
+    sanitized = code.strip()
+
+    # 1. Strip markdown fences if present
+    if sanitized.startswith("```"):
+        sanitized = re.sub(r"^```(?:python)?\s*\n?", "", sanitized)
+        sanitized = re.sub(r"\n?```\s*$", "", sanitized)
+
+    # 2. Fix BeautifulSoup/string literal common mistakes
+    # node.get_text("\\n" -> node.get_text("\n"
+    sanitized = re.sub(
+        r'(\.get_text\()\s*["\']\\\\n["\']',
+        lambda m: m.group(1) + '"\\n"',
+        sanitized
+    )
+    # text.replace("\\xa0" -> text.replace("\xa0"
+    sanitized = re.sub(
+        r'(\.replace\()\s*["\']\\\\xa0["\']',
+        lambda m: m.group(1) + '"\\xa0"',
+        sanitized
+    )
+    # text.replace("\\n" -> text.replace("\n"
+    sanitized = re.sub(
+        r'(\.replace\()\s*["\']\\\\n["\']',
+        lambda m: m.group(1) + '"\\n"',
+        sanitized
+    )
+
+    # 3. Fix double-escaped raw strings: r"..." or r'...'
+    def fix_raw_string_match(match):
+        prefix = match.group(1)
+        quote = match.group(2)
+        body = match.group(3)
+        fixed_body = sanitize_regex_in_raw_string(body)
+        return f"{prefix}{quote}{fixed_body}{quote}"
+
+    # Handle triple-quoted raw strings
+    sanitized = re.sub(
+        r'(r[fF]?|R[fF]?)(["\']{3})(.*?)\2',
+        fix_raw_string_match,
+        sanitized,
+        flags=re.DOTALL
+    )
+
+    # Handle single-quoted raw strings (non-triple)
+    sanitized = re.sub(
+        r'(r[fF]?|R[fF]?)(["\'])(.*?)\2',
+        fix_raw_string_match,
+        sanitized
+    )
+
+    # 4. Fix Excel NaN / empty-cell handling in clean helpers & pd.read_excel
+    sanitized = re.sub(
+        r'def\s+clean(?:_text)?\s*\(\s*value\s*\)\s*:\s*\n\s*if\s+value\s+is\s+None\s*:\s*\n\s*return\s*["\']["\']',
+        'def clean(value):\n    if value is None or pd.isna(value) or str(value).strip().lower() in ("", "nan", "none", "null"):\n        return ""',
+        sanitized
+    )
+    sanitized = re.sub(
+        r'(pd\.read_excel\([^)\n]+)\)(?!\s*\.\s*fillna)',
+        r'\1).fillna("")',
+        sanitized
+    )
+
+    # 5. Fix row value access: str(row.get(...) or "") where nan string could be created
+    sanitized = re.sub(
+        r'str\(\s*row\.get\(\s*(["\'](?:detail_url|listing_url|keyword)["\'])\s*(?:,\s*["\'][^"\']*["\'])?\s*\)\s*(?:or\s*["\'][^"\']*["\'])?\s*\)',
+        r'(str(row.get(\1) or "") if str(row.get(\1) or "").strip().lower() not in ("nan", "none", "null") else "")',
+        sanitized
+    )
+
+    # 6. Guard goto / navigation functions against invalid URLs (like "nan")
+    def guard_goto(m):
+        func_def = m.group(0)
+        return func_def + '\n    if not url or str(url).strip().lower() in ("", "nan", "none", "null") or not str(url).startswith(("http://", "https://")):\n        return'
+
+    sanitized = re.sub(
+        r'async\s+def\s+(?:goto_with_dismissal|safe_goto|navigate)\s*\(\s*page\s*,\s*url\s*(?:,\s*[^)]*)?\s*\)\s*:',
+        guard_goto,
+        sanitized
+    )
+
+    # 7. AST validation
+    try:
+        ast.parse(sanitized)
+    except SyntaxError as exc:
+        notes.append(f"Generated code had Python syntax error on line {exc.lineno}: {exc.msg}")
+
+    return sanitized, notes
+
+
 def parse_agent_output(final_text: str) -> tuple[str, str, list[str]]:
-    """Extracts (generated_code, requirements_txt, confidence_notes) with fallbacks."""
+    """Extracts (generated_code, requirements_txt, confidence_notes) with fallbacks and sanitization."""
     text = (final_text or "").strip()
+    raw_code = ""
+    reqs = ""
+    notes = []
 
     try:
         parsed = json.loads(text)
         if isinstance(parsed, dict):
-            return (
-                parsed.get("generated_code", ""),
-                parsed.get("requirements_txt", ""),
-                parsed.get("confidence_notes", []) if isinstance(parsed.get("confidence_notes"), list) else [],
-            )
+            raw_code = parsed.get("generated_code", "")
+            reqs = parsed.get("requirements_txt", "")
+            notes = parsed.get("confidence_notes", []) if isinstance(parsed.get("confidence_notes"), list) else []
     except (json.JSONDecodeError, TypeError):
         pass
 
-    fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
-    if fence_match:
-        try:
-            parsed = json.loads(fence_match.group(1))
-            notes = parsed.get("confidence_notes", []) if isinstance(parsed.get("confidence_notes"), list) else []
-            notes.append("Agent wrapped its JSON in a markdown fence instead of returning it raw - extracted automatically.")
-            return parsed.get("generated_code", ""), parsed.get("requirements_txt", ""), notes
-        except (json.JSONDecodeError, TypeError):
-            pass
+    if not raw_code:
+        fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+        if fence_match:
+            try:
+                parsed = json.loads(fence_match.group(1))
+                if isinstance(parsed, dict):
+                    raw_code = parsed.get("generated_code", "")
+                    reqs = parsed.get("requirements_txt", "")
+                    notes = parsed.get("confidence_notes", []) if isinstance(parsed.get("confidence_notes"), list) else []
+                    notes.append("Agent wrapped its JSON in a markdown fence instead of returning it raw - extracted automatically.")
+            except (json.JSONDecodeError, TypeError):
+                pass
 
-    code_match = re.search(r"```python\s*(.*?)\s*```", text, re.DOTALL)
-    if code_match:
-        return code_match.group(1), "", [
-            "Agent did not return valid JSON - extracted code from a ```python "
-            "fenced block in its response instead. requirements_txt could not "
-            "be recovered this way - check the script's imports manually."
+    if not raw_code:
+        code_match = re.search(r"```python\s*(.*?)\s*```", text, re.DOTALL)
+        if code_match:
+            raw_code = code_match.group(1)
+            notes.append(
+                "Agent did not return valid JSON - extracted code from a ```python "
+                "fenced block in its response instead. requirements_txt could not "
+                "be recovered this way - check the script's imports manually."
+            )
+
+    if not raw_code:
+        return "", "", [
+            "Agent response could not be parsed as JSON or a fenced code block - "
+            "no usable code was extracted. Re-running the job often resolves this."
         ]
 
-    return "", "", [
-        "Agent response could not be parsed as JSON or a fenced code block - "
-        "no usable code was extracted. Re-running the job often resolves this."
-    ]
+    sanitized_code, sanitization_notes = sanitize_generated_code(raw_code)
+    notes.extend(sanitization_notes)
+    return sanitized_code, reqs, notes
 
 
 def parse_recon_output(final_text: str) -> tuple[dict, list[str]]:
