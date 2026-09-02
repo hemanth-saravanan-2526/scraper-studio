@@ -7,16 +7,16 @@
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap');
 
   :root{
-    --bg:#0a0d12;
-    --panel:#10141b;
-    --panel-2:#151a22;
-    --border:#232a35;
-    --text:#e6e9ee;
-    --text-dim:#8b93a1;
-    --accent:#4fd1a5;
-    --accent-dim:#2c6b53;
-    --amber:#e0a750;
-    --red:#e0616b;
+    --bg:#f8f9fc;
+    --panel:#ffffff;
+    --panel-2:#f1f4f8;
+    --border:#e2e8f0;
+    --text:#0f172a;
+    --text-dim:#64748b;
+    --accent:#ff5722;
+    --accent-dim:#ff8a65;
+    --amber:#ea580c;
+    --red:#dc2626;
     --mono:'JetBrains Mono',monospace;
     --sans:'Inter',sans-serif;
   }
@@ -175,7 +175,7 @@
     <div class="view active" id="view-home">
       <div class="eyebrow">Overview</div>
       <h1>Scraper Studio</h1>
-      <p class="subtitle">Describe what to collect in plain English. Claude inspects the live site and generates a working, downloadable Python scraper.</p>
+      <p class="subtitle">Describe what to collect in plain English. OpenAI (GPT-5.6 Luna) inspects the live site and generates a working, downloadable Python scraper.</p>
 
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-num">1</div><div class="stat-label">Scrapers built</div></div>
@@ -215,7 +215,7 @@
     <div class="view" id="view-builder">
       <div class="eyebrow">New Scraper</div>
       <h1>Builder</h1>
-      <p class="subtitle">Define your target and rules. Claude opens the real site before generating code.</p>
+      <p class="subtitle">Define your target and rules. OpenAI inspects the real site with Playwright MCP before generating code.</p>
 
       <div class="form-section">
         <h3>Name</h3>
@@ -225,7 +225,7 @@
 
       <div class="form-section">
         <h3>Target</h3>
-        <p class="form-hint">One URL — Claude figures out whether it's a listing page or a detail page by looking at it.</p>
+        <p class="form-hint">One URL — OpenAI figures out whether it's a listing page or a detail page by looking at it.</p>
         <label>Listing / search page URL — or a single item's detail page</label>
         <input type="text" id="input-target-url" value="https://www.samsung.com/in/smartphones/all-smartphones/">
         <label>Sample keyword to test with (optional)</label>
@@ -291,7 +291,7 @@
 
       <div class="eyebrow">Live Agent Log</div>
       <div class="log-panel" id="log-panel">
-        <div class="sim-note" id="log-mode-note">⚠ SIMULATED TRACE — illustrates what a live Claude Agent SDK + Playwright MCP run streams via GET /jobs/{id}/stream. Not a real live session.</div>
+        <div class="sim-note" id="log-mode-note">⚠ SIMULATED TRACE — illustrates what a live OpenAI + Playwright MCP run streams via GET /jobs/{id}/stream. Not a real live session.</div>
         <div id="log-lines"></div>
       </div>
 
@@ -570,7 +570,7 @@ function showSamsungDemo(){
     <div class="code-tab" onclick="showCode('cfg',this)">config.json</div>
     <div class="code-tab" onclick="showCode('req',this)">requirements.txt</div>`;
   showCode('py', document.querySelector('#code-tabbar .code-tab'));
-  document.getElementById('log-mode-note').textContent = '⚠ SIMULATED TRACE — illustrates what a live Claude Agent SDK + Playwright MCP run streams via GET /jobs/{id}/stream. Not a real live session.';
+  document.getElementById('log-mode-note').textContent = '⚠ SIMULATED TRACE — illustrates what a live OpenAI + Playwright MCP run streams via GET /jobs/{id}/stream. Not a real live session.';
   document.getElementById('log-mode-note').style.color = 'var(--amber)';
 
   document.getElementById('run-it-target').textContent = '— for samsung.com/in';

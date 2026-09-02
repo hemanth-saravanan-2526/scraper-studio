@@ -1,32 +1,33 @@
 """
-Anthropic credential provisioning for the Inspection Agent Service.
+OpenAI credential provisioning for the Inspection Agent Service.
 
-The Claude Agent SDK shells out to the bundled Claude Code CLI, which reads
-credentials from environment variables - there is no credentials= argument
-on ClaudeAgentOptions. So "provisioning the API key" means: get the right
-env vars set, correctly, before any ClaudeSDKClient is constructed, and fail
-loudly and early if that didn't happen - never let a job silently run
-unauthenticated and discover the problem 40 tool calls in.
+Centralizes provisioning and validation for OpenAI credentials before any agent
+session or API service startup, and fails loudly and early if credentials are
+missing or malformed - never let a job silently run unauthenticated.
 
-Supports three auth backends (mirrors what Claude Code itself supports):
-  - Direct Anthropic API key  (ANTHROPIC_API_KEY)
-  - Amazon Bedrock            (CLAUDE_CODE_USE_BEDROCK=1 + AWS credentials)
-  - Google Vertex AI          (CLAUDE_CODE_USE_VERTEX=1 + GCP credentials)
+Supports two primary auth backends:
+  - Direct OpenAI API key      (OPENAI_API_KEY, optional OPENAI_ORG_ID, OPENAI_PROJECT_ID, OPENAI_BASE_URL)
+  - Azure OpenAI Service       (AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT)
 
-Direct API key is default. Bedrock/Vertex are selected by env flag because
-that's how the underlying CLI picks them - this module doesn't invent new
-config surface, it just validates what's already there before use.
+Direct OpenAI API key is default.
 """
 
 import os
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+    # Load .env from current directory or workspace root
+    load_dotenv(override=False)
+except ImportError:
+    pass
 
 
 class AuthBackend(str, Enum):
     API_KEY = "api_key"
-    BEDROCK = "bedrock"
-    VERTEX = "vertex"
+    AZURE_OPENAI = "azure_openai"
 
 
 class CredentialError(RuntimeError):
@@ -38,30 +39,30 @@ class CredentialError(RuntimeError):
 class ResolvedCredentials:
     backend: AuthBackend
     detail: str  # human-readable, safe to log (never contains the secret itself)
+    api_key: str | None = None
+    base_url: str | None = None
+    org_id: str | None = None
+    project_id: str | None = None
 
 
 def _mask(secret: str) -> str:
+    if not secret:
+        return "****"
     if len(secret) <= 8:
         return "****"
-    return f"{secret[:6]}...{secret[-4:]}"
+    return f"{secret[:7]}...{secret[-4:]}"
 
 
 def get_secret_from_manager(secret_name: str) -> str | None:
     """
     Extension point: wire this to your actual secrets manager (AWS Secrets
-    Manager, GCP Secret Manager, HashiCorp Vault, etc.) instead of relying
-    on a plaintext env var in production. Called only as a fallback when the
-    env var itself isn't set - see resolve_credentials() below.
+    Manager, GCP Secret Manager, HashiCorp Vault, Azure Key Vault, etc.)
+    instead of relying on a plaintext env var in production. Called only
+    as a fallback when the env var itself isn't set.
 
     Returns None if not implemented / not found, so callers fall through to
     the "missing" error path rather than crashing here.
     """
-    # Example (commented, not wired - fill in for your actual provider):
-    #
-    # import boto3
-    # client = boto3.client("secretsmanager")
-    # resp = client.get_secret_value(SecretId=secret_name)
-    # return resp["SecretString"]
     return None
 
 
@@ -72,61 +73,71 @@ def resolve_credentials() -> ResolvedCredentials:
     Raises CredentialError with a specific, actionable message on failure -
     never returns a partially-valid state.
     """
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(override=False)
+    except ImportError:
+        pass
 
-    if os.environ.get("CLAUDE_CODE_USE_BEDROCK") == "1":
-        missing = [
-            v for v in ("AWS_REGION",)
-            if not os.environ.get(v)
-        ]
-        # AWS SDK credential chain (env vars, instance role, etc.) handles
-        # the actual AWS auth - we just confirm the region is set, since a
-        # missing region is the single most common misconfiguration here.
-        if missing:
+    # Azure OpenAI backend
+    azure_key = os.environ.get("AZURE_OPENAI_API_KEY")
+    azure_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+    if azure_key or azure_endpoint:
+        if not azure_key or not azure_endpoint:
             raise CredentialError(
-                f"CLAUDE_CODE_USE_BEDROCK=1 but missing required env var(s): {missing}. "
-                "Also confirm AWS credentials are available via the standard AWS "
-                "credential chain (env vars, ~/.aws/credentials, or instance role)."
+                "Azure OpenAI configured partially: both AZURE_OPENAI_API_KEY "
+                "and AZURE_OPENAI_ENDPOINT must be provided."
             )
-        return ResolvedCredentials(AuthBackend.BEDROCK, "Amazon Bedrock (region-scoped)")
+        return ResolvedCredentials(
+            backend=AuthBackend.AZURE_OPENAI,
+            detail=f"Azure OpenAI Endpoint ({azure_endpoint}, key: {_mask(azure_key)})",
+            api_key=azure_key,
+            base_url=azure_endpoint,
+        )
 
-    if os.environ.get("CLAUDE_CODE_USE_VERTEX") == "1":
-        missing = [
-            v for v in ("ANTHROPIC_VERTEX_PROJECT_ID", "CLOUD_ML_REGION")
-            if not os.environ.get(v)
-        ]
-        if missing:
-            raise CredentialError(
-                f"CLAUDE_CODE_USE_VERTEX=1 but missing required env var(s): {missing}."
-            )
-        return ResolvedCredentials(AuthBackend.VERTEX, "Google Vertex AI (project-scoped)")
-
-    # Default path: direct Anthropic API key
-    api_key = os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+    # Direct OpenAI API key path
+    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENAI_AUTH_TOKEN")
 
     if not api_key:
-        # Fall back to a secrets manager before giving up.
-        fetched = get_secret_from_manager("anthropic-api-key")
+        fetched = get_secret_from_manager("openai-api-key")
         if fetched:
-            os.environ["ANTHROPIC_API_KEY"] = fetched
+            os.environ["OPENAI_API_KEY"] = fetched
             api_key = fetched
 
     if not api_key:
         raise CredentialError(
-            "No Anthropic credentials found. Set ANTHROPIC_API_KEY (or "
-            "ANTHROPIC_AUTH_TOKEN) in the environment, wire "
-            "get_secret_from_manager() to your secrets store, or set "
-            "CLAUDE_CODE_USE_BEDROCK=1 / CLAUDE_CODE_USE_VERTEX=1 with the "
-            "corresponding cloud credentials."
+            "No OpenAI credentials found. Set OPENAI_API_KEY in the environment, "
+            "wire get_secret_from_manager() to your secrets store, or set "
+            "AZURE_OPENAI_API_KEY / AZURE_OPENAI_ENDPOINT for Azure OpenAI."
         )
 
-    if not api_key.startswith("sk-ant-"):
+    clean_key = api_key.strip().strip("'\"")
+
+    if not clean_key.startswith("sk-"):
         raise CredentialError(
-            f"ANTHROPIC_API_KEY does not match the expected 'sk-ant-...' format "
-            f"(got {_mask(api_key)}). Check for a copy-paste error or a stray "
+            f"OPENAI_API_KEY does not match the expected 'sk-...' format "
+            f"(got {_mask(clean_key)}). Check for a copy-paste error or a stray "
             "quote/whitespace character in your env file."
         )
 
-    return ResolvedCredentials(AuthBackend.API_KEY, f"Direct API key ({_mask(api_key)})")
+    base_url = os.environ.get("OPENAI_BASE_URL")
+    org_id = os.environ.get("OPENAI_ORG_ID")
+    project_id = os.environ.get("OPENAI_PROJECT_ID")
+
+    details = [f"Direct OpenAI API key ({_mask(clean_key)})"]
+    if base_url:
+        details.append(f"base_url={base_url}")
+    if org_id:
+        details.append(f"org={org_id}")
+
+    return ResolvedCredentials(
+        backend=AuthBackend.API_KEY,
+        detail=", ".join(details),
+        api_key=clean_key,
+        base_url=base_url,
+        org_id=org_id,
+        project_id=project_id,
+    )
 
 
 def require_credentials_at_startup() -> ResolvedCredentials:

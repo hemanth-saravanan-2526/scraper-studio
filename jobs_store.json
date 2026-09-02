@@ -5,6 +5,9 @@
     "status": "budget_limit_hit",
     "created_at": "2026-08-20T16:24:08",
     "target_url": "https://restaurants.subway.com/united-states/al",
+    "sample_keyword": null,
+    "recon_model": null,
+    "codegen_model": null,
     "result": {
       "generated_code": "",
       "requirements_txt": "",
@@ -246,7 +249,9 @@
         }
       }
     },
-    "saved_to": null
+    "saved_to": null,
+    "anti_bot_marker": null,
+    "test_run": null
   },
   "976fab0d-b0bf-4f29-a59e-b79eaf8c9cc1": {
     "job_id": "976fab0d-b0bf-4f29-a59e-b79eaf8c9cc1",
@@ -254,6 +259,9 @@
     "status": "budget_limit_hit",
     "created_at": "2026-08-20T17:15:41",
     "target_url": "https://restaurants.subway.com/united-states",
+    "sample_keyword": null,
+    "recon_model": null,
+    "codegen_model": null,
     "result": {
       "generated_code": "",
       "requirements_txt": "",
@@ -453,7 +461,9 @@
         }
       }
     },
-    "saved_to": null
+    "saved_to": null,
+    "anti_bot_marker": null,
+    "test_run": null
   },
   "07c8e14e-ba29-4f15-8943-bf2d95f2e1a2": {
     "job_id": "07c8e14e-ba29-4f15-8943-bf2d95f2e1a2",
@@ -461,6 +471,9 @@
     "status": "budget_limit_hit",
     "created_at": "2026-08-21T00:55:46",
     "target_url": "https://www.staffordmsd.org/contact/directory",
+    "sample_keyword": null,
+    "recon_model": null,
+    "codegen_model": null,
     "result": {
       "generated_code": "",
       "requirements_txt": "",
@@ -636,7 +649,9 @@
         }
       ]
     },
-    "saved_to": null
+    "saved_to": null,
+    "anti_bot_marker": null,
+    "test_run": null
   },
   "c596138c-1b89-4a96-bba6-534bef19db33": {
     "job_id": "c596138c-1b89-4a96-bba6-534bef19db33",
@@ -644,6 +659,9 @@
     "status": "budget_limit_hit",
     "created_at": "2026-08-21T15:38:57",
     "target_url": "https://www.humbleisd.net/staff",
+    "sample_keyword": null,
+    "recon_model": null,
+    "codegen_model": null,
     "result": {
       "generated_code": "",
       "requirements_txt": "",
@@ -822,6 +840,1623 @@
         }
       ]
     },
-    "saved_to": null
+    "saved_to": null,
+    "anti_bot_marker": null,
+    "test_run": null
+  },
+  "cef77664-68b8-46c7-a792-77254613eb0e": {
+    "job_id": "cef77664-68b8-46c7-a792-77254613eb0e",
+    "name": "Samsung Smartphones Data Collector",
+    "status": "failed",
+    "created_at": "2026-08-31T08:25:12",
+    "target_url": "https://www.samsung.com/in/smartphones/all-smartphones/",
+    "sample_keyword": "Galaxy S24",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "",
+      "requirements_txt": "",
+      "confidence_notes": [
+        "Recon phase produced no output text.",
+        "Recon phase did not produce usable findings - codegen phase was skipped to avoid spending additional budget."
+      ],
+      "total_tool_calls": 0,
+      "action_log": [
+        {
+          "ts": "2026-08-31T08:25:23",
+          "error": "Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-5.6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param': 'reasoning_effort', 'code': None}}"
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "cef77664-68b8-46c7-a792-77254613eb0e",
+      "session_id": [
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T08:25:23",
+      "subtype": "recon=failed",
+      "is_error": true,
+      "total_cost_usd": 0.0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "num_turns": 1,
+      "duration_ms": 10775,
+      "duration_api_ms": 10775,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "cef77664-68b8-46c7-a792-77254613eb0e",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T08:25:23",
+          "subtype": "failed",
+          "is_error": true,
+          "total_cost_usd": 0.0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 10775,
+          "duration_api_ms": 10775,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "cached_tokens": 0,
+              "cost_usd": 0.0
+            }
+          },
+          "phase": "recon"
+        }
+      ]
+    },
+    "saved_to": null,
+    "anti_bot_marker": null,
+    "test_run": null
+  },
+  "f29b13f4-db2b-4074-9e20-6a6a8c24bd24": {
+    "job_id": "f29b13f4-db2b-4074-9e20-6a6a8c24bd24",
+    "name": "Samsung Smartphones Data Collector",
+    "status": "completed",
+    "created_at": "2026-08-31T08:31:10",
+    "target_url": "https://www.samsung.com/in/smartphones/all-smartphones/",
+    "sample_keyword": "Galaxy S24",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport json\nimport re\nimport sys\nfrom datetime import datetime, timezone\nfrom urllib.parse import urljoin, urlparse\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\nDEFAULT_LISTING_URL = \"https://www.samsung.com/in/smartphones/all-smartphones/\"\nUSER_AGENT = \"Mozilla/5.0 (compatible; ScraperStudio/1.0; +https://www.samsung.com/)\"\n\n\ndef log(message):\n    timestamp = datetime.now(timezone.utc).isoformat(timespec=\"seconds\")\n    print(f\"[{timestamp}] {message}\", flush=True)\n\n\ndef get_proxy():\n    \"\"\"Placeholder for an externally supplied proxy integration.\"\"\"\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    \"\"\"CAPTCHA solving and anti-bot bypass are intentionally not implemented.\"\"\"\n    raise NotImplementedError(\"CAPTCHA solving is not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    \"\"\"Return descriptive anti-bot signals without attempting to bypass them.\"\"\"\n    signals = []\n    body = response.text or \"\"\n    lowered = body.lower()\n    if response.status_code in (403, 429):\n        signals.append(f\"HTTP status {response.status_code}\")\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in lowered:\n            signals.append(description)\n    if len(body.strip()) < 500:\n        signals.append(f\"unusually short response body ({len(body.strip())} characters)\")\n    return signals\n\n\ndef add_flag(flags, flag_type, url, message):\n    flags.append({\n        \"timestamp\": datetime.now(timezone.utc).isoformat(timespec=\"seconds\"),\n        \"type\": flag_type,\n        \"url\": url or \"\",\n        \"message\": message,\n    })\n\n\ndef fetch(session, url, flags):\n    log(f\"Fetching {url}\")\n    try:\n        response = session.get(\n            url,\n            headers={\"User-Agent\": USER_AGENT, \"Accept-Language\": \"en-IN,en;q=0.9\"},\n            timeout=30,\n            proxies=get_proxy(),\n        )\n    except requests.RequestException as exc:\n        add_flag(flags, \"error\", url, f\"HTTP request failed: {exc}\")\n        return None\n    for signal in detect_anti_bot_signals(response):\n        add_flag(flags, \"anti-bot\", url, signal)\n    if response.status_code >= 400:\n        add_flag(flags, \"error\", url, f\"HTTP status {response.status_code}\")\n        return None\n    return response\n\n\ndef jsonld_objects(soup):\n    objects = []\n    for script in soup.select('script[type=\"application/ld+json\"]'):\n        try:\n            value = json.loads(script.string or script.get_text())\n        except (TypeError, json.JSONDecodeError):\n            continue\n        if isinstance(value, list):\n            objects.extend(value)\n        else:\n            objects.append(value)\n    return objects\n\n\ndef object_types(obj):\n    value = obj.get(\"@type\", []) if isinstance(obj, dict) else []\n    return value if isinstance(value, list) else [value]\n\n\ndef listing_items(soup, listing_url):\n    items = []\n    for obj in jsonld_objects(soup):\n        candidates = []\n        if isinstance(obj, dict) and (\"ItemList\" in object_types(obj) or \"itemListElement\" in obj):\n            candidates = obj.get(\"itemListElement\", [])\n        for entry in candidates:\n            item = entry.get(\"item\", entry) if isinstance(entry, dict) else entry\n            if not isinstance(item, dict):\n                continue\n            url = item.get(\"url\") or item.get(\"@id\")\n            name = item.get(\"name\") or item.get(\"headline\") or \"\"\n            if url:\n                items.append({\"url\": urljoin(listing_url, url), \"name\": str(name)})\n    deduped = []\n    seen = set()\n    for item in items:\n        if item[\"url\"] not in seen:\n            seen.add(item[\"url\"])\n            deduped.append(item)\n    return deduped\n\n\ndef excluded_product(name, url):\n    value = f\"{name} {url}\".lower()\n    return any(word in value for word in (\"accessor\", \"case\", \"refurbished\"))\n\n\ndef find_first(obj, keys):\n    if isinstance(obj, dict):\n        for key in keys:\n            if obj.get(key) not in (None, \"\", []):\n                return obj.get(key)\n        for value in obj.values():\n            result = find_first(value, keys)\n            if result not in (None, \"\", []):\n                return result\n    elif isinstance(obj, list):\n        for value in obj:\n            result = find_first(value, keys)\n            if result not in (None, \"\", []):\n                return result\n    return None\n\n\ndef all_product_objects(objects):\n    result = []\n    for obj in objects:\n        if isinstance(obj, dict):\n            types = [str(x).lower() for x in object_types(obj)]\n            if any(x in (\"product\", \"productgroup\", \"productmodel\") for x in types):\n                result.append(obj)\n            graph = obj.get(\"@graph\")\n            if isinstance(graph, list):\n                result.extend(all_product_objects(graph))\n    return result\n\n\ndef regex_value(text, patterns):\n    for pattern in patterns:\n        match = re.search(pattern, text, flags=re.I | re.S)\n        if match:\n            return re.sub(r\"\\\\s+\", \" \", match.group(1)).strip(\" :;-\\n\")\n    return \"\"\n\n\ndef extract_detail(response, url, flags):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    text = re.sub(r\"\\\\s+\", \" \", soup.get_text(\" \", strip=True))\n    objects = jsonld_objects(soup)\n    products = all_product_objects(objects)\n    product = products[0] if products else {}\n\n    title = product.get(\"name\", \"\") if isinstance(product, dict) else \"\"\n    if not title:\n        heading = soup.find([\"h1\", \"h2\"])\n        title = heading.get_text(\" \", strip=True) if heading else \"\"\n    if not title:\n        title = regex_value(text, [r\"(Galaxy\\\\s+[A-Za-z0-9 +\\\\-]+)\"]) or \"\"\n\n    model_code = find_first(product, [\"sku\", \"mpn\", \"model\", \"modelCode\"]) or \"\"\n    if isinstance(model_code, dict):\n        model_code = model_code.get(\"value\", \"\") or model_code.get(\"name\", \"\")\n    offers = product.get(\"offers\", {}) if isinstance(product, dict) else {}\n    if isinstance(offers, list):\n        offers = offers[0] if offers else {}\n    price = offers.get(\"price\", \"\") if isinstance(offers, dict) else \"\"\n    currency = offers.get(\"priceCurrency\", \"INR\") if isinstance(offers, dict) else \"INR\"\n    price_value = f\"{price} {currency}\" if price != \"\" else \"\"\n\n    colors = []\n    color = product.get(\"color\", \"\") if isinstance(product, dict) else \"\"\n    if color:\n        colors.extend(color if isinstance(color, list) else [color])\n    storage = regex_value(text, [r\"Storage\\\\s*[:\\\\-]?\\\\s*([0-9]+\\\\s*(?:GB|TB))\", r\"([0-9]+\\\\s*(?:GB|TB))\\\\s*(?:storage|ROM)\"])\n    display = regex_value(text, [r\"Display(?:\\\\s+size)?\\\\s*[:\\\\-]?\\\\s*(.{0,180}?)(?:Camera|Processor|Battery|Memory|Storage)\"])\n    camera = regex_value(text, [r\"Camera\\\\s*[:\\\\-]?\\\\s*(.{0,220}?)(?:Display|Processor|Battery|Memory|Storage)\"])\n    availability = \"\"\n    if isinstance(offers, dict):\n        availability = offers.get(\"availability\", \"\")\n    if availability:\n        availability = str(availability).rsplit(\"/\", 1)[-1]\n    if not availability:\n        availability = regex_value(text, [r\"(In stock|Out of stock|Available|Sold out|Currently unavailable)\"])\n\n    fields = {\n        \"Product Title\": title,\n        \"Model Code\": str(model_code),\n        \"Price (INR)\": price_value,\n        \"Color options\": \", \".join(dict.fromkeys(str(x) for x in colors)),\n        \"Storage capacity\": storage,\n        \"Display specs\": display,\n        \"Camera specs\": camera,\n        \"Availability status\": availability,\n        \"Detail URL\": url,\n    }\n    uncertain = [name for name, value in fields.items() if name != \"Detail URL\" and not value]\n    if uncertain:\n        add_flag(flags, \"low-confidence\", url, \"Fields not exposed or not confidently located: \" + \", \".join(uncertain))\n    if not products:\n        add_flag(flags, \"low-confidence\", url, \"No Product/ProductGroup JSON-LD object was found\")\n    return fields\n\n\ndef read_input(path):\n    try:\n        frame = pd.read_excel(path)\n    except Exception as exc:\n        raise RuntimeError(f\"Could not read input workbook: {exc}\") from exc\n    for column in (\"keyword\", \"listing_url\", \"detail_url\"):\n        if column not in frame.columns:\n            frame[column] = \"\"\n    return frame.fillna(\"\")\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Samsung smartphone scraper\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(\"Starting scraper\")\n    try:\n        input_frame = read_input(args.input)\n    except RuntimeError as exc:\n        log(str(exc))\n        sys.exit(1)\n    session = requests.Session()\n    flags = []\n    extracted = []\n    processed = 0\n\n    for _, row in input_frame.iterrows():\n        keyword = str(row.get(\"keyword\", \"\")).strip()\n        detail_url = str(row.get(\"detail_url\", \"\")).strip()\n        listing_url = str(row.get(\"listing_url\", \"\")).strip() or DEFAULT_LISTING_URL\n\n        if detail_url:\n            log(f\"Using independent detail URL path: {detail_url}\")\n            response = fetch(session, detail_url, flags)\n            if response is not None:\n                extracted.append(extract_detail(response, detail_url, flags))\n                processed += 1\n            if args.max_products is not None and processed >= args.max_products:\n                break\n            continue\n\n        log(f\"Crawling listing page: {listing_url}\")\n        response = fetch(session, listing_url, flags)\n        if response is None:\n            continue\n        soup = BeautifulSoup(response.text, \"html.parser\")\n        items = listing_items(soup, listing_url)\n        if not items:\n            add_flag(flags, \"low-confidence\", listing_url, \"No ItemList JSON-LD products found; rendered card selectors were not known\")\n        keyword_lower = keyword.lower()\n        if keyword:\n            items = [item for item in items if keyword_lower in (item[\"name\"] + \" \" + item[\"url\"]).lower()]\n        items = [item for item in items if not excluded_product(item[\"name\"], item[\"url\"])]\n        log(f\"Found {len(items)} matching listing products\")\n        for item in items:\n            if args.max_products is not None and processed >= args.max_products:\n                break\n            product_response = fetch(session, item[\"url\"], flags)\n            if product_response is None:\n                continue\n            extracted.append(extract_detail(product_response, item[\"url\"], flags))\n            processed += 1\n        if args.max_products is not None and processed >= args.max_products:\n            break\n\n    log(f\"Writing {len(extracted)} extracted rows and {len(flags)} flags\")\n    data_columns = [\"Product Title\", \"Model Code\", \"Price (INR)\", \"Color options\", \"Storage capacity\", \"Display specs\", \"Camera specs\", \"Availability status\", \"Detail URL\"]\n    flag_columns = [\"timestamp\", \"type\", \"url\", \"message\"]\n    with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n        pd.DataFrame(extracted, columns=data_columns).to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        pd.DataFrame(flags, columns=flag_columns).to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(\"Scraper finished\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "requirements_txt": "requests\nbeautifulsoup4\npandas\nopenpyxl\n",
+      "confidence_notes": [
+        "The inspection found no network API, so this script uses requests and BeautifulSoup plus JSON-LD parsing only; Samsung's rendered listing and detail content may require JavaScript, in which case static responses can be incomplete.",
+        "Exact listing-card and detail-data CSS selectors were not exposed, so the scraper intentionally relies on ItemList and Product/ProductGroup JSON-LD and conservative text patterns rather than inventing selectors.",
+        "The observed search interaction did not confirm a filtered URL or result flow. Keyword matching is therefore performed locally against each ItemList item's title and URL, as required by the stated search rule.",
+        "The inspection reported an ItemList containing 55 items, but did not confirm whether all item URLs are directly usable detail pages; failures are recorded in Flags.",
+        "Model code, INR price, color options, storage, display, camera, and availability were not verified in the snapshot. Missing fields are emitted as blank and flagged as low-confidence.",
+        "The observed detail title combined Galaxy S24 and S24+, and the script does not split that title into separate products without separate ItemList or detail data.",
+        "Accessory/case/refurbished exclusion is implemented using case-insensitive title/URL text matching; unusual Samsung naming that does not contain those terms may not be excluded.",
+        "No browser is used because no browser dependency or reliable selector findings were supplied. Consequently, the mandatory cookie-banner browser helper is not applicable to this static-only implementation.",
+        "The max-products cap is applied to successfully processed detail products across input rows; direct detail URLs take an independent path and do not require a prior listing crawl."
+      ],
+      "total_tool_calls": 14,
+      "action_log": [
+        {
+          "ts": "2026-08-31T08:31:19",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.samsung.com/in/smartphones/all-smartphones/"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-31T08:31:20",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-31T08:31:22",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-08-31T08:31:22",
+          "phase": "recon",
+          "tool": "browser_take_screenshot",
+          "input": {},
+          "call_number": 4
+        },
+        {
+          "ts": "2026-08-31T08:31:23",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "text=Filters"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-08-31T08:31:24",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 6
+        },
+        {
+          "ts": "2026-08-31T08:31:25",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 7
+        },
+        {
+          "ts": "2026-08-31T08:31:27",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "button[aria-label*='Search'], a[aria-label*='Search'], input[type='search']"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-08-31T08:31:29",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input[type='search']",
+            "text": "Galaxy S24"
+          },
+          "call_number": 9
+        },
+        {
+          "ts": "2026-08-31T08:31:31",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 10
+        },
+        {
+          "ts": "2026-08-31T08:31:32",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 11
+        },
+        {
+          "ts": "2026-08-31T08:31:33",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.samsung.com/in/smartphones/galaxy-s24/buy/"
+          },
+          "call_number": 12
+        },
+        {
+          "ts": "2026-08-31T08:31:35",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 13
+        },
+        {
+          "ts": "2026-08-31T08:31:38",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 14
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "f29b13f4-db2b-4074-9e20-6a6a8c24bd24",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T08:32:16",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.0072,
+      "input_tokens": 37469,
+      "output_tokens": 4559,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 32023,
+      "num_turns": 15,
+      "duration_ms": 65980,
+      "duration_api_ms": 65980,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "f29b13f4-db2b-4074-9e20-6a6a8c24bd24",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T08:31:42",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.002185,
+          "input_tokens": 35938,
+          "output_tokens": 635,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 32023,
+          "num_turns": 14,
+          "duration_ms": 32486,
+          "duration_api_ms": 32486,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 35938,
+              "output_tokens": 635,
+              "cached_tokens": 32023,
+              "cost_usd": 0.002185
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "f29b13f4-db2b-4074-9e20-6a6a8c24bd24",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T08:32:16",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005015,
+          "input_tokens": 1531,
+          "output_tokens": 3924,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 33494,
+          "duration_api_ms": 33494,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1531,
+              "output_tokens": 3924,
+              "cached_tokens": 0,
+              "cost_usd": 0.005015
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\samsung_smartphones_data_collector_f29b13f4",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "[2026-08-31T03:06:35+00:00] Starting scraper\r\n[2026-08-31T03:06:36+00:00] Crawling listing page: https://www.samsung.com/in/smartphones/all-smartphones/\r\n[2026-08-31T03:06:36+00:00] Fetching https://www.samsung.com/in/smartphones/all-smartphones/\r\n[2026-08-31T03:06:37+00:00] Found 0 matching listing products\r\n[2026-08-31T03:06:37+00:00] Writing 0 extracted rows and 1 flags\r\n[2026-08-31T03:06:37+00:00] Scraper finished\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-08-31T08:36:37"
+    }
+  },
+  "3f7d1388-398b-42c4-ab04-9fb9c877ef89": {
+    "job_id": "3f7d1388-398b-42c4-ab04-9fb9c877ef89",
+    "name": "Amazon furniture",
+    "status": "completed",
+    "created_at": "2026-08-31T12:05:52",
+    "target_url": "https://www.amazon.com/",
+    "sample_keyword": "Galaxy S24",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport re\nimport sys\nfrom datetime import datetime, timezone\nfrom urllib.parse import quote_plus, urljoin, urlparse\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\n\nTARGET = \"https://www.amazon.com/\"\nUSER_AGENT = \"Mozilla/5.0 (compatible; ScraperStudio/1.0)\"\nDATA_COLUMNS = [\n    \"Product Title\",\n    \"Model Code\",\n    \"Price (INR)\",\n    \"Color options\",\n    \"Storage capacity\",\n    \"Display specs\",\n    \"Camera specs\",\n    \"Availability status\",\n    \"Source URL\",\n]\nFLAG_COLUMNS = [\"timestamp\", \"url\", \"kind\", \"message\"]\n\n\ndef log(message):\n    timestamp = datetime.now(timezone.utc).isoformat(timespec=\"seconds\")\n    print(f\"[{timestamp}] {message}\", flush=True)\n\n\ndef get_proxy():\n    \"\"\"Placeholder for a caller-provided proxy integration.\"\"\"\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    \"\"\"CAPTCHA solving and anti-bot bypass are intentionally unsupported.\"\"\"\n    raise NotImplementedError(\"CAPTCHA solving is not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    \"\"\"Return observed anti-bot indicators without attempting to bypass them.\"\"\"\n    signals = []\n    body = response.text or \"\"\n    lower = body.lower()\n    if response.status_code == 403:\n        signals.append(\"HTTP 403 Forbidden\")\n    if response.status_code == 429:\n        signals.append(\"HTTP 429 Too Many Requests\")\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in lower:\n            signals.append(description)\n    if len(body.strip()) < 3000:\n        signals.append(f\"Unusually short response body ({len(body.strip())} bytes)\")\n    return signals\n\n\ndef add_flag(flags, url, kind, message):\n    flags.append({\n        \"timestamp\": datetime.now(timezone.utc).isoformat(timespec=\"seconds\"),\n        \"url\": url or \"\",\n        \"kind\": kind,\n        \"message\": message,\n    })\n\n\ndef fetch(session, url, flags):\n    log(f\"Fetching {url}\")\n    try:\n        response = session.get(url, timeout=30, allow_redirects=True)\n    except requests.RequestException as exc:\n        add_flag(flags, url, \"error\", f\"HTTP request failed: {exc}\")\n        return None\n    for signal in detect_anti_bot_signals(response):\n        add_flag(flags, response.url or url, \"anti-bot\", signal)\n    if response.status_code >= 400:\n        add_flag(flags, response.url or url, \"error\", f\"HTTP status {response.status_code}\")\n        return None\n    return response\n\n\ndef clean_text(value):\n    return re.sub(r\"\\s+\", \" \", value or \"\").strip()\n\n\ndef text_after_label(text, labels):\n    compact = clean_text(text)\n    label_pattern = \"|\".join(re.escape(label) for label in labels)\n    match = re.search(rf\"(?:{label_pattern})\\s*[:\\-]?\\s*(.{{1,220}})\", compact, re.I)\n    return clean_text(match.group(1)) if match else \"\"\n\n\ndef extract_detail(response, source_url, flags):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    page_text = clean_text(soup.get_text(\" \", strip=True))\n    title = \"\"\n    h1 = soup.find(\"h1\")\n    if h1:\n        title = clean_text(h1.get_text(\" \", strip=True))\n    if not title and soup.title:\n        title = clean_text(soup.title.get_text(\" \", strip=True))\n        title = re.sub(r\"\\s*[:\\-|].*Amazon.*$\", \"\", title, flags=re.I).strip()\n\n    price = \"\"\n    price_match = re.search(r\"(?:\u20b9|INR|Rs\\.?)[\\s]*[\\d,]+(?:\\.\\d{1,2})?\", page_text, re.I)\n    if price_match:\n        price = price_match.group(0)\n\n    model = text_after_label(page_text, [\"Model\", \"Model Number\", \"Model Name\", \"Item model number\"])\n    color = text_after_label(page_text, [\"Color\", \"Colour\", \"Color options\"])\n    storage = text_after_label(page_text, [\"Storage\", \"Storage capacity\", \"Hard Disk Size\", \"Memory Storage Capacity\"])\n    display = text_after_label(page_text, [\"Display\", \"Display size\", \"Screen Size\", \"Display Technology\"])\n    camera = text_after_label(page_text, [\"Camera\", \"Camera specs\", \"Rear Camera\", \"Front Camera\"])\n\n    availability = \"\"\n    availability_match = re.search(\n        r\"(In Stock|Currently unavailable|Temporarily out of stock|Available|Out of stock|Usually ships[^.]{0,100})\",\n        page_text,\n        re.I,\n    )\n    if availability_match:\n        availability = clean_text(availability_match.group(1))\n\n    if not title:\n        add_flag(flags, source_url, \"low-confidence\", \"No product title found using generic document selectors\")\n    if not any([model, price, color, storage, display, camera, availability]):\n        add_flag(flags, source_url, \"low-confidence\", \"No requested product fields were confidently found\")\n\n    return {\n        \"Product Title\": title,\n        \"Model Code\": model,\n        \"Price (INR)\": price,\n        \"Color options\": color,\n        \"Storage capacity\": storage,\n        \"Display specs\": display,\n        \"Camera specs\": camera,\n        \"Availability status\": availability,\n        \"Source URL\": source_url,\n    }\n\n\ndef product_links(response, base_url):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    links = []\n    seen = set()\n    for anchor in soup.find_all(\"a\", href=True):\n        href = urljoin(base_url, anchor[\"href\"])\n        parsed = urlparse(href)\n        path = parsed.path.lower()\n        if parsed.netloc.lower().endswith(\"amazon.com\") and (\"/dp/\" in path or \"/gp/product/\" in path):\n            normalized = href.split(\"?\")[0]\n            if normalized not in seen:\n                seen.add(normalized)\n                links.append((normalized, clean_text(anchor.get_text(\" \", strip=True))))\n    return links\n\n\ndef keyword_matches(url, anchor_text, keyword):\n    needle = (keyword or \"\").casefold().strip()\n    if not needle:\n        return True\n    haystack = f\"{url} {anchor_text}\".casefold()\n    return needle in haystack\n\n\ndef excluded_product(url, anchor_text):\n    haystack = f\"{url} {anchor_text}\".casefold()\n    return any(term in haystack for term in [\"accessory\", \"accessories\", \"case\", \"refurbished\"])\n\n\ndef process_row(row, session, flags, data, max_products, count):\n    keyword = clean_text(row.get(\"keyword\", \"\"))\n    listing_url = clean_text(row.get(\"listing_url\", \"\"))\n    detail_url = clean_text(row.get(\"detail_url\", \"\"))\n\n    # This is deliberately independent of listing discovery.\n    if detail_url:\n        if max_products is not None and count[0] >= max_products:\n            return\n        response = fetch(session, detail_url, flags)\n        if response is not None:\n            log(f\"Extracting direct detail page {detail_url}\")\n            data.append(extract_detail(response, detail_url, flags))\n            count[0] += 1\n        return\n\n    if keyword and not listing_url:\n        listing_url = TARGET.rstrip(\"/\") + \"/s?k=\" + quote_plus(keyword)\n        log(f\"Constructed Amazon search URL for keyword {keyword!r}\")\n    if not listing_url:\n        add_flag(flags, \"\", \"error\", \"Input row has no keyword, listing_url, or detail_url\")\n        return\n\n    response = fetch(session, listing_url, flags)\n    if response is None:\n        return\n    links = product_links(response, response.url or listing_url)\n    if not links:\n        add_flag(flags, listing_url, \"low-confidence\", \"No product detail links found with generic /dp/ or /gp/product/ patterns\")\n    for detail, anchor_text in links:\n        if max_products is not None and count[0] >= max_products:\n            break\n        if keyword and not keyword_matches(detail, anchor_text, keyword):\n            continue\n        if excluded_product(detail, anchor_text):\n            continue\n        detail_response = fetch(session, detail, flags)\n        if detail_response is None:\n            continue\n        log(f\"Extracting listing product detail {detail}\")\n        data.append(extract_detail(detail_response, detail, flags))\n        count[0] += 1\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Static Amazon product scraper\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(\"Starting scraper; using requests + BeautifulSoup only (no browser rendering)\")\n    try:\n        input_df = pd.read_excel(args.input)\n    except Exception as exc:\n        log(f\"Could not read input workbook: {exc}\")\n        raise\n\n    session = requests.Session()\n    session.headers.update({\"User-Agent\": USER_AGENT, \"Accept-Language\": \"en-US,en;q=0.9\"})\n    flags = []\n    data = []\n    count = [0]\n    for index, row in input_df.iterrows():\n        log(f\"Processing input row {index + 1}\")\n        process_row(row.to_dict(), session, flags, data, args.max_products, count)\n        if args.max_products is not None and count[0] >= args.max_products:\n            log(\"Reached --max-products cap\")\n            break\n\n    log(f\"Writing {len(data)} extracted rows and {len(flags)} flag rows\")\n    output_data = pd.DataFrame(data, columns=DATA_COLUMNS)\n    output_flags = pd.DataFrame(flags, columns=FLAG_COLUMNS)\n    with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n        output_data.to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        output_flags.to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(f\"Finished; output saved to {args.output}\")\n\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except Exception as exc:\n        log(f\"Fatal error: {exc}\")\n        sys.exit(1)\n",
+      "requirements_txt": "requests\nbeautifulsoup4\npandas\nopenpyxl\n",
+      "confidence_notes": [
+        "Amazon returned an effectively empty/minimal page snapshot despite HTTP 200, so search, listings, detail pages, product specifications, prices, and availability could not be verified.",
+        "Do not treat page_type as confirmed production behavior; manually check browser rendering and anti-bot/interstitial handling before running a scraper.",
+        "No CAPTCHA was explicitly observed in the snapshot, but the empty response may indicate an access/interstitial condition.",
+        "No network API or usable selectors were observed. This script therefore uses static requests and generic HTML heuristics rather than verified Amazon selectors or an API.",
+        "The keyword search URL, /dp/ and /gp/product/ link patterns, label-based field extraction, and exclusion keyword matching are assumptions required to provide the requested flow and should be validated against live pages.",
+        "The target is amazon.com, while the requested price field is INR. The script records only prices explicitly rendered with \u20b9, INR, or Rs.; it does not invent currency conversion from US-dollar prices.",
+        "Because no browser is used, no JavaScript rendering or cookie-banner dismissal is implemented. A browser-based approach may be required if the live site returns an interstitial or client-rendered content.",
+        "The short-body threshold is a heuristic and may flag legitimate small responses; all such signals are recorded only in Flags and are never bypassed."
+      ],
+      "total_tool_calls": 3,
+      "action_log": [
+        {
+          "ts": "2026-08-31T12:06:02",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.amazon.com/"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-31T12:06:04",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-31T12:06:05",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "3f7d1388-398b-42c4-ab04-9fb9c877ef89",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T12:06:41",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.005266,
+      "input_tokens": 7047,
+      "output_tokens": 3838,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 4162,
+      "num_turns": 5,
+      "duration_ms": 49084,
+      "duration_api_ms": 49084,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "3f7d1388-398b-42c4-ab04-9fb9c877ef89",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T12:06:08",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.000658,
+          "input_tokens": 5699,
+          "output_tokens": 223,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 4162,
+          "num_turns": 4,
+          "duration_ms": 16148,
+          "duration_api_ms": 16148,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 5699,
+              "output_tokens": 223,
+              "cached_tokens": 4162,
+              "cost_usd": 0.000658
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "3f7d1388-398b-42c4-ab04-9fb9c877ef89",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T12:06:41",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.004608,
+          "input_tokens": 1348,
+          "output_tokens": 3615,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 32936,
+          "duration_api_ms": 32936,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1348,
+              "output_tokens": 3615,
+              "cached_tokens": 0,
+              "cost_usd": 0.004608
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\amazon_furniture_3f7d1388",
+    "anti_bot_marker": null,
+    "test_run": null
+  },
+  "0b5981e8-7f51-4ab6-bb78-f5c9f036422c": {
+    "job_id": "0b5981e8-7f51-4ab6-bb78-f5c9f036422c",
+    "name": "Amazon furniture",
+    "status": "completed",
+    "created_at": "2026-08-31T12:06:18",
+    "target_url": "https://www.amazon.com/",
+    "sample_keyword": "Patio Furniture",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport re\nimport sys\nfrom datetime import datetime, timezone\nfrom urllib.parse import quote, urljoin\n\nimport pandas as pd\nfrom playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError\n\n\nOUTPUT_COLUMNS = [\n    'Product Title', 'Model Code', 'Price (INR)', 'Color options',\n    'Storage capacity', 'Display specs', 'Camera specs',\n    'Availability status', 'Source URL'\n]\nFLAG_COLUMNS = ['Timestamp', 'URL', 'Flag type', 'Message']\n\n\ndef log(message):\n    print(f'[{datetime.now().astimezone().isoformat(timespec=\"seconds\")}] {message}', flush=True)\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError('CAPTCHA solving and anti-bot bypass are not implemented')\n\n\ndef detect_anti_bot_signals(response, body=''):\n    signals = []\n    status = getattr(response, 'status', response if isinstance(response, int) else None)\n    url = getattr(response, 'url', '') if not isinstance(response, int) else ''\n    text = body or ''\n    lowered = text.lower()\n    if status in (403, 429):\n        signals.append(f'HTTP status {status}')\n    markers = {\n        'captcha': 'CAPTCHA marker',\n        'cloudflare': 'Cloudflare marker',\n        'perimeterx': 'PerimeterX marker',\n        'datadome': 'DataDome marker',\n        'javascript is disabled': 'JavaScript-disabled response marker',\n        'enable javascript': 'JavaScript-required response marker'\n    }\n    for marker, description in markers.items():\n        if marker in lowered:\n            signals.append(description)\n    if text and len(text.strip()) < 500:\n        signals.append(f'Unusually short response body ({len(text.strip())} characters)')\n    return signals\n\n\ndef add_flag(flags, url, flag_type, message):\n    flags.append({\n        'Timestamp': datetime.now(timezone.utc).isoformat(),\n        'URL': url or '',\n        'Flag type': flag_type,\n        'Message': message\n    })\n\n\ndef dismiss_cookie_banner(page, flags, url):\n    attempted = True\n    matches = ['Accept all', 'Accept', 'I agree', 'Allow all', 'Agree']\n    try:\n        for text in matches:\n            locator = page.get_by_role('button', name=re.compile(rf'^\\\\s*{re.escape(text)}\\\\s*$', re.I)).first\n            if locator.count() and locator.is_visible(timeout=400):\n                locator.click(timeout=700)\n                log(f'Cookie consent dismissed on {url}')\n                return True\n    except Exception:\n        pass\n    if attempted:\n        log(f'Cookie dismissal was attempted but no matching button was found on {url}')\n        add_flag(flags, url, 'possible layout change', 'Cookie dismissal attempted but no common consent button matched')\n    return False\n\n\ndef safe_goto(page, url, flags):\n    log(f'Opening {url}')\n    try:\n        page.goto(url, wait_until='domcontentloaded', timeout=30000)\n        # This must remain the first operation after every successful page.goto.\n        dismiss_cookie_banner(page, flags, url)\n        return True\n    except Exception as exc:\n        add_flag(flags, url, 'error', f'Navigation failed: {exc}')\n        return False\n\n\ndef first_text(page, selectors):\n    for selector in selectors:\n        try:\n            locator = page.locator(selector).first\n            if locator.count() and locator.is_visible(timeout=500):\n                value = locator.inner_text(timeout=1000).strip()\n                if value:\n                    return value\n        except Exception:\n            continue\n    return ''\n\n\ndef page_text(page):\n    try:\n        return page.locator('body').inner_text(timeout=3000)\n    except Exception:\n        return ''\n\n\ndef labeled_value(text, labels):\n    label_pattern = '|'.join(re.escape(label) for label in labels)\n    match = re.search(rf'(?:{label_pattern})\\\\s*[:\\\\-]?\\\\s*([^\\\\n|;]+)', text, re.I)\n    return match.group(1).strip() if match else ''\n\n\ndef extract_detail(page, url, flags):\n    text = page_text(page)\n    title = first_text(page, [\n        '#productTitle', 'h1 span', 'h1', '[data-feature-name=\"title\"]'\n    ])\n    if not title:\n        title = first_text(page, ['title'])\n    price = first_text(page, [\n        '.a-price .a-offscreen', '#priceblock_ourprice', '#priceblock_dealprice',\n        '.a-price-whole'\n    ])\n    if price and not re.search(r'(?:\u20b9|INR)', price, re.I):\n        price = ''\n    model = labeled_value(text, ['model number', 'model code', 'item model number', 'model'])\n    if not model:\n        match = re.search(r'\\\\b[A-Z0-9][A-Z0-9._-]{2,}\\\\b', text)\n        model = match.group(0) if match else ''\n    color = labeled_value(text, ['color', 'colour'])\n    storage = labeled_value(text, ['storage', '\u5bb9\u91cf', 'memory storage', 'hard disk size'])\n    display = labeled_value(text, ['display', 'screen size', 'display size', 'resolution'])\n    camera = labeled_value(text, ['camera', 'rear camera', 'front camera'])\n    availability = first_text(page, [\n        '#availability', '#outOfStock', '#buybox', '.a-color-success', '.a-color-price'\n    ])\n    if not availability:\n        availability = labeled_value(text, ['availability', 'in stock', 'currently unavailable'])\n    if not availability:\n        availability = 'Unknown'\n\n    low_confidence = []\n    if not title:\n        low_confidence.append('product title was not found')\n    for field, value in [('Model Code', model), ('Price (INR)', price), ('Color options', color),\n                         ('Storage capacity', storage), ('Display specs', display),\n                         ('Camera specs', camera)]:\n        if not value:\n            low_confidence.append(f'{field} was not found')\n    if low_confidence:\n        add_flag(flags, url, 'low-confidence extraction', '; '.join(low_confidence))\n    if not text or 'javascript is disabled' in text.lower():\n        add_flag(flags, url, 'blocked or empty page', 'No usable rendered product content was available')\n\n    return {\n        'Product Title': title,\n        'Model Code': model,\n        'Price (INR)': price,\n        'Color options': color,\n        'Storage capacity': storage,\n        'Display specs': display,\n        'Camera specs': camera,\n        'Availability status': availability,\n        'Source URL': url\n    }\n\n\ndef product_links(page, base_url, keyword=''):\n    links = []\n    keyword_lower = keyword.lower().strip()\n    try:\n        anchors = page.locator('a[href*=\"/dp/\"], a[href*=\"/gp/product/\"]')\n        for index in range(anchors.count()):\n            anchor = anchors.nth(index)\n            href = anchor.get_attribute('href') or ''\n            label = anchor.inner_text(timeout=500).strip()\n            absolute = urljoin(base_url, href)\n            haystack = f'{label} {absolute}'.lower()\n            if keyword_lower and keyword_lower not in haystack:\n                continue\n            if absolute not in links:\n                links.append(absolute)\n    except Exception:\n        pass\n    return links\n\n\ndef excluded_product(title, url):\n    haystack = f'{title} {url}'.lower()\n    return any(term in haystack for term in ['accessor', 'case', 'refurbished', 'renewed'])\n\n\ndef main():\n    parser = argparse.ArgumentParser(description='Amazon product scraper')\n    parser.add_argument('--input', default='input.xlsx')\n    parser.add_argument('--output', default='output.xlsx')\n    parser.add_argument('--max-products', type=int, default=None)\n    args = parser.parse_args()\n\n    log(f'Reading input workbook {args.input}')\n    try:\n        input_df = pd.read_excel(args.input)\n    except Exception as exc:\n        log(f'Could not read input workbook: {exc}')\n        raise\n\n    results = []\n    flags = []\n    processed = 0\n\n    with sync_playwright() as playwright:\n        log('Starting Chromium browser; Amazon was observed to require JavaScript rendering')\n        browser = playwright.chromium.launch(headless=True, proxy=get_proxy())\n        context = browser.new_context()\n\n        def inspect_response(response):\n            try:\n                body = response.body().decode('utf-8', errors='ignore')\n            except Exception:\n                body = ''\n            for signal in detect_anti_bot_signals(response, body):\n                add_flag(flags, response.url, 'anti-bot signal', signal)\n\n        context.on('response', inspect_response)\n        page = context.new_page()\n\n        for row_number, row in input_df.iterrows():\n            if args.max_products is not None and processed >= args.max_products:\n                break\n            keyword = str(row.get('keyword', '') or '').strip()\n            listing_url = str(row.get('listing_url', '') or '').strip()\n            detail_url = str(row.get('detail_url', '') or '').strip()\n\n            if detail_url:\n                # Independent fast path: it does not depend on a listing crawl.\n                if safe_goto(page, detail_url, flags):\n                    item = extract_detail(page, detail_url, flags)\n                    if not excluded_product(item['Product Title'], detail_url):\n                        results.append(item)\n                        processed += 1\n                    else:\n                        add_flag(flags, detail_url, 'filtered product', 'Ignored accessory, case, refurbished, or renewed item')\n                continue\n\n            target_listing = listing_url\n            if not target_listing and keyword:\n                target_listing = f'https://www.amazon.com/s?k={quote(keyword)}'\n            if not target_listing:\n                add_flag(flags, '', 'error', f'Input row {row_number + 2} has no keyword, listing_url, or detail_url')\n                continue\n\n            if not safe_goto(page, target_listing, flags):\n                continue\n            links = product_links(page, target_listing, keyword)\n            if not links:\n                add_flag(flags, target_listing, 'low-confidence extraction', 'No product links were observed; the page may be JavaScript-disabled or structurally changed')\n            for link in links:\n                if args.max_products is not None and processed >= args.max_products:\n                    break\n                if not safe_goto(page, link, flags):\n                    continue\n                item = extract_detail(page, link, flags)\n                title_or_slug = f'{item[\"Product Title\"]} {link}'.lower()\n                if keyword and keyword.lower() not in title_or_slug:\n                    add_flag(flags, link, 'filtered product', 'Title or URL does not contain the requested keyword')\n                    continue\n                if excluded_product(item['Product Title'], link):\n                    add_flag(flags, link, 'filtered product', 'Ignored accessory, case, refurbished, or renewed item')\n                    continue\n                results.append(item)\n                processed += 1\n\n        context.close()\n        browser.close()\n\n    log(f'Writing {len(results)} extracted items and {len(flags)} flags to {args.output}')\n    extracted_df = pd.DataFrame(results, columns=OUTPUT_COLUMNS)\n    flags_df = pd.DataFrame(flags, columns=FLAG_COLUMNS)\n    with pd.ExcelWriter(args.output, engine='openpyxl') as writer:\n        extracted_df.to_excel(writer, sheet_name='Extracted Data', index=False)\n        flags_df.to_excel(writer, sheet_name='Flags', index=False)\n    log('Run complete')\n\n\nif __name__ == '__main__':\n    main()\n",
+      "requirements_txt": "pandas==2.2.3\nopenpyxl==3.1.5\nplaywright==1.49.1\n",
+      "confidence_notes": [
+        "Amazon returned HTTP 202 with a JavaScript-disabled page, so no products, search controls, listing links, or detail pages could be inspected.",
+        "No CAPTCHA was observed, but production checks should verify access in a browser with JavaScript enabled.",
+        "No listing or detail selectors were observed. The script therefore uses generic Amazon URL patterns and common selectors as fallbacks; these selectors are assumptions and may require validation.",
+        "Search-flow behavior was not tested. The script assumes Amazon's conventional /s?k= search URL and filters links using visible anchor text and URL text.",
+        "The requested Price (INR) field is left blank when the rendered price is not explicitly marked with INR or the rupee symbol; no exchange-rate conversion was invented.",
+        "The script uses Playwright because the inspection showed JavaScript-required rendering, rather than a requests/BeautifulSoup path. The Playwright browser binary must be installed separately, for example with `playwright install chromium`.",
+        "The generic model-code and labeled-specification fallbacks may capture incomplete or incorrect values on a changed Amazon layout; such missing fields are recorded in Flags.",
+        "Cookie dismissal is attempted after every successful page.goto as required. When no common consent button is found, the script logs and records a possible-layout-change flag, even when no banner exists.",
+        "Anti-bot signals are only recorded. No CAPTCHA solving, proxy rotation, or other bypass behavior is implemented."
+      ],
+      "total_tool_calls": 3,
+      "action_log": [
+        {
+          "ts": "2026-08-31T12:06:26",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.amazon.com/"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-31T12:06:27",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-31T12:06:28",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "0b5981e8-7f51-4ab6-bb78-f5c9f036422c",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T12:07:11",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.006286,
+      "input_tokens": 7034,
+      "output_tokens": 4692,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 4171,
+      "num_turns": 5,
+      "duration_ms": 52681,
+      "duration_api_ms": 52681,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "0b5981e8-7f51-4ab6-bb78-f5c9f036422c",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T12:06:30",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.000618,
+          "input_tokens": 5724,
+          "output_tokens": 187,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 4171,
+          "num_turns": 4,
+          "duration_ms": 12224,
+          "duration_api_ms": 12224,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 5724,
+              "output_tokens": 187,
+              "cached_tokens": 4171,
+              "cost_usd": 0.000618
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "0b5981e8-7f51-4ab6-bb78-f5c9f036422c",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T12:07:11",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005668,
+          "input_tokens": 1310,
+          "output_tokens": 4505,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 40457,
+          "duration_api_ms": 40457,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1310,
+              "output_tokens": 4505,
+              "cached_tokens": 0,
+              "cost_usd": 0.005668
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\amazon_furniture_0b5981e8",
+    "anti_bot_marker": null,
+    "test_run": null
+  },
+  "eb1202f7-49a7-4e6b-b39c-7b5c22500f7e": {
+    "job_id": "eb1202f7-49a7-4e6b-b39c-7b5c22500f7e",
+    "name": "Amazon furniture",
+    "status": "completed",
+    "created_at": "2026-08-31T12:09:59",
+    "target_url": "https://www.amazon.com/",
+    "sample_keyword": "Patio Furniture",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport re\nimport sys\nfrom datetime import datetime, timezone\nfrom urllib.parse import quote_plus, urljoin\n\nimport pandas as pd\nfrom playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError\n\n\nTARGET = \"https://www.amazon.com/\"\n\n\ndef log(message):\n    timestamp = datetime.now(timezone.utc).isoformat(timespec=\"seconds\")\n    print(f\"[{timestamp}] {message}\", flush=True)\n\n\ndef get_proxy():\n    \"\"\"Proxy configuration is intentionally not implemented.\"\"\"\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    \"\"\"CAPTCHA solving and anti-bot bypass are intentionally not implemented.\"\"\"\n    raise NotImplementedError(\"CAPTCHA solving is not implemented\")\n\n\ndef detect_anti_bot_signals(response, body=None):\n    \"\"\"Return anti-bot signal descriptions for one HTTP response.\"\"\"\n    signals = []\n    status = getattr(response, \"status\", None)\n    url = getattr(response, \"url\", \"\")\n    if status in (403, 429):\n        signals.append(f\"HTTP status {status}\")\n\n    headers = getattr(response, \"headers\", {}) or {}\n    content_type = str(headers.get(\"content-type\", \"\")).lower()\n    text = (body or \"\")[:200000].lower()\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in text:\n            signals.append(description)\n\n    if body is not None and (\"text/html\" in content_type or not content_type):\n        if len(body.strip()) < 200:\n            signals.append(\"Unusually short HTML response body\")\n    return signals\n\n\ndef dismiss_cookie_banner(page, flags, page_url):\n    \"\"\"Try common consent controls; absence is recorded as a possible layout change.\"\"\"\n    consent_texts = [\"Accept all\", \"Accept\", \"I agree\", \"Allow all\", \"Agree\"]\n    matched = False\n    attempted = True\n    try:\n        for text in consent_texts:\n            locator = page.get_by_role(\"button\", name=re.compile(rf\"^{re.escape(text)}$\", re.I)).first\n            if locator.count() and locator.is_visible(timeout=700):\n                locator.click(timeout=700)\n                matched = True\n                log(f\"Dismissed a consent control on {page_url}\")\n                break\n    except Exception:\n        pass\n    if attempted and not matched:\n        log(f\"No consent control matched on {page_url}; possible layout change\")\n        flags.append({\n            \"Type\": \"low-confidence extraction\",\n            \"URL\": page_url,\n            \"Message\": \"No common cookie-consent button matched; possible layout change\",\n        })\n\n\ndef navigate(page, url, flags):\n    \"\"\"Navigate and immediately perform the required consent check.\"\"\"\n    log(f\"Navigating to {url}\")\n    try:\n        response = page.goto(url, wait_until=\"domcontentloaded\", timeout=30000)\n        # This must remain immediately after every page.goto call.\n        dismiss_cookie_banner(page, flags, url)\n        if response is not None:\n            try:\n                body = response.text()\n            except Exception:\n                body = None\n            for signal in detect_anti_bot_signals(response, body):\n                flags.append({\"Type\": \"anti-bot signal\", \"URL\": url, \"Message\": signal})\n        return True\n    except PlaywrightTimeoutError as exc:\n        flags.append({\"Type\": \"error\", \"URL\": url, \"Message\": f\"Navigation timeout: {exc}\"})\n        return False\n    except Exception as exc:\n        flags.append({\"Type\": \"error\", \"URL\": url, \"Message\": f\"Navigation failed: {exc}\"})\n        return False\n\n\ndef first_text(page, selectors):\n    for selector in selectors:\n        try:\n            locator = page.locator(selector).first\n            if locator.count() and locator.is_visible(timeout=500):\n                value = locator.inner_text(timeout=1000).strip()\n                if value:\n                    return value\n        except Exception:\n            continue\n    return \"\"\n\n\ndef clean_text(value):\n    return re.sub(r\"\\s+\", \" \", value or \"\").strip()\n\n\ndef extract_detail(page, detail_url, listing_url, keyword, flags):\n    current_url = page.url or detail_url\n    title = first_text(page, [\"#productTitle\", \"h1\"])\n    asin = \"\"\n    try:\n        asin = page.locator(\"#detailBullets_feature_div li, #prodDetails tr\").all_inner_texts()\n        asin = \" \".join(asin)\n    except Exception:\n        asin = \"\"\n    asin_match = re.search(r\"\\bB0[A-Z0-9]{8}\\b|\\b[0-9A-Z]{10}\\b\", asin, re.I)\n    asin = asin_match.group(0) if asin_match else \"\"\n    if not asin:\n        asin_match = re.search(r\"/(?:dp|gp/product)/([A-Z0-9]{10})\", current_url, re.I)\n        asin = asin_match.group(1) if asin_match else \"\"\n\n    category = first_text(page, [\"#wayfinding-breadcrumbs_feature_div\", \"nav[aria-label='Breadcrumb']\"])\n    cost = first_text(page, [\"#corePriceDisplay_desktop_feature_div .a-price\", \"#priceblock_ourprice\", \"#priceblock_dealprice\", \".a-price.aok-align-center\"])\n    msrp = first_text(page, [\".basisPrice\", \"#priceblock_listprice\", \"span.a-text-price\"])\n    ratings = first_text(page, [\"#acrPopover\", \"#averageCustomerReviews .a-icon-alt\"])\n    reviews = first_text(page, [\"#acrCustomerReviewLink\", \"#averageCustomerReviews\"])\n    badge = first_text(page, [\"#dealBadge_feature_div\", \"#acBadge_feature_div\", \".badge-wrapper\"])\n\n    if not title:\n        flags.append({\"Type\": \"low-confidence extraction\", \"URL\": current_url, \"Message\": \"Product title selector returned no value\"})\n    if not asin:\n        flags.append({\"Type\": \"low-confidence extraction\", \"URL\": current_url, \"Message\": \"ASIN could not be identified\"})\n\n    return {\n        \"Category\": clean_text(category),\n        \"Retailers\": \"Amazon\",\n        \"List Page URL\": listing_url,\n        \"Product Title\": clean_text(title),\n        \"asin\": asin,\n        \"Product Cost\": clean_text(cost),\n        \"MSRP\": clean_text(msrp),\n        \"Ratings\": clean_text(ratings),\n        \"Reviews\": clean_text(reviews),\n        \"Item Badge\": clean_text(badge),\n        \"Product URL\": current_url,\n    }\n\n\ndef collect_listing_links(page, listing_url, keyword, flags):\n    links = []\n    cards = page.locator(\"[data-component-type='s-search-result']\")\n    try:\n        count = cards.count()\n    except Exception:\n        count = 0\n    for index in range(count):\n        card = cards.nth(index)\n        try:\n            title = first_text(card, [\"h2\", \"h2 a\"])\n            anchor = card.locator(\"h2 a, a.a-link-normal\").first\n            href = anchor.get_attribute(\"href\") if anchor.count() else None\n            if not href:\n                continue\n            absolute = urljoin(listing_url, href)\n            haystack = f\"{title} {absolute}\".lower()\n            if keyword and keyword.lower() not in haystack:\n                continue\n            links.append(absolute.split(\"?\")[0])\n        except Exception:\n            continue\n\n    if not links:\n        flags.append({\"Type\": \"low-confidence extraction\", \"URL\": listing_url, \"Message\": \"No verified Amazon listing selectors or product links were found\"})\n    return list(dict.fromkeys(links))\n\n\ndef handle_row(row, page, results, flags, max_products, processed):\n    keyword = clean_text(str(row.get(\"keyword\", \"\")) if pd.notna(row.get(\"keyword\", \"\")) else \"\")\n    listing_url = clean_text(str(row.get(\"listing_url\", \"\")) if pd.notna(row.get(\"listing_url\", \"\")) else \"\")\n    detail_url = clean_text(str(row.get(\"detail_url\", \"\")) if pd.notna(row.get(\"detail_url\", \"\")) else \"\")\n\n    # Independent detail_url fast path: it never depends on a listing crawl.\n    if detail_url:\n        if navigate(page, detail_url, flags):\n            results.append(extract_detail(page, detail_url, listing_url, keyword, flags))\n            processed[0] += 1\n        return\n\n    if not listing_url:\n        if keyword:\n            listing_url = f\"{TARGET}s?k={quote_plus(keyword)}\"\n        else:\n            flags.append({\"Type\": \"error\", \"URL\": \"\", \"Message\": \"Row has neither detail_url, listing_url, nor keyword\"})\n            return\n\n    if not navigate(page, listing_url, flags):\n        return\n    links = collect_listing_links(page, listing_url, keyword, flags)\n    for product_url in links:\n        if max_products is not None and processed[0] >= max_products:\n            break\n        if navigate(page, product_url, flags):\n            results.append(extract_detail(page, product_url, listing_url, keyword, flags))\n            processed[0] += 1\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Amazon scraper\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(f\"Reading input workbook {args.input}\")\n    try:\n        input_df = pd.read_excel(args.input)\n    except Exception as exc:\n        log(f\"Could not read input workbook: {exc}\")\n        raise\n\n    results = []\n    flags = []\n    processed = [0]\n    with sync_playwright() as playwright:\n        log(\"Launching Chromium browser for JavaScript-rendered pages\")\n        browser = playwright.chromium.launch(headless=True, proxy=get_proxy())\n        context = browser.new_context(user_agent=\"Mozilla/5.0 (compatible; ScraperStudio/1.0)\")\n        page = context.new_page()\n\n        def response_handler(response):\n            try:\n                content_type = str(response.headers.get(\"content-type\", \"\")).lower()\n                body = response.text() if (\"text/html\" in content_type or not content_type) else None\n                for signal in detect_anti_bot_signals(response, body):\n                    flags.append({\"Type\": \"anti-bot signal\", \"URL\": response.url, \"Message\": signal})\n            except Exception:\n                pass\n\n        page.on(\"response\", response_handler)\n        for _, row in input_df.iterrows():\n            if args.max_products is not None and processed[0] >= args.max_products:\n                break\n            handle_row(row, page, results, flags, args.max_products, processed)\n        browser.close()\n\n    log(f\"Writing {len(results)} extracted items and {len(flags)} flags to {args.output}\")\n    columns = [\"Category\", \"Retailers\", \"List Page URL\", \"Product Title\", \"asin\", \"Product Cost\", \"MSRP\", \"Ratings\", \"Reviews\", \"Item Badge\", \"Product URL\"]\n    flags_columns = [\"Type\", \"URL\", \"Message\"]\n    with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n        pd.DataFrame(results, columns=columns).to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        pd.DataFrame(flags, columns=flags_columns).to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(\"Run complete\")\n\n\nif __name__ == \"__main__\":\n    try:\n        main()\n    except Exception as exc:\n        log(f\"Fatal error: {exc}\")\n        sys.exit(1)\n",
+      "requirements_txt": "pandas>=2.0\nopenpyxl>=3.1\nplaywright>=1.40",
+      "confidence_notes": [
+        "Amazon returned an anti-bot/JavaScript-disabled interstitial during inspection, so no products, search form, listing links, detail page, cookie UI, or selectors were actually verified.",
+        "The script therefore uses Playwright for JavaScript-rendered pages and deliberately only flags anti-bot signals; it does not bypass or solve them. Chromium must also be installed separately with `playwright install chromium`.",
+        "Amazon search URL construction, listing-card selectors, detail-field selectors, and ASIN URL patterns are implementation assumptions based on common Amazon page conventions, not selectors observed in the inspection.",
+        "The nominal listing classification was retained, but the live inspection did not verify that a listing page would render or that click-through navigation would be available.",
+        "Because the consent helper is required to try common buttons after every navigation, it records a possible layout-change flag when none matches, including when no banner exists."
+      ],
+      "total_tool_calls": 3,
+      "action_log": [
+        {
+          "ts": "2026-08-31T12:10:07",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.amazon.com/"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-31T12:10:08",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-31T12:10:09",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "eb1202f7-49a7-4e6b-b39c-7b5c22500f7e",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T12:10:50",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.0060479999999999996,
+      "input_tokens": 7084,
+      "output_tokens": 4486,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 4177,
+      "num_turns": 5,
+      "duration_ms": 51502,
+      "duration_api_ms": 51502,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "eb1202f7-49a7-4e6b-b39c-7b5c22500f7e",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T12:10:12",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.000663,
+          "input_tokens": 5732,
+          "output_tokens": 224,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 4177,
+          "num_turns": 4,
+          "duration_ms": 13227,
+          "duration_api_ms": 13227,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 5732,
+              "output_tokens": 224,
+              "cached_tokens": 4177,
+              "cost_usd": 0.000663
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "eb1202f7-49a7-4e6b-b39c-7b5c22500f7e",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T12:10:50",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005385,
+          "input_tokens": 1352,
+          "output_tokens": 4262,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 38275,
+          "duration_api_ms": 38275,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1352,
+              "output_tokens": 4262,
+              "cached_tokens": 0,
+              "cost_usd": 0.005385
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\amazon_furniture_eb1202f7",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "[2026-08-31T06:43:15+00:00] Reading input workbook C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\amazon_furniture_eb1202f7\\sample_input.xlsx\r\n[2026-08-31T06:43:17+00:00] Launching Chromium browser for JavaScript-rendered pages\r\n[2026-08-31T06:43:20+00:00] Navigating to https://www.amazon.com/\r\n[2026-08-31T06:43:28+00:00] No consent control matched on https://www.amazon.com/; possible layout change\r\n[2026-08-31T06:43:28+00:00] Writing 0 extracted items and 2 flags to C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\amazon_furniture_eb1202f7\\sample_output.xlsx\r\n[2026-08-31T06:43:28+00:00] Run complete\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-08-31T12:13:28"
+    }
+  },
+  "2ee0b8a8-97df-4c1e-a406-553b0df76c56": {
+    "job_id": "2ee0b8a8-97df-4c1e-a406-553b0df76c56",
+    "name": "BooksToScrape Travel & Mystery Scraper",
+    "status": "completed",
+    "created_at": "2026-08-31T12:18:11",
+    "target_url": "https://books.toscrape.com/",
+    "sample_keyword": "Travel",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport re\nfrom datetime import datetime, timezone\nfrom urllib.parse import urljoin\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\nBASE_URL = \"https://books.toscrape.com/\"\nUSER_AGENT = \"Mozilla/5.0 (compatible; ScraperStudio/1.0)\"\nRATING_VALUES = {\"one\": 1, \"two\": 2, \"three\": 3, \"four\": 4, \"five\": 5}\n\n\ndef log(message):\n    timestamp = datetime.now(timezone.utc).strftime(\"%Y-%m-%dT%H:%M:%SZ\")\n    print(f\"[{timestamp}] {message}\", flush=True)\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError(\"CAPTCHA solving is intentionally not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    \"\"\"Return signals found in an HTTP response; this never bypasses anti-bot controls.\"\"\"\n    signals = []\n    body = response.text or \"\"\n    lowered = body.lower()\n    url = response.url\n\n    if response.status_code == 403:\n        signals.append(\"HTTP 403 Forbidden\")\n    if response.status_code == 429:\n        signals.append(\"HTTP 429 Too Many Requests\")\n\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in lowered:\n            signals.append(description)\n\n    if len(body.strip()) < 200:\n        signals.append(\"Unusually short response body\")\n\n    return [{\"signal\": signal, \"url\": url} for signal in signals]\n\n\ndef add_flag(flags, kind, message, url=\"\", context=\"\"):\n    flags.append({\n        \"timestamp\": datetime.now(timezone.utc).isoformat(),\n        \"type\": kind,\n        \"message\": message,\n        \"url\": url,\n        \"context\": context,\n    })\n\n\ndef fetch(session, url, flags):\n    log(f\"Fetching {url}\")\n    try:\n        response = session.get(url, timeout=30, allow_redirects=True)\n        for signal in detect_anti_bot_signals(response):\n            add_flag(flags, \"anti-bot\", signal[\"signal\"], signal[\"url\"])\n        response.raise_for_status()\n        return response\n    except requests.RequestException as exc:\n        add_flag(flags, \"error\", f\"HTTP request failed: {exc}\", url)\n        log(f\"Request failed: {url}: {exc}\")\n        return None\n\n\ndef clean_text(node):\n    return \" \".join(node.get_text(\" \", strip=True).split()) if node else \"\"\n\n\ndef rating_from_node(node):\n    if not node:\n        return None\n    classes = node.get(\"class\", [])\n    for value in classes:\n        normalized = value.strip().lower()\n        if normalized in RATING_VALUES:\n            return normalized.title()\n        if normalized.endswith(\"-star\"):\n            name = normalized[:-5]\n            if name in RATING_VALUES:\n                return name.title()\n    text = clean_text(node).lower()\n    for name in RATING_VALUES:\n        if name in text:\n            return name.title()\n    return None\n\n\ndef rating_number(rating):\n    return RATING_VALUES.get((rating or \"\").lower())\n\n\ndef parse_price(node):\n    value = clean_text(node)\n    return value\n\n\ndef parse_availability(node):\n    return clean_text(node)\n\n\ndef category_from_detail(soup, fallback=\"\"):\n    breadcrumb = soup.select_one(\"ul.breadcrumb\")\n    if breadcrumb:\n        links = breadcrumb.select(\"a\")\n        if len(links) >= 2:\n            return clean_text(links[-1])\n    return fallback\n\n\ndef extract_detail(response, flags, fallback_category=\"\"):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    title = clean_text(soup.select_one(\"div.product_main h1, h1\"))\n    price = parse_price(soup.select_one(\"div.product_main p.price_color, p.price_color\"))\n    availability = parse_availability(soup.select_one(\"div.product_main p.instock, p.instock\"))\n    rating_node = soup.select_one(\"div.product_main p.star-rating, p.star-rating\")\n    rating = rating_from_node(rating_node)\n    category = category_from_detail(soup, fallback_category)\n    product_url = response.url\n    upc = \"\"\n\n    for row in soup.select(\"table.table tr\"):\n        cells = row.find_all([\"th\", \"td\"])\n        if len(cells) >= 2 and clean_text(cells[0]).lower() == \"upc\":\n            upc = clean_text(cells[1])\n            break\n\n    missing = []\n    for field, value in ((\"title\", title), (\"price\", price), (\"availability\", availability),\n                         (\"star rating\", rating), (\"UPC\", upc)):\n        if not value:\n            missing.append(field)\n    if missing:\n        add_flag(flags, \"low-confidence\", \"Missing detail fields: \" + \", \".join(missing), product_url)\n\n    if not rating or rating_number(rating) < 3:\n        return None\n    if not availability:\n        return None\n    if \"out of stock\" in availability.lower():\n        return None\n\n    return {\n        \"Book Title\": title,\n        \"Category\": category,\n        \"Price (GBP)\": price,\n        \"Star Rating\": rating,\n        \"Availability Status\": availability,\n        \"Product URL\": product_url,\n        \"UPC Code\": upc,\n    }\n\n\ndef listing_cards(soup):\n    cards = soup.select(\"article.product_pod\")\n    if not cards:\n        cards = soup.select(\"article\")\n    return cards\n\n\ndef parse_listing(response, fallback_category=\"\"):\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    heading = clean_text(soup.select_one(\"div.page-header h1, h1\")) or fallback_category\n    items = []\n    for card in listing_cards(soup):\n        link = card.select_one(\"h3 a\")\n        if not link or not link.get(\"href\"):\n            continue\n        items.append({\n            \"url\": urljoin(response.url, link[\"href\"]),\n            \"category\": heading,\n            \"listing_title\": link.get(\"title\") or clean_text(link),\n        })\n    next_link = soup.select_one(\"li.next a\")\n    next_url = urljoin(response.url, next_link[\"href\"]) if next_link and next_link.get(\"href\") else None\n    return items, next_url\n\n\ndef resolve_keyword(session, keyword, flags):\n    if keyword.strip().lower() == \"travel\":\n        return urljoin(BASE_URL, \"catalogue/category/books/travel_2/index.html\"), \"Travel\"\n\n    response = fetch(session, BASE_URL, flags)\n    if not response:\n        return None, keyword\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    wanted = keyword.strip().casefold()\n    for link in soup.select(\"ul.nav-list a, a\"):\n        if clean_text(link).casefold() == wanted and link.get(\"href\"):\n            return urljoin(response.url, link[\"href\"]), clean_text(link)\n    add_flag(flags, \"low-confidence\", f\"No category link matched keyword '{keyword}'\", BASE_URL)\n    return None, keyword\n\n\ndef crawl_listing(session, start_url, fallback_category, flags, max_products, results, seen_details):\n    current = start_url\n    seen_pages = set()\n    while current and current not in seen_pages:\n        if max_products is not None and len(results) >= max_products:\n            break\n        seen_pages.add(current)\n        response = fetch(session, current, flags)\n        if not response:\n            break\n        cards, next_url = parse_listing(response, fallback_category)\n        log(f\"Found {len(cards)} cards on listing page\")\n        for card in cards:\n            if max_products is not None and len(results) >= max_products:\n                break\n            detail_url = card[\"url\"]\n            if detail_url in seen_details:\n                continue\n            seen_details.add(detail_url)\n            detail_response = fetch(session, detail_url, flags)\n            if not detail_response:\n                continue\n            item = extract_detail(detail_response, flags, card[\"category\"])\n            if item:\n                results.append(item)\n        current = next_url\n        if current:\n            log(\"Following next listing page\")\n\n\ndef read_cell(row, name):\n    value = row.get(name, \"\")\n    if pd.isna(value):\n        return \"\"\n    return str(value).strip()\n\n\ndef main():\n    parser = argparse.ArgumentParser(description=\"Books to Scrape category/detail scraper\")\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(\"Reading input workbook\")\n    try:\n        input_df = pd.read_excel(args.input)\n    except Exception as exc:\n        raise SystemExit(f\"Could not read input workbook: {exc}\")\n\n    results = []\n    flags = []\n    seen_details = set()\n    session = requests.Session()\n    session.headers.update({\"User-Agent\": USER_AGENT, \"Accept\": \"text/html,application/xhtml+xml\"})\n\n    for row_number, row in input_df.iterrows():\n        if args.max_products is not None and len(results) >= args.max_products:\n            break\n        keyword = read_cell(row, \"keyword\")\n        listing_url = read_cell(row, \"listing_url\")\n        detail_url = read_cell(row, \"detail_url\")\n        log(f\"Processing input row {row_number + 2}\")\n\n        if detail_url:\n            # Independent fast path: no listing discovery is performed.\n            if detail_url in seen_details:\n                continue\n            seen_details.add(detail_url)\n            response = fetch(session, detail_url, flags)\n            if response:\n                item = extract_detail(response, flags, keyword)\n                if item:\n                    results.append(item)\n        elif listing_url:\n            crawl_listing(session, listing_url, keyword, flags, args.max_products, results, seen_details)\n        elif keyword:\n            resolved, category = resolve_keyword(session, keyword, flags)\n            if resolved:\n                crawl_listing(session, resolved, category, flags, args.max_products, results, seen_details)\n        else:\n            add_flag(flags, \"error\", \"Input row has no keyword, listing_url, or detail_url\", context=f\"row {row_number + 2}\")\n\n    columns = [\"Book Title\", \"Category\", \"Price (GBP)\", \"Star Rating\", \"Availability Status\", \"Product URL\", \"UPC Code\"]\n    extracted_df = pd.DataFrame(results, columns=columns)\n    flags_columns = [\"timestamp\", \"type\", \"message\", \"url\", \"context\"]\n    flags_df = pd.DataFrame(flags, columns=flags_columns)\n    log(f\"Writing {len(extracted_df)} extracted items and {len(flags_df)} flags\")\n    with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n        extracted_df.to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        flags_df.to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(\"Finished\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "requirements_txt": "requests\nbeautifulsoup4\npandas\nopenpyxl\n",
+      "confidence_notes": [
+        "The inspection reported no network API and no JavaScript requirement, so this script uses requests plus BeautifulSoup and does not use a browser.",
+        "The inspection did not expose concrete CSS selectors. The script assumes the conventional Books to Scrape HTML structure (article.product_pod, h3 links, p.price_color, p.instock, p.star-rating, div.product_main, and table.table), which should be manually verified before production.",
+        "Travel is mapped to the inspected URL /catalogue/category/books/travel_2/index.html. For other keywords, the script attempts an exact text match against category links on the homepage; this was not verified during inspection.",
+        "The Three-star-or-above rating values and class representation were not verified in the snapshot. The script interprets one through five rating class names and excludes missing or below-three ratings conservatively.",
+        "Out-of-stock behavior was not tested. The script excludes availability text containing 'out of stock' and excludes items with missing availability conservatively.",
+        "Pagination presence and all Travel pages were not verified. The script follows li.next a when present and stops otherwise.",
+        "UPC and exact rating selectors/values were not exposed in the inspection. UPC extraction assumes the standard Product Information table with an UPC row and records a low-confidence flag when absent.",
+        "A detail_url row is intentionally processed directly and independently, as required, even if it was not discovered through a listing.",
+        "If multiple input rows reference the same product URL, the script deduplicates the product across the run.",
+        "Anti-bot signals are only recorded in the Flags sheet; no bypass, CAPTCHA solving, proxy use, or browser automation is implemented."
+      ],
+      "total_tool_calls": 11,
+      "action_log": [
+        {
+          "ts": "2026-08-31T12:18:20",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://books.toscrape.com/"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-31T12:18:22",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-31T12:18:24",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-08-31T12:18:24",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-08-31T12:18:26",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 5
+        },
+        {
+          "ts": "2026-08-31T12:18:27",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "a[href*='its-only-the-himalayas']"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-08-31T12:18:28",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 7
+        },
+        {
+          "ts": "2026-08-31T12:18:29",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-08-31T12:18:31",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 9
+        },
+        {
+          "ts": "2026-08-31T12:18:32",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://books.toscrape.com/catalogue/category/books/travel_2/index.html"
+          },
+          "call_number": 10
+        },
+        {
+          "ts": "2026-08-31T12:18:34",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 11
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "2ee0b8a8-97df-4c1e-a406-553b0df76c56",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T12:19:15",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.006848,
+      "input_tokens": 24258,
+      "output_tokens": 4630,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 19774,
+      "num_turns": 12,
+      "duration_ms": 63235,
+      "duration_api_ms": 63235,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "2ee0b8a8-97df-4c1e-a406-553b0df76c56",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T12:18:38",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.001746,
+          "input_tokens": 22676,
+          "output_tokens": 642,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 19774,
+          "num_turns": 11,
+          "duration_ms": 27025,
+          "duration_api_ms": 27025,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 22676,
+              "output_tokens": 642,
+              "cached_tokens": 19774,
+              "cost_usd": 0.001746
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "2ee0b8a8-97df-4c1e-a406-553b0df76c56",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T12:19:15",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005102,
+          "input_tokens": 1582,
+          "output_tokens": 3988,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 36210,
+          "duration_api_ms": 36210,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1582,
+              "output_tokens": 3988,
+              "cached_tokens": 0,
+              "cost_usd": 0.005102
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\bookstoscrape_travel_mystery_scraper_2ee0b8a8",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "[2026-08-31T06:53:34Z] Reading input workbook\r\n[2026-08-31T06:53:35Z] Processing input row 2\r\n[2026-08-31T06:53:35Z] Fetching https://books.toscrape.com/\r\n[2026-08-31T06:53:36Z] Found 20 cards on listing page\r\n[2026-08-31T06:53:36Z] Fetching https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html\r\n[2026-08-31T06:53:37Z] Fetching https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html\r\n[2026-08-31T06:53:37Z] Fetching https://books.toscrape.com/catalogue/soumission_998/index.html\r\n[2026-08-31T06:53:37Z] Fetching https://books.toscrape.com/catalogue/sharp-objects_997/index.html\r\n[2026-08-31T06:53:37Z] Fetching https://books.toscrape.com/catalogue/sapiens-a-brief-history-of-humankind_996/index.html\r\n[2026-08-31T06:53:38Z] Following next listing page\r\n[2026-08-31T06:53:38Z] Writing 3 extracted items and 0 flags\r\n[2026-08-31T06:53:38Z] Finished\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-08-31T12:23:38"
+    }
+  },
+  "ff948afe-6269-4caf-9436-352e16b69d00": {
+    "job_id": "ff948afe-6269-4caf-9436-352e16b69d00",
+    "name": "E-Commerce Product & Price Monitor",
+    "status": "anti_bot_detected",
+    "created_at": "2026-08-31T13:10:32",
+    "target_url": "https://www.ebay.com/b/Cell-Phones-Smartphones/9355/bn_320094",
+    "sample_keyword": "iPhone 15 Pro",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "",
+      "requirements_txt": "",
+      "confidence_notes": [
+        "Recon phase produced no output text.",
+        "Inspection stopped early - possible anti-bot signal detected ('cloudflare') during recon. Findings reflect only data gathered prior to block.",
+        "Recon phase did not produce usable findings - codegen phase was skipped to avoid spending additional budget."
+      ],
+      "total_tool_calls": 1,
+      "action_log": [
+        {
+          "ts": "2026-08-31T13:10:49",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.ebay.com/b/Cell-Phones-Smartphones/9355/bn_320094"
+          },
+          "call_number": 1
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "ff948afe-6269-4caf-9436-352e16b69d00",
+      "session_id": [
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T13:10:49",
+      "subtype": "recon=anti_bot_detected",
+      "is_error": false,
+      "total_cost_usd": 0.000319,
+      "input_tokens": 1359,
+      "output_tokens": 39,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "num_turns": 1,
+      "duration_ms": 16607,
+      "duration_api_ms": 16607,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "ff948afe-6269-4caf-9436-352e16b69d00",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T13:10:49",
+          "subtype": "anti_bot_detected",
+          "is_error": false,
+          "total_cost_usd": 0.000319,
+          "input_tokens": 1359,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 16607,
+          "duration_api_ms": 16607,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1359,
+              "output_tokens": 39,
+              "cached_tokens": 0,
+              "cost_usd": 0.000319
+            }
+          },
+          "phase": "recon"
+        }
+      ]
+    },
+    "saved_to": null,
+    "anti_bot_marker": "cloudflare",
+    "test_run": null
+  },
+  "85a59f0b-e55e-4bf7-befe-e5369b9000c0": {
+    "job_id": "85a59f0b-e55e-4bf7-befe-e5369b9000c0",
+    "name": "E-Commerce Product & Price Monitor",
+    "status": "anti_bot_detected",
+    "created_at": "2026-08-31T13:11:07",
+    "target_url": "https://www.ebay.com/b/Cell-Phones-Smartphones/9355/bn_320094",
+    "sample_keyword": "iPhone 15 Pro",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "",
+      "requirements_txt": "",
+      "confidence_notes": [
+        "Recon phase produced no output text.",
+        "Inspection stopped early - possible anti-bot signal detected ('cloudflare') during recon. Findings reflect only data gathered prior to block.",
+        "Recon phase did not produce usable findings - codegen phase was skipped to avoid spending additional budget."
+      ],
+      "total_tool_calls": 1,
+      "action_log": [
+        {
+          "ts": "2026-08-31T13:11:15",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.ebay.com/b/Cell-Phones-Smartphones/9355/bn_320094"
+          },
+          "call_number": 1
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "85a59f0b-e55e-4bf7-befe-e5369b9000c0",
+      "session_id": [
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T13:11:15",
+      "subtype": "recon=anti_bot_detected",
+      "is_error": false,
+      "total_cost_usd": 7.5e-05,
+      "input_tokens": 1359,
+      "output_tokens": 39,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1356,
+      "num_turns": 1,
+      "duration_ms": 8352,
+      "duration_api_ms": 8352,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "85a59f0b-e55e-4bf7-befe-e5369b9000c0",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T13:11:15",
+          "subtype": "anti_bot_detected",
+          "is_error": false,
+          "total_cost_usd": 7.5e-05,
+          "input_tokens": 1359,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 1356,
+          "num_turns": 1,
+          "duration_ms": 8352,
+          "duration_api_ms": 8352,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1359,
+              "output_tokens": 39,
+              "cached_tokens": 1356,
+              "cost_usd": 7.5e-05
+            }
+          },
+          "phase": "recon"
+        }
+      ]
+    },
+    "saved_to": null,
+    "anti_bot_marker": "cloudflare",
+    "test_run": null
+  },
+  "eec91f74-a5cf-438b-b395-8fe7629726b7": {
+    "job_id": "eec91f74-a5cf-438b-b395-8fe7629726b7",
+    "name": "Subway Restaurant Locator",
+    "status": "completed",
+    "created_at": "2026-08-31T13:15:17",
+    "target_url": "https://restaurants.subway.com/united-states/al",
+    "sample_keyword": "Prattville",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport json\nimport re\nimport sys\nfrom datetime import datetime, timezone\nfrom urllib.parse import urljoin, urlparse\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\nBASE_URL = \"https://restaurants.subway.com/united-states/al\"\nFIELDS = [\n    \"Store Number\", \"Street Address\", \"City\", \"State\", \"Postal Code\",\n    \"Phone Number\", \"Operating Hours\", \"Drive-Thru Available\", \"Delivery Available\"\n]\n\n\ndef log(message):\n    print(f\"[{datetime.now().astimezone().isoformat(timespec='seconds')}] {message}\", flush=True)\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError(\"CAPTCHA solving is intentionally not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    body = response.text or \"\"\n    lower = body.lower()\n    markers = {\n        \"captcha\": \"captcha\",\n        \"cloudflare\": \"cloudflare\",\n        \"perimeterx\": \"perimeterx\",\n        \"datadome\": \"datadome\",\n    }\n    signals = []\n    if response.status_code in (403, 429):\n        signals.append(f\"HTTP status {response.status_code}\")\n    for label, marker in markers.items():\n        if marker in lower:\n            signals.append(f\"{label} marker detected\")\n    if len(body.strip()) < 500:\n        signals.append(f\"unusually short response body ({len(body.strip())} characters)\")\n    return signals\n\n\ndef make_session():\n    session = requests.Session()\n    session.headers.update({\n        \"User-Agent\": \"Mozilla/5.0 (compatible; ScraperStudio/1.0)\",\n        \"Accept-Language\": \"en-US,en;q=0.9\",\n    })\n    proxy = get_proxy()\n    if proxy:\n        session.proxies.update({\"http\": proxy, \"https\": proxy})\n    return session\n\n\ndef fetch(session, url, flags):\n    log(f\"Fetching {url}\")\n    try:\n        response = session.get(url, timeout=30)\n        for signal in detect_anti_bot_signals(response):\n            flags.append({\"Type\": \"anti-bot\", \"URL\": url, \"Message\": signal})\n        response.raise_for_status()\n        return response\n    except requests.RequestException as exc:\n        flags.append({\"Type\": \"error\", \"URL\": url, \"Message\": str(exc)})\n        log(f\"Request failed: {exc}\")\n        return None\n\n\ndef clean_text(value):\n    return re.sub(r\"\\\\s+\", \" \", value or \"\").strip()\n\n\ndef page_text(soup):\n    return clean_text(soup.get_text(\" \", strip=True))\n\n\ndef is_alabama_path(url):\n    path = urlparse(url).path.rstrip(\"/\").lower()\n    return path.startswith(\"/united-states/al/\")\n\n\ndef city_links(soup, keyword):\n    result = []\n    wanted = clean_text(keyword).casefold()\n    for anchor in soup.find_all(\"a\", href=True):\n        href = urljoin(BASE_URL + \"/\", anchor[\"href\"])\n        text = clean_text(anchor.get_text(\" \", strip=True))\n        parts = [p for p in urlparse(href).path.split(\"/\") if p]\n        if is_alabama_path(href) and len(parts) == 3 and wanted in text.casefold():\n            if href not in result:\n                result.append(href)\n    return result\n\n\ndef location_links(soup, listing_url):\n    result = []\n    listing_parts = [p for p in urlparse(listing_url).path.split(\"/\") if p]\n    for anchor in soup.find_all(\"a\", href=True):\n        href = urljoin(listing_url, anchor[\"href\"])\n        parts = [p for p in urlparse(href).path.split(\"/\") if p]\n        if (is_alabama_path(href) and len(parts) > len(listing_parts)\n                and href.rstrip(\"/\") != listing_url.rstrip(\"/\")\n                and href not in result):\n            result.append(href)\n    return result\n\n\ndef json_ld_objects(soup):\n    objects = []\n    for tag in soup.find_all(\"script\", type=\"application/ld+json\"):\n        try:\n            value = json.loads(tag.string or tag.get_text())\n            objects.extend(value if isinstance(value, list) else [value])\n        except (ValueError, TypeError):\n            continue\n    return objects\n\n\ndef first_json_value(objects, keys):\n    for obj in objects:\n        if not isinstance(obj, dict):\n            continue\n        for key in keys:\n            value = obj.get(key)\n            if value and not isinstance(value, (dict, list)):\n                return clean_text(str(value))\n    return \"\"\n\n\ndef extract_detail(soup, url):\n    text = page_text(soup)\n    objects = json_ld_objects(soup)\n    address_obj = {}\n    for obj in objects:\n        if isinstance(obj, dict) and isinstance(obj.get(\"address\"), dict):\n            address_obj = obj[\"address\"]\n            break\n    postal = clean_text(str(address_obj.get(\"postalCode\", \"\")))\n    if not postal:\n        match = re.search(r\"\\\\b(\\\\d{5}(?:-\\\\d{4})?)\\\\b\", text)\n        postal = match.group(1) if match else \"\"\n    phone = first_json_value(objects, [\"telephone\", \"phone\"])\n    if not phone:\n        match = re.search(r\"(?:\\\\+?1[ .-]?)?\\\\(?\\\\d{3}\\\\)?[ .-]\\\\d{3}[ .-]\\\\d{4}\", text)\n        phone = match.group(0) if match else \"\"\n\n    street = clean_text(str(address_obj.get(\"streetAddress\", \"\")))\n    city = clean_text(str(address_obj.get(\"addressLocality\", \"\")))\n    state = clean_text(str(address_obj.get(\"addressRegion\", \"\"))) or \"AL\"\n    if not city or not street:\n        path_parts = [p for p in urlparse(url).path.split(\"/\") if p]\n        if len(path_parts) >= 3 and not city:\n            city = path_parts[2].replace(\"-\", \" \").title()\n        if postal:\n            before_postal = text[:text.find(postal)] if postal in text else text\n            candidates = [clean_text(x) for x in re.split(r\"[|\\\\n]\", before_postal) if clean_text(x)]\n            if not street:\n                for candidate in reversed(candidates[-8:]):\n                    if re.search(r\"\\\\d+\\\\s+\\\\S+\", candidate):\n                        street = candidate\n                        break\n\n    hours = []\n    for line in soup.get_text(\"\\\\n\", strip=True).splitlines():\n        line = clean_text(line)\n        if re.search(r\"(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\", line, re.I) and re.search(r\"\\\\d{1,2}:\\\\d{2}\", line):\n            if line not in hours:\n                hours.append(line)\n    if not hours:\n        for match in re.findall(r\"((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[^.;]{0,100}\\\\d{1,2}:\\\\d{2}[^.;]{0,40})\", text, re.I):\n            if match not in hours:\n                hours.append(clean_text(match))\n    lower = text.casefold()\n    drive = \"Yes\" if re.search(r\"drive[- ]?thru|drive[- ]?through\", lower) and not re.search(r\"no drive[- ]?thru|drive[- ]?thru unavailable\", lower) else \"No\" if re.search(r\"no drive[- ]?thru|drive[- ]?thru unavailable\", lower) else \"\"\n    delivery = \"Yes\" if re.search(r\"delivery available|offers delivery|delivery\", lower) and not re.search(r\"no delivery|delivery unavailable\", lower) else \"No\" if re.search(r\"no delivery|delivery unavailable\", lower) else \"\"\n    store_number = first_json_value(objects, [\"storeNumber\", \"store_number\", \"branchCode\"])\n    return {\n        \"Store Number\": store_number,\n        \"Street Address\": street,\n        \"City\": city,\n        \"State\": state,\n        \"Postal Code\": postal,\n        \"Phone Number\": phone,\n        \"Operating Hours\": \" ; \".join(hours),\n        \"Drive-Thru Available\": drive,\n        \"Delivery Available\": delivery,\n    }\n\n\ndef should_skip(soup):\n    text = page_text(soup).casefold()\n    closed = re.search(r\"\\\\b(permanently closed|temporarily closed|closed location|closed)\\\\b\", text)\n    kiosk = re.search(r\"\\\\b(temporary kiosk|temporary location|kiosk)\\\\b\", text)\n    return closed or kiosk, (\"closed\" if closed else \"temporary kiosk\" if kiosk else \"\")\n\n\ndef add_low_confidence_flags(item, url, flags):\n    missing = [key for key, value in item.items() if not value]\n    if missing:\n        flags.append({\"Type\": \"low-confidence\", \"URL\": url, \"Message\": \"Unverified or missing fields: \" + \", \".join(missing)})\n\n\ndef process_detail(session, url, rows, flags):\n    response = fetch(session, url, flags)\n    if not response:\n        return\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    skip, reason = should_skip(soup)\n    if skip:\n        log(f\"Ignoring {reason} location: {url}\")\n        return\n    item = extract_detail(soup, url)\n    rows.append(item)\n    add_low_confidence_flags(item, url, flags)\n\n\ndef process_listing(session, url, rows, flags, max_products):\n    response = fetch(session, url, flags)\n    if not response:\n        return\n    soup = BeautifulSoup(response.text, \"html.parser\")\n    links = location_links(soup, url)\n    if not links:\n        flags.append({\"Type\": \"low-confidence\", \"URL\": url, \"Message\": \"No stable individual-location links were found; listing selectors were not verified.\"})\n    for detail in links:\n        if max_products is not None and len(rows) >= max_products:\n            break\n        process_detail(session, detail, rows, flags)\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n    rows, flags = [], []\n    log(f\"Reading input workbook {args.input}\")\n    try:\n        input_df = pd.read_excel(args.input)\n    except Exception as exc:\n        flags.append({\"Type\": \"error\", \"URL\": \"\", \"Message\": f\"Could not read input workbook: {exc}\"})\n        input_df = pd.DataFrame()\n    session = make_session()\n    for _, record in input_df.iterrows():\n        if args.max_products is not None and len(rows) >= args.max_products:\n            break\n        detail = clean_text(str(record.get(\"detail_url\", \"\"))) if pd.notna(record.get(\"detail_url\", \"\")) else \"\"\n        listing = clean_text(str(record.get(\"listing_url\", \"\"))) if pd.notna(record.get(\"listing_url\", \"\")) else \"\"\n        keyword = clean_text(str(record.get(\"keyword\", \"\"))) if pd.notna(record.get(\"keyword\", \"\")) else \"\"\n        if detail:\n            log(\"Using independent detail_url fast path\")\n            process_detail(session, detail, rows, flags)\n        elif listing:\n            process_listing(session, listing, rows, flags, args.max_products)\n        elif keyword:\n            log(f\"Matching Alabama city links for keyword {keyword!r}\")\n            response = fetch(session, BASE_URL, flags)\n            if response:\n                links = city_links(BeautifulSoup(response.text, \"html.parser\"), keyword)\n                if not links:\n                    flags.append({\"Type\": \"low-confidence\", \"URL\": BASE_URL, \"Message\": f\"No city link matched keyword {keyword!r}\"})\n                for link in links:\n                    if args.max_products is not None and len(rows) >= args.max_products:\n                        break\n                    process_listing(session, link, rows, flags, args.max_products)\n        else:\n            flags.append({\"Type\": \"error\", \"URL\": \"\", \"Message\": \"Input row has no keyword, listing_url, or detail_url\"})\n    if args.max_products is not None:\n        rows = rows[:args.max_products]\n    log(f\"Writing {len(rows)} extracted rows and {len(flags)} flags to {args.output}\")\n    with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n        pd.DataFrame(rows, columns=FIELDS).to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        pd.DataFrame(flags, columns=[\"Type\", \"URL\", \"Message\"]).to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(\"Finished\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "requirements_txt": "requests\nbeautifulsoup4\npandas\nopenpyxl\n",
+      "confidence_notes": [
+        "The inspection exposed no stable CSS selectors or individual-location hrefs, so this script uses URL-depth heuristics and generic text/JSON-LD extraction; those assumptions require production verification.",
+        "No network API was observed, so the script uses requests and BeautifulSoup. The findings showed rendered pages but did not establish that JavaScript is required; a browser fallback was therefore not invented.",
+        "The search input did not visibly change the directory. Keyword processing consequently matches Alabama city anchor text on the state directory, while direct listing_url and independent detail_url paths are supported.",
+        "Store number, phone, drive-thru, delivery, and closed/temporary-kiosk status were not observed in the inspection. Missing or heuristically inferred values are flagged as low confidence.",
+        "Operating-hours extraction depends on visible day/time text or JSON-LD and may not match the site's unverified markup.",
+        "The requested navigation wording contains a typo ('tate directory'); the observed path used is https://restaurants.subway.com/united-states/al."
+      ],
+      "total_tool_calls": 13,
+      "action_log": [
+        {
+          "ts": "2026-08-31T13:15:26",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-31T13:15:28",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-31T13:15:30",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-08-31T13:15:30",
+          "phase": "recon",
+          "tool": "browser_take_screenshot",
+          "input": {},
+          "call_number": 4
+        },
+        {
+          "ts": "2026-08-31T13:15:31",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input",
+            "text": "Prattville"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-08-31T13:15:32",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-08-31T13:15:33",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 7
+        },
+        {
+          "ts": "2026-08-31T13:15:35",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-08-31T13:15:36",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 9
+        },
+        {
+          "ts": "2026-08-31T13:15:37",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "text=113 S Memorial Dr"
+          },
+          "call_number": 10
+        },
+        {
+          "ts": "2026-08-31T13:15:38",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 11
+        },
+        {
+          "ts": "2026-08-31T13:15:40",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "a[href*='113-s-memorial']"
+          },
+          "call_number": 12
+        },
+        {
+          "ts": "2026-08-31T13:15:41",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 13
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "eec91f74-a5cf-438b-b395-8fe7629726b7",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T13:16:21",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.007679,
+      "input_tokens": 33424,
+      "output_tokens": 4944,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 27435,
+      "num_turns": 14,
+      "duration_ms": 64273,
+      "duration_api_ms": 64273,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "eec91f74-a5cf-438b-b395-8fe7629726b7",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T13:15:46",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.002222,
+          "input_tokens": 31836,
+          "output_tokens": 661,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 27435,
+          "num_turns": 13,
+          "duration_ms": 28563,
+          "duration_api_ms": 28563,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 31836,
+              "output_tokens": 661,
+              "cached_tokens": 27435,
+              "cost_usd": 0.002222
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "eec91f74-a5cf-438b-b395-8fe7629726b7",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T13:16:21",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005457,
+          "input_tokens": 1588,
+          "output_tokens": 4283,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 35710,
+          "duration_api_ms": 35710,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1588,
+              "output_tokens": 4283,
+              "cached_tokens": 0,
+              "cost_usd": 0.005457
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_eec91f74",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "failed",
+      "returncode": 1,
+      "stdout_tail": "[2026-08-31T13:19:43+05:30] Reading input workbook C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_eec91f74\\sample_input.xlsx\r\n[2026-08-31T13:19:44+05:30] Fetching https://restaurants.subway.com/united-states/al\r\n[2026-08-31T13:19:44+05:30] Fetching https://restaurants.subway.com/united-states/al/abbeville/644-ozark-road\r\n",
+      "stderr_tail": "Traceback (most recent call last):\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_eec91f74\\generated_scraper.py\", line 287, in <module>\r\n    main()\r\n    ~~~~^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_eec91f74\\generated_scraper.py\", line 263, in main\r\n    process_listing(session, listing, rows, flags, args.max_products)\r\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_eec91f74\\generated_scraper.py\", line 236, in process_listing\r\n    process_detail(session, detail, rows, flags)\r\n    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_eec91f74\\generated_scraper.py\", line 220, in process_detail\r\n    item = extract_detail(soup, url)\r\n  File \"C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_eec91f74\\generated_scraper.py\", line 152, in extract_detail\r\n    match = re.search(r\"(?:\\\\+?1[ .-]?)?\\\\(?\\\\d{3}\\\\)?[ .-]\\\\d{3}[ .-]\\\\d{4}\", text)\r\n  File \"C:\\Python314\\Lib\\re\\__init__.py\", line 177, in search\r\n    return _compile(pattern, flags).search(string)\r\n           ~~~~~~~~^^^^^^^^^^^^^^^^\r\n  File \"C:\\Python314\\Lib\\re\\__init__.py\", line 350, in _compile\r\n    p = _compiler.compile(pattern, flags)\r\n  File \"C:\\Python314\\Lib\\re\\_compiler.py\", line 762, in compile\r\n    p = _parser.parse(p, flags)\r\n  File \"C:\\Python314\\Lib\\re\\_parser.py\", line 973, in parse\r\n    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)\r\n  File \"C:\\Python314\\Lib\\re\\_parser.py\", line 460, in _parse_sub\r\n    itemsappend(_parse(source, state, verbose, nested + 1,\r\n                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n                       not nested and not items))\r\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"C:\\Python314\\Lib\\re\\_parser.py\", line 843, in _parse\r\n    raise source.error(\"unknown extension ?\" + char,\r\n                       len(char) + 1)\r\nre.PatternError: unknown extension ?\\\\ at position 19\r\n",
+      "sample_output_ready": false,
+      "max_products": 3,
+      "finished_at": "2026-08-31T13:19:44"
+    }
+  },
+  "59559313-2a76-44cc-8db2-fd3642b2ad54": {
+    "job_id": "59559313-2a76-44cc-8db2-fd3642b2ad54",
+    "name": "Subway Restaurant Locator",
+    "status": "completed",
+    "created_at": "2026-08-31T13:22:47",
+    "target_url": "https://restaurants.subway.com/united-states/al",
+    "sample_keyword": " Prattville",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport re\nfrom datetime import datetime\nfrom urllib.parse import urljoin, urlparse\n\nimport pandas as pd\nimport requests\nfrom bs4 import BeautifulSoup\n\nBASE_URL = \"https://restaurants.subway.com\"\nSTATE_URL = \"https://restaurants.subway.com/united-states/al\"\n\nDATA_COLUMNS = [\n    \"Store Number\",\n    \"Street Address\",\n    \"City\",\n    \"State\",\n    \"Postal Code\",\n    \"Phone Number\",\n    \"Operating Hours\",\n    \"Drive-Thru Available\",\n    \"Delivery Available\",\n    \"Source URL\",\n]\nFLAG_COLUMNS = [\"timestamp\", \"flag_type\", \"message\", \"url\", \"keyword\"]\n\n\ndef log(message):\n    print(f\"[{datetime.now().isoformat(timespec='seconds')}] {message}\", flush=True)\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError(\"CAPTCHA solving is intentionally not implemented\")\n\n\ndef detect_anti_bot_signals(response):\n    \"\"\"Return signals only; this function never attempts to bypass protection.\"\"\"\n    signals = []\n    body = response.text or \"\"\n    lower = body.lower()\n    if response.status_code in (403, 429):\n        signals.append(f\"HTTP status {response.status_code}\")\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in lower:\n            signals.append(description)\n    if len(body.strip()) < 500:\n        signals.append(f\"unusually short response body ({len(body.strip())} characters)\")\n    return signals\n\n\ndef clean_text(value):\n    return re.sub(r\"\\\\s+\", \" \", value or \"\").strip()\n\n\ndef make_session():\n    session = requests.Session()\n    session.headers.update({\n        \"User-Agent\": \"Mozilla/5.0 (compatible; ScraperStudio/1.0)\",\n        \"Accept-Language\": \"en-US,en;q=0.9\",\n    })\n    proxy = get_proxy()\n    if proxy:\n        session.proxies.update({\"http\": proxy, \"https\": proxy})\n    return session\n\n\ndef fetch(session, url, flags, keyword=\"\"):\n    log(f\"Fetching {url}\")\n    try:\n        response = session.get(url, timeout=30)\n        for signal in detect_anti_bot_signals(response):\n            flags.append({\n                \"timestamp\": datetime.now().isoformat(timespec=\"seconds\"),\n                \"flag_type\": \"anti-bot\",\n                \"message\": signal,\n                \"url\": url,\n                \"keyword\": keyword,\n            })\n        response.raise_for_status()\n        return response\n    except Exception as exc:\n        flags.append({\n            \"timestamp\": datetime.now().isoformat(timespec=\"seconds\"),\n            \"flag_type\": \"error\",\n            \"message\": f\"Request failed: {exc}\",\n            \"url\": url,\n            \"keyword\": keyword,\n        })\n        log(f\"Request failed for {url}: {exc}\")\n        return None\n\n\ndef soup_links(html, base_url):\n    soup = BeautifulSoup(html, \"html.parser\")\n    links = []\n    for anchor in soup.find_all(\"a\", href=True):\n        href = urljoin(base_url, anchor.get(\"href\"))\n        parsed = urlparse(href)\n        if parsed.netloc and parsed.netloc != urlparse(BASE_URL).netloc:\n            continue\n        links.append((clean_text(anchor.get_text(\" \", strip=True)), href.split(\"#\", 1)[0]))\n    return soup, links\n\n\ndef path_parts(url):\n    return [part for part in urlparse(url).path.split(\"/\") if part]\n\n\ndef city_links(html, page_url, keyword):\n    _, links = soup_links(html, page_url)\n    wanted = (keyword or \"\").casefold()\n    result = []\n    seen = set()\n    for text, href in links:\n        parts = path_parts(href)\n        if len(parts) == 3 and parts[:2] == [\"united-states\", \"al\"]:\n            candidate = f\"{text} {parts[2]}\".casefold()\n            if wanted in candidate and href not in seen:\n                seen.add(href)\n                result.append(href)\n    return result\n\n\ndef detail_links(html, page_url):\n    _, links = soup_links(html, page_url)\n    result = []\n    seen = set()\n    for _, href in links:\n        parts = path_parts(href)\n        if (len(parts) >= 4 and parts[:2] == [\"united-states\", \"al\"]\n                and href.rstrip(\"/\") != page_url.rstrip(\"/\") and href not in seen):\n            seen.add(href)\n            result.append(href)\n    return result\n\n\ndef parse_hours(text):\n    patterns = [\n        r\"(?:Mon(?:day)?|Tue(?:sday)?|Wed(?:nesday)?|Thu(?:rsday)?|Fri(?:day)?|Sat(?:urday)?|Sun(?:day)?)[^.;|]{0,80}?\\d{1,2}:\\d{2}\\s*[AP]M[^.;|]{0,20}(?:\\d{1,2}:\\d{2}\\s*[AP]M|Closed)\",\n    ]\n    found = []\n    for pattern in patterns:\n        found.extend(re.findall(pattern, text, flags=re.I))\n    unique = []\n    for item in found:\n        item = clean_text(item)\n        if item not in unique:\n            unique.append(item)\n    return \"; \".join(unique)\n\n\ndef extract_detail(html, url, flags, keyword):\n    soup = BeautifulSoup(html, \"html.parser\")\n    text = clean_text(soup.get_text(\" \", strip=True))\n    lower = text.casefold()\n    if \"temporary kiosk\" in lower or \"temporarily closed\" in lower or re.search(r\"\\bclosed\\b\", lower):\n        flags.append({\n            \"timestamp\": datetime.now().isoformat(timespec=\"seconds\"),\n            \"flag_type\": \"filtered\",\n            \"message\": \"Location appears closed or temporary; excluded per rules\",\n            \"url\": url,\n            \"keyword\": keyword,\n        })\n        return None\n\n    row = {column: \"\" for column in DATA_COLUMNS}\n    row[\"Source URL\"] = url\n    number_match = re.search(r\"(?:store\\s*(?:number|no\\\\.?|#)|location\\s*(?:number|no\\\\.?|#))\\s*[:#]?\\s*([A-Z0-9-]+)\", text, re.I)\n    if number_match:\n        row[\"Store Number\"] = number_match.group(1)\n\n    address_match = re.search(r\"(\\d+\\s+[^,;|]+?),\\s*([A-Za-z .'-]+?),\\s*(AL)\\s+(\\d{5}(?:-\\d{4})?)\", text, re.I)\n    if not address_match:\n        address_match = re.search(r\"(\\d+\\s+[^;|]+?)\\s+([A-Za-z .'-]+),\\s*(AL)\\s+(\\d{5}(?:-\\d{4})?)\", text, re.I)\n    if address_match:\n        row[\"Street Address\"] = clean_text(address_match.group(1))\n        row[\"City\"] = clean_text(address_match.group(2))\n        row[\"State\"] = address_match.group(3).upper()\n        row[\"Postal Code\"] = address_match.group(4)\n\n    phone_match = re.search(r\"(?:phone|tel(?:ephone)?)?\\s*[:.]?\\s*(\\(?\\d{3}\\)?[-. ]\\d{3}[-. ]\\d{4})\", text, re.I)\n    if phone_match:\n        row[\"Phone Number\"] = phone_match.group(1)\n    row[\"Operating Hours\"] = parse_hours(text)\n\n    drive_match = re.search(r\"drive[- ]?thru[^.]{0,40}\", text, re.I)\n    delivery_match = re.search(r\"delivery[^.]{0,40}\", text, re.I)\n    if drive_match:\n        row[\"Drive-Thru Available\"] = drive_match.group(0)\n    if delivery_match:\n        row[\"Delivery Available\"] = delivery_match.group(0)\n\n    uncertain = [name for name in DATA_COLUMNS[:-1] if not row[name]]\n    if uncertain:\n        flags.append({\n            \"timestamp\": datetime.now().isoformat(timespec=\"seconds\"),\n            \"flag_type\": \"low-confidence\",\n            \"message\": \"Fields not confidently found: \" + \", \".join(uncertain),\n            \"url\": url,\n            \"keyword\": keyword,\n        })\n    return row\n\n\ndef scrape_detail(session, url, flags, keyword):\n    response = fetch(session, url, flags, keyword)\n    if response is None:\n        return None\n    return extract_detail(response.text, url, flags, keyword)\n\n\ndef crawl_listing(session, listing_url, flags, keyword, max_products, rows):\n    response = fetch(session, listing_url, flags, keyword)\n    if response is None:\n        return\n    links = detail_links(response.text, listing_url)\n    if not links:\n        flags.append({\n            \"timestamp\": datetime.now().isoformat(timespec=\"seconds\"),\n            \"flag_type\": \"low-confidence\",\n            \"message\": \"No individual location links found; exact DOM selectors were not available in inspection\",\n            \"url\": listing_url,\n            \"keyword\": keyword,\n        })\n    for url in links:\n        if max_products is not None and len(rows) >= max_products:\n            return\n        item = scrape_detail(session, url, flags, keyword)\n        if item:\n            rows.append(item)\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    log(\"Reading input workbook\")\n    input_df = pd.read_excel(args.input)\n    session = make_session()\n    rows, flags = [], []\n\n    for _, record in input_df.iterrows():\n        if args.max_products is not None and len(rows) >= args.max_products:\n            break\n        keyword = \"\" if pd.isna(record.get(\"keyword\", \"\")) else str(record.get(\"keyword\", \"\")).strip()\n        detail_url = \"\" if pd.isna(record.get(\"detail_url\", \"\")) else str(record.get(\"detail_url\", \"\")).strip()\n        listing_url = \"\" if pd.isna(record.get(\"listing_url\", \"\")) else str(record.get(\"listing_url\", \"\")).strip()\n\n        if detail_url:\n            log(f\"Using independent detail fast path: {detail_url}\")\n            item = scrape_detail(session, detail_url, flags, keyword)\n            if item:\n                rows.append(item)\n            continue\n\n        if listing_url:\n            log(f\"Crawling supplied listing URL: {listing_url}\")\n            crawl_listing(session, listing_url, flags, keyword, args.max_products, rows)\n            continue\n\n        if keyword:\n            log(f\"Matching city links for keyword: {keyword}\")\n            response = fetch(session, STATE_URL, flags, keyword)\n            if response is not None:\n                cities = city_links(response.text, STATE_URL, keyword)\n                if not cities:\n                    flags.append({\n                        \"timestamp\": datetime.now().isoformat(timespec=\"seconds\"),\n                        \"flag_type\": \"low-confidence\",\n                        \"message\": \"No matching Alabama city link found; search behavior was not observable in inspection\",\n                        \"url\": STATE_URL,\n                        \"keyword\": keyword,\n                    })\n                for city_url in cities:\n                    if args.max_products is not None and len(rows) >= args.max_products:\n                        break\n                    crawl_listing(session, city_url, flags, keyword, args.max_products, rows)\n\n    log(\"Writing output workbook\")\n    output_df = pd.DataFrame(rows, columns=DATA_COLUMNS)\n    flags_df = pd.DataFrame(flags, columns=FLAG_COLUMNS)\n    with pd.ExcelWriter(args.output, engine=\"openpyxl\") as writer:\n        output_df.to_excel(writer, sheet_name=\"Extracted Data\", index=False)\n        flags_df.to_excel(writer, sheet_name=\"Flags\", index=False)\n    log(f\"Finished: {len(rows)} extracted item(s), {len(flags)} flag(s)\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "requirements_txt": "requests\nbeautifulsoup4\npandas\nopenpyxl\n",
+      "confidence_notes": [
+        "The inspection exposed no exact CSS selectors, so this script uses conservative generic link, text, and regular-expression extraction and flags missing fields or links for review.",
+        "No network API was observed; the script therefore uses requests and BeautifulSoup against rendered HTML responses. If the site requires client-side JavaScript to populate content, this static path may not retrieve listings.",
+        "The observed search input did not visibly change the page; keyword handling consequently matches Alabama city-directory links by visible anchor text or URL slug rather than interacting with that input.",
+        "The script assumes individual location URLs have at least four path components under /united-states/al/, based on the one inspected detail URL.",
+        "Closed and temporary-kiosk detection is based on visible text containing closed, temporarily closed, or temporary kiosk and should be manually verified to avoid false positives.",
+        "Store number, phone number, drive-thru status, delivery status, and exact operating-hours markup were not reliably visible in the inspection; blank values are flagged as low confidence.",
+        "Only one individual detail page was inspected, so address and field-label parsing may require DOM verification for other locations.",
+        "No cookie banner was observed, and this script uses no browser automation; consequently no cookie-dismissal helper is needed for this static implementation.",
+        "The supplied listing URL path is treated as a page containing individual location links; if a listing page uses JavaScript-only links, it will be flagged rather than bypassed."
+      ],
+      "total_tool_calls": 12,
+      "action_log": [
+        {
+          "ts": "2026-08-31T13:22:56",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-08-31T13:22:57",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-08-31T13:22:58",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-08-31T13:22:58",
+          "phase": "recon",
+          "tool": "browser_take_screenshot",
+          "input": {},
+          "call_number": 4
+        },
+        {
+          "ts": "2026-08-31T13:23:01",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input",
+            "text": "Prattville"
+          },
+          "call_number": 5
+        },
+        {
+          "ts": "2026-08-31T13:23:02",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-08-31T13:23:03",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 7
+        },
+        {
+          "ts": "2026-08-31T13:23:04",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville"
+          },
+          "call_number": 8
+        },
+        {
+          "ts": "2026-08-31T13:23:05",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 9
+        },
+        {
+          "ts": "2026-08-31T13:23:06",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 10
+        },
+        {
+          "ts": "2026-08-31T13:23:07",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://restaurants.subway.com/united-states/al/prattville/113-s-memorial-dr"
+          },
+          "call_number": 11
+        },
+        {
+          "ts": "2026-08-31T13:23:09",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 12
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "59559313-2a76-44cc-8db2-fd3642b2ad54",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-08-31T13:23:52",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.007286,
+      "input_tokens": 28302,
+      "output_tokens": 4830,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 23166,
+      "num_turns": 13,
+      "duration_ms": 65069,
+      "duration_api_ms": 65069,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "59559313-2a76-44cc-8db2-fd3642b2ad54",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T13:23:15",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.001988,
+          "input_tokens": 26680,
+          "output_tokens": 685,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 23166,
+          "num_turns": 12,
+          "duration_ms": 27607,
+          "duration_api_ms": 27607,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 26680,
+              "output_tokens": 685,
+              "cached_tokens": 23166,
+              "cost_usd": 0.001988
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "59559313-2a76-44cc-8db2-fd3642b2ad54",
+          "session_id": "openai-session",
+          "recorded_at": "2026-08-31T13:23:52",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005298,
+          "input_tokens": 1622,
+          "output_tokens": 4145,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 37462,
+          "duration_api_ms": 37462,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1622,
+              "output_tokens": 4145,
+              "cached_tokens": 0,
+              "cost_usd": 0.005298
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\subway_restaurant_locator_59559313",
+    "anti_bot_marker": null,
+    "test_run": {
+      "status": "passed",
+      "returncode": 0,
+      "stdout_tail": "[2026-08-31T13:26:19] Reading input workbook\r\n[2026-08-31T13:26:20] Crawling supplied listing URL: https://restaurants.subway.com/united-states/al\r\n[2026-08-31T13:26:20] Fetching https://restaurants.subway.com/united-states/al\r\n[2026-08-31T13:26:21] Fetching https://restaurants.subway.com/united-states/al/abbeville/644-ozark-road\r\n[2026-08-31T13:26:21] Fetching https://restaurants.subway.com/united-states/al/alabaster/438-1st-st-sw\r\n[2026-08-31T13:26:21] Fetching https://restaurants.subway.com/united-states/al/albertville/7343-highway-431\r\n[2026-08-31T13:26:22] Writing output workbook\r\n[2026-08-31T13:26:22] Finished: 3 extracted item(s), 6 flag(s)\r\n",
+      "stderr_tail": "",
+      "sample_output_ready": true,
+      "max_products": 3,
+      "finished_at": "2026-08-31T13:26:22"
+    }
+  },
+  "daf09675-b67e-4130-8aa5-c1b577fcefc2": {
+    "job_id": "daf09675-b67e-4130-8aa5-c1b577fcefc2",
+    "name": "Samsung Smartphones Data Collector",
+    "status": "completed",
+    "created_at": "2026-09-02T11:31:44",
+    "target_url": "https://www.samsung.com/in/smartphones/all-smartphones/",
+    "sample_keyword": "Galaxy S24",
+    "recon_model": "gpt-5.6-luna",
+    "codegen_model": "gpt-5.6-luna",
+    "result": {
+      "generated_code": "import argparse\nimport json\nimport re\nimport sys\nimport traceback\nfrom datetime import datetime\nfrom urllib.parse import urljoin, urlparse\n\nfrom bs4 import BeautifulSoup\nfrom openpyxl import Workbook, load_workbook\nfrom playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError\n\nTARGET_URL = \"https://www.samsung.com/in/smartphones/all-smartphones/\"\n\n\ndef log(message):\n    print(f\"[{datetime.now().isoformat(timespec='seconds')}] {message}\", flush=True)\n\n\ndef get_proxy():\n    return None\n\n\ndef solve_captcha(*args, **kwargs):\n    raise NotImplementedError(\"CAPTCHA solving and anti-bot bypass are not implemented\")\n\n\ndef detect_anti_bot_signals(status, body, url=\"\"):\n    \"\"\"Return signals only; this function never attempts to bypass anything.\"\"\"\n    signals = []\n    text = (body or \"\")[:100000].lower()\n    if status in (403, 429):\n        signals.append(f\"HTTP status {status}\")\n    markers = {\n        \"captcha\": \"CAPTCHA marker\",\n        \"cloudflare\": \"Cloudflare marker\",\n        \"cf-chl-\": \"Cloudflare challenge marker\",\n        \"perimeterx\": \"PerimeterX marker\",\n        \"datadome\": \"DataDome marker\",\n    }\n    for marker, description in markers.items():\n        if marker in text:\n            signals.append(description)\n    if len(body or \"\") < 200:\n        signals.append(\"Unusually short HTTP response body\")\n    return signals\n\n\ndef dismiss_cookie_banner(page):\n    \"\"\"Try common consent labels; absence of a banner is not fatal.\"\"\"\n    labels = [\"Accept all\", \"Accept\", \"I agree\", \"Allow all\", \"Agree\"]\n    for label in labels:\n        try:\n            locator = page.get_by_role(\"button\", name=re.compile(rf\"^{re.escape(label)}$\", re.I)).first\n            if locator.is_visible(timeout=500):\n                locator.click(timeout=700)\n                log(f\"Cookie consent button clicked: {label}\")\n                return True\n        except Exception:\n            pass\n    log(\"Cookie dismissal was attempted but no consent button matched; possible layout change\")\n    return False\n\n\ndef add_flag(flags, flag_type, url, message):\n    flags.append({\"Type\": flag_type, \"URL\": url or \"\", \"Message\": message})\n\n\ndef jsonld_objects(html):\n    soup = BeautifulSoup(html, \"html.parser\")\n    objects = []\n    for script in soup.select('script[type=\"application/ld+json\"]'):\n        try:\n            value = json.loads(script.string or script.get_text())\n            if isinstance(value, list):\n                objects.extend(value)\n            else:\n                objects.append(value)\n        except Exception:\n            continue\n    return objects\n\n\ndef walk(value):\n    yield value\n    if isinstance(value, dict):\n        for child in value.values():\n            yield from walk(child)\n    elif isinstance(value, list):\n        for child in value:\n            yield from walk(child)\n\n\ndef first_key(objects, keys):\n    wanted = {key.lower() for key in keys}\n    for root in objects:\n        for value in walk(root):\n            if isinstance(value, dict):\n                for key, item in value.items():\n                    if key.lower() in wanted and item not in (None, \"\", []):\n                        return item\n    return None\n\n\ndef all_key_values(objects, keys):\n    wanted = {key.lower() for key in keys}\n    result = []\n    for root in objects:\n        for value in walk(root):\n            if isinstance(value, dict):\n                for key, item in value.items():\n                    if key.lower() in wanted and item not in (None, \"\", []):\n                        if isinstance(item, list):\n                            result.extend(item)\n                        else:\n                            result.append(item)\n    return result\n\n\ndef clean_values(values):\n    output = []\n    for value in values:\n        if isinstance(value, dict):\n            value = value.get(\"name\") or value.get(\"value\") or value.get(\"option\")\n        if value is not None:\n            value = str(value).strip()\n            if value and value not in output:\n                output.append(value)\n    return output\n\n\ndef product_items(objects):\n    items = []\n    for root in objects:\n        for value in walk(root):\n            if isinstance(value, dict) and str(value.get(\"@type\", \"\")).lower() == \"itemlist\":\n                entries = value.get(\"itemListElement\", [])\n                if isinstance(entries, list):\n                    for entry in entries:\n                        item = entry.get(\"item\") if isinstance(entry, dict) else entry\n                        if isinstance(item, str):\n                            items.append({\"url\": item})\n                        elif isinstance(item, dict):\n                            items.append(item)\n    return items\n\n\ndef title_slug_match(item, keyword):\n    if not keyword:\n        return True\n    needle = str(keyword).strip().lower()\n    title = str(item.get(\"name\") or item.get(\"title\") or \"\").lower()\n    slug = urlparse(str(item.get(\"url\") or item.get(\"@id\") or \"\")).path.lower()\n    return needle in title or needle in slug\n\n\ndef extract_detail(page, url, keyword=None):\n    html = page.content()\n    soup = BeautifulSoup(html, \"html.parser\")\n    objects = jsonld_objects(html)\n    title = first_key(objects, [\"name\", \"headline\"])\n    if not title:\n        heading = soup.select_one(\"h1\") or soup.select_one(\"h2\")\n        title = heading.get_text(\" \", strip=True) if heading else None\n    title = str(title).strip() if title else None\n    if keyword and not (str(keyword).lower() in (title or \"\").lower() or str(keyword).lower() in urlparse(url).path.lower()):\n        return None\n\n    price = first_key(objects, [\"price\"])\n    if isinstance(price, dict):\n        price = price.get(\"value\") or price.get(\"amount\")\n    currency = first_key(objects, [\"priceCurrency\", \"currency\"])\n    model = first_key(objects, [\"mpn\", \"model\", \"modelNumber\", \"sku\"])\n    availability = first_key(objects, [\"availability\"])\n    if isinstance(availability, dict):\n        availability = availability.get(\"value\") or availability.get(\"name\")\n\n    colors = clean_values(all_key_values(objects, [\"color\", \"colour\", \"colorOptions\", \"colourOptions\"]))\n    storage = clean_values(all_key_values(objects, [\"storage\", \"storageCapacity\", \"storageOptions\", \"capacity\"]))\n    display = first_key(objects, [\"display\", \"displaySize\", \"screenSize\", \"displaySpecs\"])\n    camera = first_key(objects, [\"camera\", \"cameraSpecs\", \"cameraResolution\"])\n\n    # The page exposes Device, Storage, and Colour controls.  Use their option\n    # text only as a fallback because the exact control DOM was not specified.\n    for label, target in ((\"storage\", storage), (\"colour\", colors), (\"color\", colors)):\n        if not target:\n            pattern = re.compile(label, re.I)\n            heading = next((h for h in soup.find_all([\"h2\", \"h3\", \"label\", \"legend\"]) if pattern.search(h.get_text(\" \", strip=True))), None)\n            if heading:\n                container = heading.parent\n                target.extend(clean_values([x.get_text(\" \", strip=True) for x in container.find_all([\"button\", \"option\", '[role=\"option\"]'])]))\n\n    return {\n        \"Product Title\": title,\n        \"Model Code\": model,\n        \"Price (INR)\": price if str(currency or \"INR\").upper() in (\"INR\", \"INR \", \"\u20b9\") else price,\n        \"Color options\": \"; \".join(colors) if colors else None,\n        \"Storage capacity\": \"; \".join(storage) if storage else None,\n        \"Display specs\": display,\n        \"Camera specs\": camera,\n        \"Availability status\": availability,\n        \"URL\": url,\n    }\n\n\ndef main():\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--input\", default=\"input.xlsx\")\n    parser.add_argument(\"--output\", default=\"output.xlsx\")\n    parser.add_argument(\"--max-products\", type=int, default=None)\n    args = parser.parse_args()\n\n    rows = []\n    try:\n        workbook = load_workbook(args.input, read_only=True, data_only=True)\n        sheet = workbook.active\n        headers = [str(x).strip().lower() if x is not None else \"\" for x in next(sheet.iter_rows(values_only=True))]\n        for values in sheet.iter_rows(min_row=2, values_only=True):\n            row = dict(zip(headers, values))\n            rows.append({key: row.get(key) for key in (\"keyword\", \"listing_url\", \"detail_url\")})\n    except Exception as exc:\n        log(f\"Input read error: {exc}\")\n        rows = [{\"keyword\": None, \"listing_url\": TARGET_URL, \"detail_url\": None}]\n\n    extracted = []\n    flags = []\n    seen = set()\n    count = 0\n    log(\"Starting browser-based scraper; no API was observed during inspection\")\n\n    with sync_playwright() as pw:\n        browser = pw.chromium.launch(headless=True, proxy=get_proxy())\n        page = browser.new_page()\n\n        def inspect_response(response):\n            try:\n                body = response.body()\n                signals = detect_anti_bot_signals(response.status, body.decode(\"utf-8\", \"ignore\"), response.url)\n                for signal in signals:\n                    add_flag(flags, \"anti-bot\", response.url, signal)\n            except Exception:\n                pass\n\n        page.on(\"response\", inspect_response)\n        for input_row in rows:\n            if args.max_products is not None and count >= args.max_products:\n                break\n            keyword = input_row.get(\"keyword\")\n            detail_url = input_row.get(\"detail_url\")\n            listing_url = input_row.get(\"listing_url\") or TARGET_URL\n            try:\n                if detail_url:\n                    urls = [(str(detail_url).strip(), keyword)]\n                else:\n                    log(f\"Opening listing: {listing_url}\")\n                    page.goto(str(listing_url), wait_until=\"domcontentloaded\", timeout=60000)\n                    if not dismiss_cookie_banner(page):\n                        add_flag(flags, \"low-confidence\", listing_url, \"Cookie dismissal attempted but no common consent button matched\")\n                    page.wait_for_timeout(1500)\n                    items = product_items(jsonld_objects(page.content()))\n                    if not items:\n                        add_flag(flags, \"low-confidence\", listing_url, \"ItemList JSON-LD found no usable product entries\")\n                    urls = []\n                    for item in items:\n                        if title_slug_match(item, keyword):\n                            raw = item.get(\"url\") or item.get(\"@id\")\n                            if raw:\n                                urls.append((urljoin(str(listing_url), str(raw)), keyword))\n                for url, item_keyword in urls:\n                    if args.max_products is not None and count >= args.max_products:\n                        break\n                    if url in seen:\n                        continue\n                    seen.add(url)\n                    log(f\"Opening detail page: {url}\")\n                    page.goto(url, wait_until=\"domcontentloaded\", timeout=60000)\n                    if not dismiss_cookie_banner(page):\n                        add_flag(flags, \"low-confidence\", url, \"Cookie dismissal attempted but no common consent button matched\")\n                    page.wait_for_timeout(1200)\n                    record = extract_detail(page, url, item_keyword)\n                    if record is None:\n                        continue\n                    extracted.append(record)\n                    count += 1\n                    for field in (\"Model Code\", \"Price (INR)\", \"Color options\", \"Storage capacity\", \"Display specs\", \"Camera specs\", \"Availability status\"):\n                        if record.get(field) in (None, \"\"):\n                            add_flag(flags, \"low-confidence\", url, f\"Field not exposed or not confidently extracted: {field}\")\n            except PlaywrightTimeoutError as exc:\n                add_flag(flags, \"error\", str(detail_url or listing_url), f\"Page timeout: {exc}\")\n            except Exception as exc:\n                add_flag(flags, \"error\", str(detail_url or listing_url), f\"Extraction error: {exc}\")\n                log(traceback.format_exc())\n        browser.close()\n\n    log(f\"Writing {len(extracted)} extracted rows and {len(flags)} flags\")\n    out = Workbook()\n    data_sheet = out.active\n    data_sheet.title = \"Extracted Data\"\n    data_headers = [\"Product Title\", \"Model Code\", \"Price (INR)\", \"Color options\", \"Storage capacity\", \"Display specs\", \"Camera specs\", \"Availability status\", \"URL\"]\n    data_sheet.append(data_headers)\n    for record in extracted:\n        data_sheet.append([record.get(header) for header in data_headers])\n    flag_sheet = out.create_sheet(\"Flags\")\n    flag_sheet.append([\"Type\", \"URL\", \"Message\"])\n    for flag in flags:\n        flag_sheet.append([flag[\"Type\"], flag[\"URL\"], flag[\"Message\"])\n    out.save(args.output)\n    log(\"Done\")\n\n\nif __name__ == \"__main__\":\n    main()\n",
+      "requirements_txt": "beautifulsoup4\nopenpyxl\nplaywright",
+      "confidence_notes": [
+        "The listing is confirmed by ItemList JSON-LD and numberOfItems=50, but individual rendered product cards and href patterns were not exposed; this script therefore relies on ItemList JSON-LD entries and flags listings with no usable entries.",
+        "The sample keyword search did not visibly alter the listing URL or snapshot, so keyword matching is performed locally against each ItemList item's title/name and URL path rather than relying on Samsung's search UI.",
+        "The inspected detail URL is a purchase/configuration page for a product family; the script extracts JSON-LD and limited nearby control text, but exact variant-state behavior was not confirmed.",
+        "Price, model code, availability, display, camera, storage, and color values were not exposed in the inspection snapshot. Missing values are left blank and produce low-confidence Flags rows.",
+        "No network API was observed, so this implementation uses Playwright browser rendering and JSON-LD/DOM extraction. Install the Playwright browser separately with `playwright install chromium`.",
+        "No cookie banner was observed, but the mandatory browser contract requires a dismissal attempt after every goto; when no common consent button matches, the script logs and adds a possible-layout-change flag.",
+        "The script assumes the first Excel row contains column headers and uses the active worksheet. detail_url has independent priority and is navigated to directly without a listing crawl.",
+        "The generic JSON-LD key mappings for variant fields are necessarily conservative because the inspection did not expose the site's exact embedded ProductGroup schema or page-state structure.",
+        "Accessories, cases, and refurbished products are not included when using the inspected ItemList unless Samsung exposes them in that list; no reliable exclusion selector or classification field was provided, so such products are not guessed away."
+      ],
+      "total_tool_calls": 11,
+      "action_log": [
+        {
+          "ts": "2026-09-02T11:32:03",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.samsung.com/in/smartphones/all-smartphones/"
+          },
+          "call_number": 1
+        },
+        {
+          "ts": "2026-09-02T11:32:04",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 2
+        },
+        {
+          "ts": "2026-09-02T11:32:06",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 3
+        },
+        {
+          "ts": "2026-09-02T11:32:09",
+          "phase": "recon",
+          "tool": "browser_click",
+          "input": {
+            "selector": "input[type='search'], input[placeholder*='Search'], button[aria-label*='Search']"
+          },
+          "call_number": 4
+        },
+        {
+          "ts": "2026-09-02T11:32:10",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 5
+        },
+        {
+          "ts": "2026-09-02T11:32:11",
+          "phase": "recon",
+          "tool": "browser_type",
+          "input": {
+            "selector": "input[type='search'], input[placeholder*='Search']",
+            "text": "Galaxy S24"
+          },
+          "call_number": 6
+        },
+        {
+          "ts": "2026-09-02T11:32:13",
+          "phase": "recon",
+          "tool": "browser_press_key",
+          "input": {
+            "key": "Enter"
+          },
+          "call_number": 7
+        },
+        {
+          "ts": "2026-09-02T11:32:15",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 8
+        },
+        {
+          "ts": "2026-09-02T11:32:17",
+          "phase": "recon",
+          "tool": "browser_navigate",
+          "input": {
+            "url": "https://www.samsung.com/in/smartphones/galaxy-s24/buy/"
+          },
+          "call_number": 9
+        },
+        {
+          "ts": "2026-09-02T11:32:18",
+          "phase": "recon",
+          "tool": "browser_snapshot",
+          "input": {},
+          "call_number": 10
+        },
+        {
+          "ts": "2026-09-02T11:32:21",
+          "phase": "recon",
+          "tool": "browser_network_requests",
+          "input": {},
+          "call_number": 11
+        }
+      ]
+    },
+    "cost": {
+      "job_id": "daf09675-b67e-4130-8aa5-c1b577fcefc2",
+      "session_id": [
+        "openai-session",
+        "openai-session"
+      ],
+      "recorded_at": "2026-09-02T11:33:12",
+      "subtype": "recon=completed; codegen=completed",
+      "is_error": false,
+      "total_cost_usd": 0.008014,
+      "input_tokens": 31431,
+      "output_tokens": 5352,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 26078,
+      "num_turns": 13,
+      "duration_ms": 87588,
+      "duration_api_ms": 87588,
+      "model_usage": null,
+      "phases": [
+        {
+          "job_id": "daf09675-b67e-4130-8aa5-c1b577fcefc2",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T11:32:27",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.002027,
+          "input_tokens": 29850,
+          "output_tokens": 626,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 26078,
+          "num_turns": 12,
+          "duration_ms": 42797,
+          "duration_api_ms": 42797,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 29850,
+              "output_tokens": 626,
+              "cached_tokens": 26078,
+              "cost_usd": 0.002027
+            }
+          },
+          "phase": "recon"
+        },
+        {
+          "job_id": "daf09675-b67e-4130-8aa5-c1b577fcefc2",
+          "session_id": "openai-session",
+          "recorded_at": "2026-09-02T11:33:12",
+          "subtype": "completed",
+          "is_error": false,
+          "total_cost_usd": 0.005987,
+          "input_tokens": 1581,
+          "output_tokens": 4726,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "num_turns": 1,
+          "duration_ms": 44791,
+          "duration_api_ms": 44791,
+          "model_usage": {
+            "gpt-5.6-luna": {
+              "input_tokens": 1581,
+              "output_tokens": 4726,
+              "cached_tokens": 0,
+              "cost_usd": 0.005987
+            }
+          },
+          "phase": "codegen"
+        }
+      ]
+    },
+    "saved_to": "C:\\Users\\MOB260005997\\Scraper Studio\\generated_scripts\\samsung_smartphones_data_collector_daf09675",
+    "anti_bot_marker": null,
+    "test_run": null
   }
 }

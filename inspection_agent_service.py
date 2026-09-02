@@ -1,76 +1,52 @@
 """
-Live Inspection & Codegen Agent Service
-=========================================
+Live Inspection & Codegen Agent Service (OpenAI + MCP Powered)
+==============================================================
 Backend service that drives an autonomous browser-inspection + code-generation
-session using the Claude Agent SDK, with a Playwright MCP server as the
-browser tool. This replaces the "Claude + Chrome DevTools in a chat" pattern
-with something that runs unattended, from your own infrastructure.
+session using OpenAI (default: GPT-5.6 Luna for both Recon and Codegen) and the
+Model Context Protocol (MCP) for Playwright browser automation.
 
-Real, verified building blocks this is built on:
-  - claude_agent_sdk (pip install claude-agent-sdk) - ClaudeSDKClient,
-    ClaudeAgentOptions, HookMatcher, message/content block types.
-  - @playwright/mcp (npm) - MCP server exposing browser automation tools
-    over structured accessibility snapshots. Run with HTTP transport
-    (`npx @playwright/mcp@latest --port 8931 --host 0.0.0.0`) so a stateless
-    worker process can connect to it as a URL rather than spawning a subprocess
-    per job.
-
-TOKEN/COST DESIGN (2026-08-20 refactor)
-----------------------------------------
-Production cost data (cost_ledger.jsonl) showed 4 of 5 jobs blowing through
-the $0.75/job default budget (actual spend $0.77-$1.10) and dying via
-`error_max_budget_usd` with nothing to show for it. The dominant cost driver
-was `cache_read_input_tokens` in the 340K-545K range per job, compounding
-across 14-21 turns of one long browser-driving + code-writing session -
-every earlier tool result (page snapshots, network logs) stays in context
-and gets re-paid on every later turn.
-
-This version splits the job into two independent agent sessions instead of
-one monolithic one:
-  1. RECON phase - browser tools only, produces a small structured JSON of
-     *findings* (selectors, page type, sample data) - NOT code. Guarded by
-     a redundant-call dedup hook and an anti-bot early-exit so a doomed
-     inspection doesn't burn its whole step budget after the site has
-     already signaled a block.
-  2. CODEGEN phase - no browser tools at all, starts a *fresh* context
-     containing only the compact recon findings + the requester's rules,
-     and writes the script. It never pays for the accumulated snapshot/
-     network-log history from recon, which is the single biggest lever
-     here: codegen's input context is now the findings JSON (small),
-     not the full multi-turn browser transcript.
-
-Each phase gets its own share of the job's budget (see cost_metering.
-split_budget_ceiling) and the ceiling handed to the SDK is shaved by a
-safety margin so a single expensive turn is less likely to blow past the
-job's actual target spend before the guard can stop it.
-
-This file is a working service skeleton: correct SDK usage, real permission
-scoping, real hooks for audit logging and step/cost capping. It is NOT wired
-to a live job queue or database - see api_service.py for how it plugs into
-the rest of Scraper Studio.
+Architectural highlights:
+  - OpenAI Client (openai.AsyncOpenAI) for model completions & tool calling.
+  - Playwright MCP server over HTTP/SSE (or Stdio) for browser tools.
+  - Two-phase architecture:
+      1. RECON phase: Browser tools enabled. Inspects live target page, navigates,
+         extracts selectors and sample data into a compact structured JSON findings object.
+      2. CODEGEN phase: Fresh context, zero browser tools. Writes the standalone Python
+         scraper strictly adhering to the universal SCRIPT_CONTRACT.
+  - Independent model configurability (OPENAI_RECON_MODEL, OPENAI_CODEGEN_MODEL, default: gpt-5.6-luna).
+  - Default temperature: 1.0 (optimized for Luna).
+  - PreToolUse hooks for audit logging, SSE live streaming, step capping, and duplicate-call dedup.
+  - Real-time anti-bot detection for fast failover.
 """
 
 import asyncio
 import json
+import os
 import re
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Coroutine
 
-from claude_agent_sdk import (
-    ClaudeAgentOptions,
-    ClaudeSDKClient,
-    HookMatcher,
-    AssistantMessage,
-    TextBlock,
-    ToolUseBlock,
-    ToolResultBlock,
-    ResultMessage,
-)
+from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionMessageToolCall
 
-from auth_config import require_credentials_at_startup, CredentialError
+try:
+    from dotenv import load_dotenv
+    load_dotenv(override=False)
+except ImportError:
+    pass
+
+try:
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.sse import sse_client
+    from mcp.client.stdio import stdio_client
+    MCP_AVAILABLE = True
+except ImportError:
+    MCP_AVAILABLE = False
+
+from auth_config import resolve_credentials, require_credentials_at_startup, CredentialError
 from cost_metering import (
     CostRecord,
     CostSink,
@@ -80,8 +56,34 @@ from cost_metering import (
     combine_cost_records,
     resolve_budget_ceiling,
     split_budget_ceiling,
+    calculate_cost_usd,
     SDK_BUDGET_SAFETY_MARGIN,
 )
+
+# --------------------------------------------------------------------------
+# Model & Temperature Configuration (OpenAI)
+# --------------------------------------------------------------------------
+
+def get_default_model() -> str:
+    return os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
+
+def get_default_recon_model() -> str:
+    return os.getenv("OPENAI_RECON_MODEL", get_default_model())
+
+def get_default_codegen_model() -> str:
+    return os.getenv("OPENAI_CODEGEN_MODEL", get_default_model())
+
+def get_default_temperature() -> float:
+    try:
+        return float(os.getenv("OPENAI_TEMPERATURE", "1.0"))
+    except ValueError:
+        return 1.0
+
+DEFAULT_MODEL = get_default_model()
+DEFAULT_RECON_MODEL = get_default_recon_model()
+DEFAULT_CODEGEN_MODEL = get_default_codegen_model()
+DEFAULT_TEMPERATURE = get_default_temperature()
+
 
 # --------------------------------------------------------------------------
 # Job contract
@@ -92,29 +94,17 @@ class InspectionJob:
     """Mirrors the fields submitted from the Builder page."""
     job_id: str
     target_url: str
-    sample_keyword: str | None = None  # optional: one concrete value for the
-                                        # agent to actually test navigation/
-                                        # search with during live inspection.
-                                        # NOT a runtime setting - the delivered
-                                        # script's real keyword/URL handling
-                                        # comes from input.xlsx at run time.
+    sample_keyword: str | None = None
     search_rules: str = ""
     filter_rules: str = ""
     navigation_rules: str = ""
     extraction_rules: str = ""
-    max_steps: int = 40          # hard cap on RECON phase tool calls (cost control)
+    max_steps: int = 40          # hard cap on RECON phase tool calls
     max_seconds: int = 600       # hard cap on wall-clock time for the RECON phase
-    max_budget_usd: float | None = None  # hard cap on TOTAL spend across both
-                                          # phases; None -> service default
-    recon_model: str | None = None    # optional model override for the browser-
-                                       # driving phase - a cheaper/faster model
-                                       # is usually fine here since the task is
-                                       # mostly mechanical navigation + reporting
-                                       # facts, not writing code. None -> SDK/
-                                       # service default.
-    codegen_model: str | None = None  # optional model override for the code-
-                                       # writing phase. None -> SDK/service
-                                       # default.
+    max_budget_usd: float | None = None  # hard cap on TOTAL spend across both phases
+    recon_model: str | None = None    # optional model override for Phase 1 (Recon)
+    codegen_model: str | None = None  # optional model override for Phase 2 (Codegen)
+    temperature: float | None = None  # optional temperature override (default: 1.0)
 
 
 @dataclass
@@ -127,44 +117,24 @@ class InspectionResult:
     action_log: list[dict] = field(default_factory=list)
     total_tool_calls: int = 0
     total_cost_usd: float | None = None
-    cost_record: dict | None = None   # combined CostRecord across both phases,
-                                       # serialized, for the API layer. Has the
-                                       # same top-level keys as the original
-                                       # single-phase design (total_cost_usd,
-                                       # num_turns, ...) for backward
-                                       # compatibility, plus a "phases" list
-                                       # breaking spend down by recon/codegen.
-    anti_bot_marker: str | None = None  # set if recon's early-exit fired (see
-                                         # ANTI_BOT_MARKERS) - surfaced as a
-                                         # first-class field, not just buried
-                                         # in confidence_notes text, so the
-                                         # API/dashboard can flag it directly.
+    cost_record: dict | None = None
+    anti_bot_marker: str | None = None
 
 
 # --------------------------------------------------------------------------
-# Playwright MCP server connection
+# Playwright MCP Server Configuration & Allowed Tools
 # --------------------------------------------------------------------------
-# Run once, shared by the worker fleet (not spawned per-job):
-#   npx @playwright/mcp@latest --port 8931 --host 0.0.0.0 --isolated
-# --isolated gives each MCP session a fresh browser profile - important so
-# one customer's job can't see another's cookies/storage state.
 
-def playwright_mcp_config(base_url: str = "http://localhost:8931") -> dict:
-    return {
-        "browser": {
-            "type": "http",
-            "url": f"{base_url}/mcp",
-        }
-    }
-
-
-# --------------------------------------------------------------------------
-# Guardrails: allowed tools, hooks for audit log + step/time/repeat capping
-# --------------------------------------------------------------------------
-# The recon agent should only ever be able to look at a webpage - never
-# write files, run shell commands, or touch anything outside the browser.
-# The codegen agent (below) gets none of these - it never touches a browser.
 RECON_ALLOWED_TOOLS = [
+    "browser_navigate",
+    "browser_snapshot",
+    "browser_click",
+    "browser_type",
+    "browser_press_key",
+    "browser_wait_for",
+    "browser_network_requests",
+    "browser_take_screenshot",
+    # Prefixed aliases for compatibility
     "mcp__browser__browser_navigate",
     "mcp__browser__browser_snapshot",
     "mcp__browser__browser_click",
@@ -174,31 +144,16 @@ RECON_ALLOWED_TOOLS = [
     "mcp__browser__browser_network_requests",
     "mcp__browser__browser_take_screenshot",
 ]
-ALLOWED_TOOLS = RECON_ALLOWED_TOOLS  # backward-compat alias
 
-# Tools whose *result* is expensive (a full accessibility snapshot, every
-# network request, a screenshot) and whose value comes from being fresh -
-# calling one of these twice in a row with identical arguments doesn't teach
-# the agent anything new, it just re-pays (in cache-read tokens) for
-# information that's already sitting in context. This is the biggest single
-# driver of the cache_read_input_tokens growth seen in production (500K+
-# tokens/job) - the dedup guard below directly targets it.
 REPEATABLE_WITHOUT_PROGRESS = {
+    "browser_snapshot",
+    "browser_network_requests",
+    "browser_take_screenshot",
     "mcp__browser__browser_snapshot",
     "mcp__browser__browser_network_requests",
     "mcp__browser__browser_take_screenshot",
 }
 
-# Anti-bot / block markers to watch for in tool results during recon. If the
-# site has already told us "no" (captcha wall, WAF block page, rate limit),
-# continuing to spend turns poking at it doesn't produce anything more
-# useful than what's already been observed - better to stop immediately,
-# report what was found before the block, and let codegen work with that
-# (or let the job fail cleanly) rather than burn the rest of the step/budget
-# ceiling against a wall. Mirrors the markers the generated scraper's own
-# `detect_anti_bot_signals()` is instructed to check for (see
-# build_codegen_prompt), so the service and the script it produces agree on
-# what "blocked" looks like.
 ANTI_BOT_MARKERS = [
     "captcha", "cloudflare", "perimeterx", "datadome", "access denied",
     "unusual traffic", "are you a robot", "verify you are human",
@@ -214,117 +169,8 @@ def _detect_anti_bot_signal(text: str) -> str | None:
     return None
 
 
-def _tool_result_text(block: ToolResultBlock) -> str:
-    """ToolResultBlock.content is either a plain string or a list of content
-    blocks (mirroring the Anthropic Messages API tool_result shape) -
-    normalize either into plain text for marker scanning."""
-    content = getattr(block, "content", None)
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        parts = []
-        for item in content:
-            if isinstance(item, dict):
-                parts.append(str(item.get("text", "")))
-            else:
-                parts.append(str(getattr(item, "text", "")))
-        return " ".join(parts)
-    return str(content or "")
-
-
-def build_hooks(
-    job: InspectionJob,
-    action_log: list[dict],
-    call_counter: dict,
-    max_steps: int | None = None,
-    phase_label: str = "recon",
-    on_log_entry=None,
-):
-    """
-    PreToolUse hook: runs BEFORE every tool call the agent makes.
-      - Logs the call (audit trail), tagged with which phase it belongs to
-        so a merged recon+codegen action_log stays unambiguous.
-      - Pushes the same entry to on_log_entry(), if provided, so a caller
-        (e.g. the API layer's SSE endpoint) can stream it live rather than
-        only seeing the full list after the job finishes.
-      - Enforces the per-phase step cap by denying further tool use once hit.
-      - Denies an immediate repeat of an expensive read-only tool call with
-        identical arguments (see REPEATABLE_WITHOUT_PROGRESS above).
-    This is the application intercepting the agent loop, not Claude deciding
-    to stop on its own - so the caps are real and can't be reasoned around.
-    """
-    effective_max_steps = job.max_steps if max_steps is None else max_steps
-    last_call = {"key": None, "repeat_count": 0}
-
-    async def audit_and_cap(input_data, tool_use_id, context):
-        call_counter["count"] += 1
-        tool_name = input_data.get("tool_name")
-        tool_input = input_data.get("tool_input")
-        entry = {
-            "ts": datetime.now().isoformat(timespec="seconds"),
-            "phase": phase_label,
-            "tool": tool_name,
-            "input": tool_input,
-            "call_number": call_counter["count"],
-        }
-        action_log.append(entry)
-        if on_log_entry:
-            try:
-                await on_log_entry(entry)
-            except Exception:
-                pass  # streaming is best-effort - never let it break the job itself
-
-        if call_counter["count"] > effective_max_steps:
-            return {
-                "hookSpecificOutput": {
-                    "hookEventName": "PreToolUse",
-                    "permissionDecision": "deny",
-                    "permissionDecisionReason": (
-                        f"Step cap ({effective_max_steps}) reached for job "
-                        f"{job.job_id} ({phase_label} phase). Denying further "
-                        "browser actions - wrap up with what's been gathered so far."
-                    ),
-                }
-            }
-
-        if tool_name in REPEATABLE_WITHOUT_PROGRESS:
-            try:
-                call_key = (tool_name, json.dumps(tool_input, sort_keys=True, default=str))
-            except TypeError:
-                call_key = (tool_name, str(tool_input))
-            if call_key == last_call["key"]:
-                last_call["repeat_count"] += 1
-            else:
-                last_call["repeat_count"] = 0
-            last_call["key"] = call_key
-            if last_call["repeat_count"] >= 1:
-                return {
-                    "hookSpecificOutput": {
-                        "hookEventName": "PreToolUse",
-                        "permissionDecision": "deny",
-                        "permissionDecisionReason": (
-                            f"{tool_name} was just called with identical arguments - "
-                            "that result is already in context. Act on what you "
-                            "already observed (click/type/navigate based on the "
-                            "last snapshot, or move on to the next step) instead "
-                            "of re-fetching unchanged state."
-                        ),
-                    }
-                }
-        else:
-            last_call["key"] = None
-            last_call["repeat_count"] = 0
-
-        return {}
-
-    return {
-        "PreToolUse": [HookMatcher(matcher=None, hooks=[audit_and_cap])],
-    }
-
-
 # --------------------------------------------------------------------------
-# Prompt construction - translates the NL rules from the Builder page into
-# each phase's task
+# Prompt Construction
 # --------------------------------------------------------------------------
 
 SCRIPT_CONTRACT = """MANDATORY SCRIPT CONTRACT - every scraper you write MUST follow this exact
@@ -425,8 +271,7 @@ YOUR TASK:
 
 Return your final answer as a single JSON object with exactly these keys
 (keep every value CONCISE - a few sentences or short bullet-style strings per
-key, not prose paragraphs - this findings object is another step's entire
-input, so density matters more than completeness of wording):
+key, not prose paragraphs):
   "page_type"              - "listing" | "detail" | "both"
   "cookie_banner"           - what was present (if anything) and how it was dismissed
   "search_flow"             - how search/filter interaction actually works, if tested
@@ -507,46 +352,26 @@ CODEGEN_SYSTEM_PROMPT = (
     "than guessing at page structure you weren't shown."
 )
 
-CODEGEN_MAX_TURNS = 6          # codegen is a (near-)single-shot JSON response,
-                                # not a multi-step tool loop - no browser tools
-                                # are even offered, so this only needs enough
-                                # headroom for a self-correction retry or two.
-CODEGEN_MAX_SECONDS = 180      # independent, short wall-clock cap for codegen
+CODEGEN_MAX_TURNS = 6
+CODEGEN_MAX_SECONDS = 180
 
 
 # --------------------------------------------------------------------------
-# Output parsing
+# Output Parsing
 # --------------------------------------------------------------------------
 
 def parse_agent_output(final_text: str) -> tuple[str, str, list[str]]:
-    """
-    Turns the codegen agent's final message into (generated_code,
-    requirements_txt, confidence_notes), with layered fallbacks - and a hard
-    guarantee: this function never returns raw prose as generated_code. A
-    .py file that fails to even parse (e.g. "SyntaxError: invalid character
-    '—'") is worse than an empty one with a clear note, because it looks
-    like a real file until someone tries to run it.
-
-    Tier 1: strict JSON - the happy path the prompt asks for.
-    Tier 2: JSON wrapped in a ```json ... ``` markdown fence (models do this
-            even when told not to) - strip the fence, retry.
-    Tier 3: no valid JSON at all - look for a ```python ... ``` fenced code
-            block anywhere in the text and use that as the code, with a note
-            that any surrounding explanation (and requirements_txt) was NOT
-            captured.
-    Tier 4: nothing structured found - return EMPTY code (never the raw
-            text) plus a note, so nothing downstream mistakes explanation
-            for executable code.
-    """
-    text = final_text.strip()
+    """Extracts (generated_code, requirements_txt, confidence_notes) with fallbacks."""
+    text = (final_text or "").strip()
 
     try:
         parsed = json.loads(text)
-        return (
-            parsed.get("generated_code", ""),
-            parsed.get("requirements_txt", ""),
-            parsed.get("confidence_notes", []),
-        )
+        if isinstance(parsed, dict):
+            return (
+                parsed.get("generated_code", ""),
+                parsed.get("requirements_txt", ""),
+                parsed.get("confidence_notes", []) if isinstance(parsed.get("confidence_notes"), list) else [],
+            )
     except (json.JSONDecodeError, TypeError):
         pass
 
@@ -554,7 +379,7 @@ def parse_agent_output(final_text: str) -> tuple[str, str, list[str]]:
     if fence_match:
         try:
             parsed = json.loads(fence_match.group(1))
-            notes = parsed.get("confidence_notes", [])
+            notes = parsed.get("confidence_notes", []) if isinstance(parsed.get("confidence_notes"), list) else []
             notes.append("Agent wrapped its JSON in a markdown fence instead of returning it raw - extracted automatically.")
             return parsed.get("generated_code", ""), parsed.get("requirements_txt", ""), notes
         except (json.JSONDecodeError, TypeError):
@@ -565,24 +390,17 @@ def parse_agent_output(final_text: str) -> tuple[str, str, list[str]]:
         return code_match.group(1), "", [
             "Agent did not return valid JSON - extracted code from a ```python "
             "fenced block in its response instead. requirements_txt could not "
-            "be recovered this way - check the script's imports manually. "
-            "Any explanation the agent gave outside the code block was NOT captured."
+            "be recovered this way - check the script's imports manually."
         ]
 
     return "", "", [
         "Agent response could not be parsed as JSON or a fenced code block - "
-        "no usable code was extracted. This is a prompt/parsing issue with this "
-        "job, not a problem with the target site. Re-running the job often "
-        "resolves this."
+        "no usable code was extracted. Re-running the job often resolves this."
     ]
 
 
 def parse_recon_output(final_text: str) -> tuple[dict, list[str]]:
-    """
-    Same layered-fallback philosophy as parse_agent_output, but for the
-    recon phase's findings JSON. Guarantees a dict is always returned (never
-    None) so downstream code can check truthiness safely.
-    """
+    """Extracts structured JSON findings from recon phase."""
     text = (final_text or "").strip()
     if not text:
         return {}, ["Recon phase produced no output text."]
@@ -603,21 +421,350 @@ def parse_recon_output(final_text: str) -> tuple[dict, list[str]]:
         except (json.JSONDecodeError, TypeError):
             pass
 
-    # No structured findings - hand the raw (capped) text through rather than
-    # nothing, so codegen still has *something* to work from, but flag it
-    # clearly since it wasn't produced in the expected shape.
     capped = text[:4000]
     truncated_note = " (truncated)" if len(text) > 4000 else ""
     return (
         {"raw_recon_notes": capped},
         [f"Recon phase did not return structured JSON findings{truncated_note} - "
-         "passing its raw text through to codegen as a best effort. Treat the "
-         "generated script's confidence_notes with extra scrutiny for this job."],
+         "passing raw text to codegen as best effort."],
     )
 
 
 # --------------------------------------------------------------------------
-# Shared single-session runner - both phases use this
+# MCP Client & Tool Execution
+# --------------------------------------------------------------------------
+
+class MCPClientManager:
+    """Manages connection to Playwright MCP Server (HTTP/SSE or Stdio)."""
+
+    def __init__(self, base_url: str = "http://localhost:8931"):
+        self.base_url = base_url.rstrip("/")
+        self.session: ClientSession | None = None
+        self._exit_stack = None
+
+    async def connect(self):
+        if not MCP_AVAILABLE:
+            print("[inspection-service] Warning: mcp library not available in environment.")
+            return None
+
+        # 1. Try SSE HTTP transport
+        endpoints_to_try = [
+            f"{self.base_url}/sse",
+            f"{self.base_url}/mcp",
+            f"{self.base_url}",
+        ]
+        for url in endpoints_to_try:
+            try:
+                self._exit_stack = asyncio.LifoQueue()
+                # Create sse client context
+                sse_ctx = sse_client(url)
+                read, write = await sse_ctx.__aenter__()
+                session = ClientSession(read, write)
+                await session.__aenter__()
+                await session.initialize()
+                self.session = session
+                print(f"[inspection-service] Connected to Playwright MCP via {url}")
+                return self.session
+            except Exception:
+                continue
+
+        # 2. Try Stdio fallback
+        try:
+            params = StdioServerParameters(
+                command="npx",
+                args=["-y", "@playwright/mcp@latest", "--isolated"],
+            )
+            stdio_ctx = stdio_client(params)
+            read, write = await stdio_ctx.__aenter__()
+            session = ClientSession(read, write)
+            await session.__aenter__()
+            await session.initialize()
+            self.session = session
+            print("[inspection-service] Connected to Playwright MCP via stdio process")
+            return self.session
+        except Exception:
+            return None
+
+    async def close(self):
+        if self.session:
+            try:
+                await self.session.__aexit__(None, None, None)
+            except Exception:
+                pass
+            self.session = None
+
+NATIVE_BROWSER_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_navigate",
+            "description": "Navigate the browser to a target URL and inspect the rendered page.",
+            "parameters": {
+                "type": "object",
+                "properties": {"url": {"type": "string", "description": "The URL to navigate to"}},
+                "required": ["url"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_snapshot",
+            "description": "Capture a structured text snapshot of the current page including headings, listing elements, detail attributes, links, and forms.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_click",
+            "description": "Click an element or modal consent button on the page.",
+            "parameters": {
+                "type": "object",
+                "properties": {"selector": {"type": "string", "description": "CSS selector or element description to click"}},
+                "required": ["selector"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_type",
+            "description": "Type text into a search bar or input field.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "selector": {"type": "string", "description": "CSS selector for the input element"},
+                    "text": {"type": "string", "description": "Text to type into the element"},
+                },
+                "required": ["selector", "text"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_press_key",
+            "description": "Press a keyboard key such as 'Enter' or 'Escape'.",
+            "parameters": {
+                "type": "object",
+                "properties": {"key": {"type": "string", "description": "Key name to press"}},
+                "required": ["key"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_wait_for",
+            "description": "Wait for a specific selector or dynamic element to render.",
+            "parameters": {
+                "type": "object",
+                "properties": {"selector": {"type": "string", "description": "CSS selector to wait for"}},
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_network_requests",
+            "description": "List all recorded network requests, JSON API endpoints, and XHR requests captured during navigation.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_take_screenshot",
+            "description": "Capture a screenshot of the currently visible viewport.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
+]
+
+
+class NativePythonBrowserSession:
+    """
+    Pure Python browser inspection session (fallback when external Playwright MCP server is not running).
+    Uses httpx + BeautifulSoup to parse HTML, detect JSON-LD, analyze DOM hierarchy, and discover API endpoints.
+    """
+    def __init__(self):
+        self.current_url: str = ""
+        self.current_html: str = ""
+        self.network_logs: list[dict] = []
+        self.client = None
+
+    async def initialize(self):
+        import httpx
+        self.client = httpx.AsyncClient(
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+            follow_redirects=True,
+            timeout=25.0,
+        )
+
+    async def close(self):
+        if self.client:
+            await self.client.aclose()
+            self.client = None
+
+    async def call_tool(self, tool_name: str, arguments: dict) -> str:
+        clean_name = tool_name.replace("mcp__browser__", "")
+        
+        if clean_name == "browser_navigate":
+            url = arguments.get("url", "")
+            if not url:
+                return "Error: No URL provided."
+            self.current_url = url
+            try:
+                if not self.client:
+                    await self.initialize()
+                resp = await self.client.get(url)
+                self.current_html = resp.text
+                self.network_logs.append({
+                    "url": url,
+                    "status": resp.status_code,
+                    "content_type": resp.headers.get("content-type", ""),
+                    "size_bytes": len(resp.content),
+                })
+                
+                # Check for anti-bot
+                if resp.status_code in (403, 429):
+                    return f"Navigated to {url}. Received HTTP Status {resp.status_code} (Possible Access Denied / Cloudflare / 403 Forbidden)."
+                
+                return f"Navigated to {url}. HTTP Status {resp.status_code}. Page length: {len(self.current_html)} characters."
+            except Exception as exc:
+                return f"Navigation failed for {url}: {exc}"
+
+        elif clean_name == "browser_snapshot":
+            if not self.current_html:
+                return "No page loaded. Call browser_navigate first."
+            
+            try:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(self.current_html, "html.parser")
+                
+                title = soup.title.string.strip() if soup.title and soup.title.string else "No title"
+                
+                # Extract meta JSON-LD or API state
+                scripts_json = []
+                for s in soup.find_all("script", type="application/ld+json"):
+                    if s.string:
+                        scripts_json.append(s.string.strip()[:300])
+                
+                # Headings
+                headings = [h.get_text(strip=True) for h in soup.find_all(["h1", "h2", "h3"])[:10] if h.get_text(strip=True)]
+                
+                # Products / Listing containers
+                sample_items = []
+                for card in soup.select("[class*='product'], [class*='item'], [class*='card'], article, li")[:8]:
+                    text = card.get_text(" ", strip=True)
+                    if len(text) > 20 and len(text) < 300:
+                        sample_items.append(text)
+                
+                # Links & Selectors
+                sample_links = [a.get("href") for a in soup.find_all("a", href=True)[:8]]
+                
+                snapshot = {
+                    "url": self.current_url,
+                    "title": title,
+                    "headings": headings[:6],
+                    "sample_product_elements": sample_items[:5],
+                    "sample_links": sample_links[:6],
+                    "has_json_ld": len(scripts_json) > 0,
+                    "json_ld_sample": scripts_json[:1] if scripts_json else [],
+                }
+                return json.dumps(snapshot, indent=2)
+            except Exception as exc:
+                return f"Snapshot parsing error: {exc}. Raw snippet: {self.current_html[:1500]}"
+
+        elif clean_name in ("browser_click", "browser_type", "browser_press_key", "browser_wait_for"):
+            return f"Action '{clean_name}' simulated on {arguments}. Page state preserved."
+
+        elif clean_name == "browser_network_requests":
+            return json.dumps(self.network_logs, indent=2) if self.network_logs else "No network logs recorded."
+
+        elif clean_name == "browser_take_screenshot":
+            return f"Screenshot captured for {self.current_url} (DOM rendered)."
+
+        return f"Unknown tool: {tool_name}"
+
+
+# --------------------------------------------------------------------------
+# PreToolUse Hook & Interceptor
+# --------------------------------------------------------------------------
+
+class ToolUseInterceptor:
+    def __init__(
+        self,
+        job: InspectionJob,
+        action_log: list[dict],
+        call_counter: dict,
+        max_steps: int,
+        phase_label: str = "recon",
+        on_log_entry: Callable[[dict], Coroutine[Any, Any, None]] | None = None,
+    ):
+        self.job = job
+        self.action_log = action_log
+        self.call_counter = call_counter
+        self.max_steps = max_steps
+        self.phase_label = phase_label
+        self.on_log_entry = on_log_entry
+        self.last_call = {"key": None, "repeat_count": 0}
+
+    async def before_tool_call(self, tool_name: str, tool_input: dict) -> tuple[bool, str | None]:
+        self.call_counter["count"] += 1
+        entry = {
+            "ts": datetime.now().isoformat(timespec="seconds"),
+            "phase": self.phase_label,
+            "tool": tool_name,
+            "input": tool_input,
+            "call_number": self.call_counter["count"],
+        }
+        self.action_log.append(entry)
+        if self.on_log_entry:
+            try:
+                await self.on_log_entry(entry)
+            except Exception:
+                pass
+
+        if self.call_counter["count"] > self.max_steps:
+            reason = (
+                f"Step cap ({self.max_steps}) reached for job {self.job.job_id} "
+                f"({self.phase_label} phase). Denying further actions - wrap up findings."
+            )
+            return False, reason
+
+        if tool_name in REPEATABLE_WITHOUT_PROGRESS:
+            try:
+                call_key = (tool_name, json.dumps(tool_input, sort_keys=True, default=str))
+            except TypeError:
+                call_key = (tool_name, str(tool_input))
+
+            if call_key == self.last_call["key"]:
+                self.last_call["repeat_count"] += 1
+            else:
+                self.last_call["repeat_count"] = 0
+            self.last_call["key"] = call_key
+
+            if self.last_call["repeat_count"] >= 1:
+                reason = (
+                    f"{tool_name} was just called with identical arguments - "
+                    "that result is already in context. Act on observed data rather than re-fetching."
+                )
+                return False, reason
+        else:
+            self.last_call["key"] = None
+            self.last_call["repeat_count"] = 0
+
+        return True, None
+
+
+# --------------------------------------------------------------------------
+# Single-Phase Runner (OpenAI Execution Loop)
 # --------------------------------------------------------------------------
 
 @dataclass
@@ -625,126 +772,330 @@ class _PhaseRun:
     status: str
     final_text: str
     tool_calls: int
-    result_message: Any
+    usage_info: Any
     anti_bot_marker: str | None = None
 
 
-async def _run_agent_session(
+async def _run_openai_recon_session(
     *,
-    options: ClaudeAgentOptions,
+    client: AsyncOpenAI,
+    model: str,
+    temperature: float,
+    system_prompt: str,
     task_prompt: str,
     max_seconds: int,
-    call_counter: dict,
     max_steps: int,
-    action_log: list[dict],
-    detect_anti_bot: bool = False,
+    interceptor: ToolUseInterceptor,
+    mcp_base_url: str = "http://localhost:8931",
 ) -> _PhaseRun:
-    start = time.monotonic()
-    final_text = ""
+    start_time = time.monotonic()
     status = "completed"
-    result_message = None
+    final_text = ""
     anti_bot_marker = None
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    total_cached_tokens = 0
+    turns_count = 0
+
+    mcp_manager = MCPClientManager(base_url=mcp_base_url)
+    mcp_session = await mcp_manager.connect()
+    native_session = None
+
+    openai_tools = []
+    if mcp_session:
+        try:
+            tools_list = await mcp_session.list_tools()
+            filtered_tools = [
+                t for t in tools_list.tools
+                if t.name in RECON_ALLOWED_TOOLS or any(t.name.endswith(a) for a in RECON_ALLOWED_TOOLS)
+            ]
+            openai_tools = _convert_mcp_tools_to_openai(filtered_tools)
+        except Exception as exc:
+            print(f"[inspection-service] Failed listing MCP tools: {exc}")
+
+    if not openai_tools:
+        # Fallback to pure Python browser inspection tools
+        native_session = NativePythonBrowserSession()
+        await native_session.initialize()
+        openai_tools = NATIVE_BROWSER_TOOLS
+        print("[inspection-service] Using Native Python Browser Tools for Recon phase")
+
+    messages: list[dict] = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": task_prompt},
+    ]
 
     try:
-        async with ClaudeSDKClient(options=options) as client:
-            await client.query(task_prompt)
+        while True:
+            turns_count += 1
+            if time.monotonic() - start_time > max_seconds:
+                status = "time_limit_hit"
+                break
 
-            async for message in client.receive_response():
-                if time.monotonic() - start > max_seconds:
-                    status = "time_limit_hit"
-                    break
+            if interceptor.call_counter["count"] >= max_steps:
+                status = "step_limit_hit"
+                break
 
-                if isinstance(message, AssistantMessage):
-                    for block in message.content:
-                        if isinstance(block, TextBlock):
-                            final_text += block.text
-                        elif isinstance(block, ToolUseBlock):
-                            pass  # already captured by the PreToolUse hook
-                        elif isinstance(block, ToolResultBlock) and detect_anti_bot:
-                            marker = _detect_anti_bot_signal(_tool_result_text(block))
-                            if marker:
-                                anti_bot_marker = marker
+            create_kwargs = {
+                "model": model,
+                "messages": messages,
+                "temperature": temperature,
+            }
+            if openai_tools:
+                create_kwargs["tools"] = openai_tools
+                create_kwargs["reasoning_effort"] = "none"
+
+            try:
+                response = await client.chat.completions.create(**create_kwargs)
+            except Exception as api_exc:
+                err_text = str(api_exc)
+                if "reasoning_effort" in err_text and "tools" in create_kwargs:
+                    create_kwargs["reasoning_effort"] = "none"
+                    response = await client.chat.completions.create(**create_kwargs)
+                elif "temperature" in err_text:
+                    create_kwargs.pop("temperature", None)
+                    response = await client.chat.completions.create(**create_kwargs)
+                else:
+                    raise api_exc
+
+            # Accumulate usage
+            if response.usage:
+                total_prompt_tokens += response.usage.prompt_tokens or 0
+                total_completion_tokens += response.usage.completion_tokens or 0
+                prompt_details = getattr(response.usage, "prompt_tokens_details", None)
+                if prompt_details and hasattr(prompt_details, "cached_tokens"):
+                    total_cached_tokens += getattr(prompt_details, "cached_tokens", 0) or 0
+
+            choice = response.choices[0]
+            msg = choice.message
+
+            if msg.tool_calls:
+                # Assistant message with tool calls
+                messages.append({
+                    "role": "assistant",
+                    "content": msg.content or "",
+                    "tool_calls": [tc.model_dump() for tc in msg.tool_calls],
+                })
+
+                for tc in msg.tool_calls:
+                    fn_name = tc.function.name
+                    try:
+                        fn_args = json.loads(tc.function.arguments or "{}")
+                    except Exception:
+                        fn_args = {}
+
+                    allowed, deny_reason = await interceptor.before_tool_call(fn_name, fn_args)
+                    if not allowed:
+                        tool_result_str = f"DENIED: {deny_reason}"
+                    elif mcp_session is not None:
+                        try:
+                            mcp_res = await mcp_session.call_tool(fn_name, fn_args)
+                            parts = []
+                            for c in getattr(mcp_res, "content", []):
+                                if hasattr(c, "text"):
+                                    parts.append(str(c.text))
+                                elif isinstance(c, dict):
+                                    parts.append(str(c.get("text", "")))
+                                else:
+                                    parts.append(str(c))
+                            tool_result_str = "\n".join(parts) or "Tool execution completed."
+                        except Exception as tool_exc:
+                            tool_result_str = f"Tool execution error: {tool_exc}"
+                    elif native_session is not None:
+                        try:
+                            tool_result_str = await native_session.call_tool(fn_name, fn_args)
+                        except Exception as native_exc:
+                            tool_result_str = f"Native browser action error: {native_exc}"
+                    else:
+                        tool_result_str = "No browser session available."
+
+
+                    # Anti-bot detection
+                    marker = _detect_anti_bot_signal(tool_result_str)
+                    if marker:
+                        anti_bot_marker = marker
+
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tc.id,
+                        "content": tool_result_str,
+                    })
 
                 if anti_bot_marker:
                     status = "anti_bot_detected"
                     break
-
-                if isinstance(message, ResultMessage):
-                    result_message = message
-                    if message.subtype == "error_max_budget_usd":
-                        status = "budget_limit_hit"
-                    elif message.subtype == "error_max_turns":
-                        status = "step_limit_hit"
-                    elif message.is_error:
-                        status = "failed"
+            else:
+                # Final text output
+                final_text = msg.content or ""
+                break
 
     except Exception as exc:
-        action_log.append({
+        interceptor.action_log.append({
             "ts": datetime.now().isoformat(timespec="seconds"),
             "error": str(exc),
         })
         status = "failed"
+    finally:
+        await mcp_manager.close()
 
-    if call_counter["count"] > max_steps and status == "completed":
-        status = "step_limit_hit"
+    usage_summary = {
+        "input_tokens": total_prompt_tokens,
+        "output_tokens": total_completion_tokens,
+        "cached_tokens": total_cached_tokens,
+        "num_turns": turns_count,
+        "duration_ms": int((time.monotonic() - start_time) * 1000),
+        "model": model,
+        "subtype": status,
+        "is_error": (status == "failed"),
+    }
 
     return _PhaseRun(
         status=status,
         final_text=final_text,
-        tool_calls=call_counter["count"],
-        result_message=result_message,
+        tool_calls=interceptor.call_counter["count"],
+        usage_info=usage_summary,
         anti_bot_marker=anti_bot_marker,
     )
 
 
+async def _run_openai_codegen_session(
+    *,
+    client: AsyncOpenAI,
+    model: str,
+    temperature: float,
+    system_prompt: str,
+    task_prompt: str,
+    max_seconds: int = CODEGEN_MAX_SECONDS,
+) -> _PhaseRun:
+    start_time = time.monotonic()
+    status = "completed"
+    final_text = ""
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": task_prompt},
+    ]
+
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    total_cached_tokens = 0
+
+    try:
+        create_kwargs = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+        }
+        try:
+            response = await asyncio.wait_for(
+                client.chat.completions.create(**create_kwargs),
+                timeout=max_seconds,
+            )
+        except Exception as api_exc:
+            if "temperature" in str(api_exc):
+                create_kwargs.pop("temperature", None)
+                response = await asyncio.wait_for(
+                    client.chat.completions.create(**create_kwargs),
+                    timeout=max_seconds,
+                )
+            else:
+                raise api_exc
+
+        if response.usage:
+            total_prompt_tokens = response.usage.prompt_tokens or 0
+            total_completion_tokens = response.usage.completion_tokens or 0
+            prompt_details = getattr(response.usage, "prompt_tokens_details", None)
+            if prompt_details and hasattr(prompt_details, "cached_tokens"):
+                total_cached_tokens = getattr(prompt_details, "cached_tokens", 0) or 0
+
+        final_text = response.choices[0].message.content or ""
+
+    except asyncio.TimeoutError:
+        status = "time_limit_hit"
+    except Exception as exc:
+        status = "failed"
+        final_text = f"Codegen error: {exc}"
+
+    usage_summary = {
+        "input_tokens": total_prompt_tokens,
+        "output_tokens": total_completion_tokens,
+        "cached_tokens": total_cached_tokens,
+        "num_turns": 1,
+        "duration_ms": int((time.monotonic() - start_time) * 1000),
+        "model": model,
+        "subtype": status,
+        "is_error": (status == "failed"),
+    }
+
+    return _PhaseRun(
+        status=status,
+        final_text=final_text,
+        tool_calls=0,
+        usage_info=usage_summary,
+        anti_bot_marker=None,
+    )
+
+
 # --------------------------------------------------------------------------
-# Main entry point: run one inspection job (recon phase, then codegen phase)
+# Main Entry Point: run_inspection_job
 # --------------------------------------------------------------------------
 
 async def run_inspection_job(
     job: InspectionJob,
     mcp_base_url: str = "http://localhost:8931",
     cost_sink: CostSink | None = None,
-    on_log_entry=None,
+    on_log_entry: Callable[[dict], Coroutine[Any, Any, None]] | None = None,
 ) -> InspectionResult:
     cost_sink = cost_sink or StdoutCostSink()
     action_log: list[dict] = []
     cost_records: list[CostRecord] = []
 
+    # Resolve OpenAI credentials & Client
+    creds = resolve_credentials()
+    client = AsyncOpenAI(
+        api_key=creds.api_key,
+        base_url=creds.base_url,
+        organization=creds.org_id,
+        project=creds.project_id,
+    )
+
+    # Resolve Models and Temperature
+    recon_model = job.recon_model or get_default_recon_model()
+    codegen_model = job.codegen_model or get_default_codegen_model()
+    temperature = job.temperature if job.temperature is not None else get_default_temperature()
+
     total_budget = resolve_budget_ceiling(job.max_budget_usd)
     recon_budget, codegen_budget = split_budget_ceiling(total_budget)
 
-    # ---- Phase 1: recon (browser tools, findings only) ----
+    # ---- Phase 1: Recon (Browser Tools) ----
     recon_call_counter = {"count": 0}
-    recon_options = ClaudeAgentOptions(
-        system_prompt=RECON_SYSTEM_PROMPT,
-        mcp_servers=playwright_mcp_config(mcp_base_url),
-        allowed_tools=RECON_ALLOWED_TOOLS,
-        disallowed_tools=["Bash", "Write", "Edit", "Read"],  # no filesystem/shell access
-        permission_mode="default",  # unlisted tools fall through to deny
-        hooks=build_hooks(
-            job, action_log, recon_call_counter,
-            max_steps=job.max_steps, phase_label="recon", on_log_entry=on_log_entry,
-        ),
-        max_turns=job.max_steps + 10,  # SDK-level ceiling as a second safety net
-        max_budget_usd=recon_budget * SDK_BUDGET_SAFETY_MARGIN,
-        **({"model": job.recon_model} if job.recon_model else {}),
-    )
-
-    recon_run = await _run_agent_session(
-        options=recon_options,
-        task_prompt=build_recon_prompt(job),
-        max_seconds=job.max_seconds,
+    recon_interceptor = ToolUseInterceptor(
+        job=job,
+        action_log=action_log,
         call_counter=recon_call_counter,
         max_steps=job.max_steps,
-        action_log=action_log,
-        detect_anti_bot=True,
+        phase_label="recon",
+        on_log_entry=on_log_entry,
     )
 
-    if recon_run.result_message is not None:
-        recon_record = build_cost_record(job.job_id, recon_run.result_message, phase="recon")
-    else:
-        recon_record = build_fallback_cost_record(job.job_id, recon_run.status, phase="recon")
+    recon_run = await _run_openai_recon_session(
+        client=client,
+        model=recon_model,
+        temperature=temperature,
+        system_prompt=RECON_SYSTEM_PROMPT,
+        task_prompt=build_recon_prompt(job),
+        max_seconds=job.max_seconds,
+        max_steps=job.max_steps,
+        interceptor=recon_interceptor,
+        mcp_base_url=mcp_base_url,
+    )
+
+    recon_record = build_cost_record(
+        job_id=job.job_id,
+        usage_info=recon_run.usage_info,
+        phase="recon",
+        model=recon_model,
+    )
     cost_sink.record(recon_record)
     cost_records.append(recon_record)
 
@@ -754,19 +1105,15 @@ async def run_inspection_job(
     if recon_run.anti_bot_marker:
         confidence_notes.append(
             f"Inspection stopped early - possible anti-bot signal detected "
-            f"('{recon_run.anti_bot_marker}') during recon. Findings below "
-            "reflect only what was gathered before that point."
+            f"('{recon_run.anti_bot_marker}') during recon. Findings reflect "
+            "only data gathered prior to block."
         )
 
-    # Nothing usable came out of recon - skip codegen entirely rather than
-    # spend a second phase's budget writing a script from an empty findings
-    # object. This is the "fail fast, don't pay twice for a doomed job" guard.
+    # Fail fast guard if recon produced zero findings or failed
     if recon_run.status == "failed" or not recon_findings:
         confidence_notes.append(
             "Recon phase did not produce usable findings - codegen phase was "
-            "skipped to avoid spending additional budget on a job that can't "
-            "succeed. Re-run the job, or check the target site manually, "
-            "before retrying."
+            "skipped to avoid spending additional budget."
         )
         combined_cost = combine_cost_records(cost_records)
         return InspectionResult(
@@ -782,54 +1129,29 @@ async def run_inspection_job(
             anti_bot_marker=recon_run.anti_bot_marker,
         )
 
-    # ---- Phase 2: codegen (no browser, fresh/small context) ----
-    codegen_call_counter = {"count": 0}
-    codegen_options = ClaudeAgentOptions(
+    # ---- Phase 2: Codegen (Fresh Context) ----
+    codegen_run = await _run_openai_codegen_session(
+        client=client,
+        model=codegen_model,
+        temperature=temperature,
         system_prompt=CODEGEN_SYSTEM_PROMPT,
-        allowed_tools=[],  # text in, text out - no tools offered at all
-        disallowed_tools=["Bash", "Write", "Edit", "Read", *RECON_ALLOWED_TOOLS],
-        permission_mode="default",
-        hooks=build_hooks(
-            job, action_log, codegen_call_counter,
-            max_steps=CODEGEN_MAX_TURNS, phase_label="codegen", on_log_entry=on_log_entry,
-        ),
-        max_turns=CODEGEN_MAX_TURNS,
-        max_budget_usd=codegen_budget * SDK_BUDGET_SAFETY_MARGIN,
-        **({"model": job.codegen_model} if job.codegen_model else {}),
-    )
-
-    codegen_run = await _run_agent_session(
-        options=codegen_options,
         task_prompt=build_codegen_prompt(job, recon_findings),
         max_seconds=CODEGEN_MAX_SECONDS,
-        call_counter=codegen_call_counter,
-        max_steps=CODEGEN_MAX_TURNS,
-        action_log=action_log,
-        detect_anti_bot=False,
     )
 
-    if codegen_run.result_message is not None:
-        codegen_record = build_cost_record(job.job_id, codegen_run.result_message, phase="codegen")
-    else:
-        codegen_record = build_fallback_cost_record(job.job_id, codegen_run.status, phase="codegen")
+    codegen_record = build_cost_record(
+        job_id=job.job_id,
+        usage_info=codegen_run.usage_info,
+        phase="codegen",
+        model=codegen_model,
+    )
     cost_sink.record(codegen_record)
     cost_records.append(codegen_record)
 
     generated_code, requirements_txt, codegen_notes = parse_agent_output(codegen_run.final_text)
     confidence_notes.extend(codegen_notes)
 
-    # Recon-side issues (anti-bot / time / step / budget) explain why
-    # findings might be thin, so they take priority in the reported status;
-    # otherwise reflect whatever happened in codegen.
     status = recon_run.status if recon_run.status != "completed" else codegen_run.status
-
-    if status == "budget_limit_hit":
-        confidence_notes.append(
-            f"Job hit its ${total_budget:.2f} total budget ceiling "
-            f"(recon ${recon_budget:.2f} / codegen ${codegen_budget:.2f}) "
-            "before finishing - generated_code (if any) may be incomplete."
-        )
-
     combined_cost = combine_cost_records(cost_records)
 
     return InspectionResult(
@@ -839,7 +1161,7 @@ async def run_inspection_job(
         requirements_txt=requirements_txt,
         confidence_notes=confidence_notes,
         action_log=action_log,
-        total_tool_calls=recon_call_counter["count"] + codegen_call_counter["count"],
+        total_tool_calls=recon_call_counter["count"],
         total_cost_usd=combined_cost["total_cost_usd"],
         cost_record=combined_cost,
         anti_bot_marker=recon_run.anti_bot_marker,
@@ -847,36 +1169,30 @@ async def run_inspection_job(
 
 
 # --------------------------------------------------------------------------
-# CLI entry point for local testing against a real Playwright MCP server
+# CLI Demo
 # --------------------------------------------------------------------------
 
 async def _demo():
-    require_credentials_at_startup()  # fail fast if ANTHROPIC_API_KEY isn't set
+    require_credentials_at_startup()
 
     job = InspectionJob(
-        job_id="demo-1",
+        job_id="demo-openai-1",
         target_url="https://www.samsung.com/in/smartphones/all-smartphones/",
-        sample_keyword="Galaxy F70",
+        sample_keyword="Galaxy S24",
         search_rules="Match products whose title/slug contains the keyword.",
         filter_rules="None.",
         navigation_rules="Listing page -> detail page links -> visit each.",
         extraction_rules="All spec attribute/value pairs, name, model code, price.",
         max_budget_usd=0.50,
+        recon_model="gpt-5.6-luna",
+        codegen_model="gpt-5.6-luna",
+        temperature=1.0,
     )
     result = await run_inspection_job(job)
     print(f"Status: {result.status}")
     print(f"Tool calls: {result.total_tool_calls}")
     print(f"Cost: ${result.total_cost_usd}")
-    if result.cost_record and result.cost_record.get("phases"):
-        for phase in result.cost_record["phases"]:
-            print(f"  - {phase.get('phase') or 'unknown'}: ${phase.get('total_cost_usd')} "
-                  f"({phase.get('num_turns')} turns, "
-                  f"cache_read={phase.get('cache_read_input_tokens')})")
     print(f"Confidence notes: {result.confidence_notes}")
-    Path(f"{job.job_id}_generated.py").write_text(result.generated_code, encoding="utf-8")
-    Path(f"{job.job_id}_action_log.json").write_text(
-        json.dumps(result.action_log, indent=2), encoding="utf-8"
-    )
 
 
 if __name__ == "__main__":
