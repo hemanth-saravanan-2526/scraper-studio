@@ -33,11 +33,9 @@ module.exports = {
     },
     {
       name: "scraper-studio-mcp",
-      script: "npx.cmd",
-      args: "--yes @playwright/mcp@latest --port 8931 --host 127.0.0.1 --isolated",
+      script: "./start-mcp.cmd",
       cwd: __dirname,
       interpreter: "none",
-      shell: true,
       watch: false,
       autorestart: true,
       max_memory_restart: "512M",
