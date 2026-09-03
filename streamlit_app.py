@@ -6,6 +6,7 @@ Recreates all Builder, Live Agent Detail, Dashboard, Cost Ops, and Settings feat
 """
 
 import asyncio
+import html
 import io
 import json
 import os
@@ -38,7 +39,9 @@ from inspection_agent_service import (
     get_default_codegen_model,
     get_default_temperature,
 )
+import importlib
 import api_service
+importlib.reload(api_service)
 from api_service import store, write_generated_files_to_disk, _build_sample_input_xlsx, TEST_RUN_MAX_PRODUCTS, CreateJobRequest, _run_test_run
 
 # -----------------------------------------------------------------------------
@@ -273,8 +276,180 @@ st.markdown("""
     div[data-baseweb="tab-highlight"] {
         background-color: #ff5722 !important;
     }
+
+    /* Test Run Sandbox Console */
+    .sandbox-terminal {
+        background: #090d16;
+        border: 1px solid #1e293b;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        margin: 16px 0 20px 0;
+        font-family: 'JetBrains Mono', 'Consolas', monospace;
+    }
+    .sandbox-header {
+        background: #111827;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #1f2937;
+    }
+    .sandbox-dots {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+    .sandbox-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .sandbox-dot-red { background: #ef4444; }
+    .sandbox-dot-yellow { background: #f59e0b; }
+    .sandbox-dot-green { background: #10b981; }
+    .sandbox-title {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #94a3b8;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-left: 6px;
+    }
+    .sandbox-status-pill {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+    }
+    .sandbox-pill-running {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+    .sandbox-pill-passed {
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    .sandbox-pill-failed {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .sandbox-body {
+        padding: 14px 16px;
+        color: #cbd5e1;
+        font-size: 12px;
+        line-height: 1.6;
+        max-height: 380px;
+        overflow-y: auto;
+    }
+    .sandbox-log-line {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 2.5px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .sandbox-ts {
+        color: #64748b;
+        font-size: 11px;
+        white-space: nowrap;
+        font-family: inherit;
+    }
+    .sandbox-badge {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 4px;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-family: inherit;
+    }
+    .badge-env { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); }
+    .badge-deps { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.4); }
+    .badge-playwright { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .badge-setup { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); }
+    .badge-scraper { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-validate { background: rgba(139, 92, 246, 0.2); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.4); }
+    .badge-self-heal { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-done { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+    .badge-error { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .sandbox-msg {
+        color: #e2e8f0;
+        word-break: break-word;
+        font-family: inherit;
+    }
 </style>
 """, unsafe_allow_html=True)
+
+def render_sandbox_terminal(logs: list, is_running: bool = False, status_override: str | None = None) -> str:
+    if not logs:
+        return ""
+    
+    if is_running:
+        status_html = '<span class="sandbox-status-pill sandbox-pill-running">● RUNNING (NO TIMEOUT)</span>'
+    elif status_override == "passed" or (logs and logs[-1].get("phase") == "DONE" and "PASSED" in str(logs[-1].get("message", ""))):
+        status_html = '<span class="sandbox-status-pill sandbox-pill-passed">✔ PASSED</span>'
+    elif status_override == "failed" or (logs and logs[-1].get("phase") in ["ERROR", "DONE"] and "FAILED" in str(logs[-1].get("message", ""))):
+        status_html = '<span class="sandbox-status-pill sandbox-pill-failed">✖ FAILED</span>'
+    else:
+        status_html = '<span class="sandbox-status-pill sandbox-pill-running">EXECUTION LOGS</span>'
+
+    lines_html = []
+    for entry in logs:
+        ts = html.escape(str(entry.get("ts", "")))
+        phase = str(entry.get("phase", "LOG")).upper()
+        msg = html.escape(str(entry.get("message", "")))
+        level = str(entry.get("level", "info")).lower()
+        
+        badge_cls = "badge-setup"
+        if "ENV" in phase:
+            badge_cls = "badge-env"
+        elif "PIP" in phase or "DEP" in phase:
+            badge_cls = "badge-deps"
+        elif "PW" in phase or "PLAYWRIGHT" in phase:
+            badge_cls = "badge-playwright"
+        elif "SCRAPER" in phase or "EXEC" in phase:
+            badge_cls = "badge-scraper"
+        elif "VALIDATE" in phase:
+            badge_cls = "badge-validate"
+        elif "SELF-HEAL" in phase or "REPAIR" in phase:
+            badge_cls = "badge-self-heal"
+        elif "DONE" in phase or "SUCCESS" in phase or level == "success":
+            badge_cls = "badge-done"
+        elif "ERROR" in phase or "FAIL" in phase or "ERR" in phase or level == "error":
+            badge_cls = "badge-error"
+
+        lines_html.append(
+            f'<div class="sandbox-log-line">'
+            f'<span class="sandbox-ts">[{ts}]</span>'
+            f'<span class="sandbox-badge {badge_cls}">[{html.escape(phase)}]</span>'
+            f'<span class="sandbox-msg">{msg}</span>'
+            f'</div>'
+        )
+
+    content_html = "".join(lines_html)
+    return (
+        f'<div class="sandbox-terminal">'
+        f'  <div class="sandbox-header">'
+        f'    <div class="sandbox-dots">'
+        f'      <span class="sandbox-dot sandbox-dot-red"></span>'
+        f'      <span class="sandbox-dot sandbox-dot-yellow"></span>'
+        f'      <span class="sandbox-dot sandbox-dot-green"></span>'
+        f'      <span class="sandbox-title">⚡ ISOLATED SANDBOX EXECUTION CONSOLE</span>'
+        f'    </div>'
+        f'    {status_html}'
+        f'  </div>'
+        f'  <div class="sandbox-body" id="sandbox-body-terminal">'
+        f'    {content_html}'
+        f'  </div>'
+        f'</div>'
+    )
 
 # Ensure jobs store is loaded
 store.load_from_disk()
@@ -560,19 +735,23 @@ elif nav_selection == "📊 Dashboard":
         # Test Run Section
         st.markdown("#### 🧪 Test Run Against Sample Site")
         col_test1, col_test2 = st.columns([1, 2])
+        test_disabled = not bool(code_str)
+
+        run_triggered = False
         with col_test1:
-            test_disabled = not bool(code_str)
-            if st.button("Run Test Run Script", disabled=test_disabled, help="Runs the scraper in an isolated per-job venv against a 3-product sample."):
-                with st.spinner("Creating venv, installing dependencies, and running smoke test..."):
-                    asyncio.run(api_service._run_test_run(job.job_id))
-                    st.rerun()
+            if st.button("🚀 Run Test Run Script", disabled=test_disabled, help="Runs the scraper in an isolated sandbox with zero timeouts, streaming execution logs, and autonomous self-healing."):
+                run_triggered = True
         
+        test_run_info = job.test_run
         with col_test2:
-            test_run_info = job.test_run
-            if test_run_info:
+            if test_run_info and not run_triggered:
                 st.markdown(f"**Status:** `{test_run_info.get('status','').upper()}`")
+                if test_run_info.get("self_healed"):
+                    st.info("✨ **Self-Healing Auto-Repair Triggered**: Initial blockers were automatically resolved by the self-healing repair pass!")
+                
                 if test_run_info.get("status") == "passed":
-                    st.success("Test run passed! Sample data was successfully collected.")
+                    extracted_count = test_run_info.get("extracted_rows", "sample")
+                    st.success(f"✅ Test run passed! Collected **{extracted_count}** product records.")
                     if job.saved_to:
                         sample_output_path = Path(job.saved_to) / "sample_output.xlsx"
                         if sample_output_path.exists():
@@ -584,6 +763,58 @@ elif nav_selection == "📊 Dashboard":
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                 )
                 elif test_run_info.get("status") == "failed":
-                    st.error(f"Test run failed: {test_run_info.get('error', 'Check stderr output below')}")
+                    st.error(f"Test run failed: {test_run_info.get('error', 'Check execution log below')}")
                     if test_run_info.get("stderr_tail"):
                         st.code(test_run_info["stderr_tail"], language="text")
+
+        terminal_placeholder = st.empty()
+        status_banner_placeholder = st.empty()
+
+        if run_triggered:
+            live_logs = []
+            status_banner_placeholder.info("⏳ Test run executing with zero timeouts... Streaming real-time environment creation, package installations, scraper outputs, and self-healing actions below.")
+
+            async def _on_test_stream_log(entry):
+                live_logs.append(entry)
+                terminal_placeholder.markdown(render_sandbox_terminal(live_logs, is_running=True), unsafe_allow_html=True)
+
+            with st.spinner("Executing smoke test in isolated sandbox (no timeout)..."):
+                try:
+                    asyncio.run(api_service._run_test_run(job.job_id, on_log=_on_test_stream_log))
+                except TypeError:
+                    importlib.reload(api_service)
+                    asyncio.run(api_service._run_test_run(job.job_id, on_log=_on_test_stream_log))
+
+            # Reload updated job from store
+            store.load_from_disk()
+            job = store.jobs.get(job.job_id, job)
+            test_run_info = job.test_run or {}
+            final_status = test_run_info.get("status", "completed")
+            final_rows = test_run_info.get("extracted_rows", 0)
+
+            terminal_placeholder.markdown(render_sandbox_terminal(live_logs, is_running=False, status_override=final_status), unsafe_allow_html=True)
+            if final_status == "passed":
+                status_banner_placeholder.success(f"🎉 Smoke test PASSED without timeouts! Successfully extracted **{final_rows}** product records.")
+            else:
+                status_banner_placeholder.error(f"Smoke test ended with status: **{final_status}**. Check log trace above.")
+            st.rerun()
+
+        elif test_run_info and test_run_info.get("logs"):
+            terminal_placeholder.markdown(render_sandbox_terminal(test_run_info.get("logs", []), is_running=False, status_override=test_run_info.get("status")), unsafe_allow_html=True)
+
+        # Live Excel Output Table Preview
+        if job.saved_to:
+            sample_output_path = Path(job.saved_to) / "sample_output.xlsx"
+            if sample_output_path.exists():
+                st.markdown("##### 📋 Extracted Data Preview (`sample_output.xlsx`)")
+                try:
+                    df_preview = pd.read_excel(sample_output_path, sheet_name="Extracted Data")
+                    st.dataframe(df_preview, use_container_width=True)
+                    
+                    # Also check Flags sheet
+                    df_flags = pd.read_excel(sample_output_path, sheet_name="Flags")
+                    if not df_flags.empty:
+                        with st.expander(f"🚩 Audit & Observation Flags ({len(df_flags)} entries)"):
+                            st.dataframe(df_flags, use_container_width=True)
+                except Exception as exc:
+                    st.caption(f"Could not load preview: {exc}")

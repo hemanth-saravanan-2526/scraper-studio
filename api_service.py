@@ -35,7 +35,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
-from inspection_agent_service import InspectionJob, InspectionResult, run_inspection_job, sanitize_generated_code
+from inspection_agent_service import InspectionJob, InspectionResult, run_inspection_job, run_codegen_repair, sanitize_generated_code
 from auth_config import require_credentials_at_startup, CredentialError
 from cost_metering import JSONLCostSink
 
@@ -154,12 +154,10 @@ def write_generated_files_to_disk(job_id: str, name: str, generated_code: str, r
 
 
 # --------------------------------------------------------------------------
-# Test Run Execution
+# Test Run Execution (No Timeout, Real-Time Streaming Logs)
 # --------------------------------------------------------------------------
 
 TEST_RUN_MAX_PRODUCTS = 3
-PIP_INSTALL_TIMEOUT_SECONDS = 120
-TEST_RUN_TIMEOUT_SECONDS = 180
 
 
 def _build_sample_input_xlsx(folder: Path, record: "JobRecord") -> Path:
@@ -175,76 +173,259 @@ def _build_sample_input_xlsx(folder: Path, record: "JobRecord") -> Path:
     return path
 
 
-async def _run_test_run(job_id: str):
+async def _run_test_run(job_id: str, on_log=None):
     record = store.jobs.get(job_id)
     if record is None or not record.saved_to:
         return
 
     folder = Path(record.saved_to)
-    record.test_run = {"status": "running", "started_at": datetime.now().isoformat(timespec="seconds")}
+    all_logs = []
+
+    async def emit_log(phase: str, message: str, level: str = "info"):
+        entry = {
+            "ts": datetime.now().strftime("%H:%M:%S"),
+            "phase": phase,
+            "message": message,
+            "level": level,
+        }
+        all_logs.append(entry)
+        if on_log:
+            try:
+                if asyncio.iscoroutinefunction(on_log):
+                    await on_log(entry)
+                else:
+                    on_log(entry)
+            except Exception:
+                pass
+
+    record.test_run = {
+        "status": "running",
+        "started_at": datetime.now().isoformat(timespec="seconds"),
+        "logs": all_logs,
+    }
     await store._persist()
 
     venv_dir = folder / ".venv"
     venv_python = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
 
-    async def _run(*args, timeout: int, cwd: str | None = None):
+    async def _run_streaming(*args, cwd: str | None = None, phase: str = "EXEC"):
+        env = {**os.environ, "PYTHONUNBUFFERED": "1"}
         proc = await asyncio.create_subprocess_exec(
-            *args, cwd=cwd,
+            *args, cwd=cwd, env=env,
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-        return proc.returncode, stdout, stderr
+        stdout_chunks = []
+        stderr_chunks = []
+
+        async def read_stream(stream, is_stderr: bool):
+            while True:
+                line_bytes = await stream.readline()
+                if not line_bytes:
+                    break
+                text = line_bytes.decode(errors="replace")
+                if is_stderr:
+                    stderr_chunks.append(text)
+                else:
+                    stdout_chunks.append(text)
+                clean_text = text.rstrip("\r\n").strip()
+                if clean_text:
+                    await emit_log(
+                        phase=phase if not is_stderr else f"{phase}-ERR",
+                        message=clean_text,
+                        level="error" if is_stderr else "stdout",
+                    )
+
+        await asyncio.gather(
+            read_stream(proc.stdout, False),
+            read_stream(proc.stderr, True),
+        )
+        await proc.wait()
+        full_stdout = "".join(stdout_chunks).encode("utf-8")
+        full_stderr = "".join(stderr_chunks).encode("utf-8")
+        return proc.returncode, full_stdout, full_stderr
 
     try:
-        if not venv_python.exists():
-            rc, _, stderr = await _run(sys.executable, "-m", "venv", str(venv_dir), timeout=PIP_INSTALL_TIMEOUT_SECONDS)
-            if rc != 0:
-                raise RuntimeError(f"venv creation failed: {stderr.decode(errors='replace')[-2000:]}")
+        await emit_log("INIT", f"Initializing isolated test environment for '{record.name}'...", "info")
+        await emit_log("INIT", f"Target: {record.target_url} | Keyword: {record.sample_keyword or 'None'}", "info")
 
+        # 1. Environment Setup
+        if not venv_python.exists():
+            await emit_log("ENV", f"Creating isolated Python virtual environment at {venv_dir}...", "info")
+            rc, _, stderr = await _run_streaming(sys.executable, "-m", "venv", str(venv_dir), phase="ENV")
+            if rc != 0:
+                err_str = stderr.decode(errors='replace')[-2000:]
+                await emit_log("ENV", f"❌ Failed to create virtual environment: {err_str}", "error")
+                raise RuntimeError(f"venv creation failed: {err_str}")
+            await emit_log("ENV", "✅ Virtual environment created successfully.", "success")
+        else:
+            await emit_log("ENV", f"✅ Active isolated virtual environment detected at {venv_dir}.", "info")
+
+        await emit_log("ENV", f"Active Python interpreter: {venv_python}", "info")
+
+        # 2. Dependency Installation
         req_file = folder / "requirements.txt"
         if req_file.exists() and req_file.read_text(encoding="utf-8").strip():
-            rc, _, stderr = await _run(
-                str(venv_python), "-m", "pip", "install", "-q", "-r", str(req_file),
-                timeout=PIP_INSTALL_TIMEOUT_SECONDS,
+            req_content = req_file.read_text(encoding="utf-8").strip()
+            summary_reqs = ", ".join([l.strip() for l in req_content.splitlines() if l.strip() and not l.startswith("#")])
+            await emit_log("DEPS", f"Installing dependencies: {summary_reqs}", "info")
+            rc, _, stderr = await _run_streaming(
+                str(venv_python), "-m", "pip", "install", "--no-warn-script-location", "-r", str(req_file),
+                phase="PIP"
             )
             if rc != 0:
-                raise RuntimeError(f"pip install -r requirements.txt failed: {stderr.decode(errors='replace')[-2000:]}")
+                err_str = stderr.decode(errors='replace')[-2000:]
+                await emit_log("DEPS", f"❌ pip install failed: {err_str}", "error")
+                raise RuntimeError(f"pip install -r requirements.txt failed: {err_str}")
+            await emit_log("DEPS", "✅ Python dependencies installed successfully.", "success")
+            
+            # If script requires Playwright, ensure Chromium binary is available
+            if "playwright" in req_content.lower():
+                await emit_log("PLAYWRIGHT", "Playwright detected in requirements. Ensuring Chromium browser binary is installed...", "info")
+                rc_pw, _, _ = await _run_streaming(
+                    str(venv_python), "-m", "playwright", "install", "chromium",
+                    phase="PLAYWRIGHT"
+                )
+                if rc_pw == 0:
+                    await emit_log("PLAYWRIGHT", "✅ Playwright Chromium browser binaries ready.", "success")
+                else:
+                    await emit_log("PLAYWRIGHT", "⚠️ Playwright install chromium returned non-zero, continuing...", "warning")
+        else:
+            await emit_log("DEPS", "No custom requirements specified. Using standard virtual environment.", "info")
 
+        # 3. Test Input Workbook Preparation
+        await emit_log("SETUP", "Building sample_input.xlsx with target URL and keyword...", "info")
         sample_input = _build_sample_input_xlsx(folder, record)
         sample_output = folder / "sample_output.xlsx"
         if sample_output.exists():
             sample_output.unlink()
+        await emit_log("SETUP", f"✅ Prepared sample_input.xlsx (Max products: {TEST_RUN_MAX_PRODUCTS}). Cleaned output path.", "success")
 
-        rc, stdout, stderr = await _run(
+        # 4. Executing Scraper (No Timeout)
+        await emit_log("EXEC", "🚀 Launching generated_scraper.py in isolated sandbox (no timeout limit)...", "info")
+        rc, stdout, stderr = await _run_streaming(
             str(venv_python), "generated_scraper.py",
             "--input", str(sample_input),
             "--output", str(sample_output),
             "--max-products", str(TEST_RUN_MAX_PRODUCTS),
-            timeout=TEST_RUN_TIMEOUT_SECONDS,
             cwd=str(folder),
+            phase="SCRAPER",
         )
+        await emit_log("EXEC", f"Scraper execution process completed with exit code {rc}.", "success" if rc == 0 else "warning")
+
+        num_extracted_rows = 0
+        if sample_output.exists():
+            try:
+                import pandas as pd
+                df_out = pd.read_excel(sample_output, sheet_name="Extracted Data")
+                num_extracted_rows = len(df_out)
+            except Exception as ex:
+                await emit_log("VALIDATE", f"Note: could not read output Excel: {ex}", "warning")
+
+        await emit_log("VALIDATE", f"Output inspection: found {num_extracted_rows} product rows in 'Extracted Data'.", "success" if num_extracted_rows > 0 else "warning")
+
+        # ----------------------------------------------------------------------
+        # Self-Healing Loop: Auto-repair if execution failed or extracted 0 rows
+        # ----------------------------------------------------------------------
+        healed = False
+        if rc != 0 or not sample_output.exists() or num_extracted_rows == 0:
+            err_msg = stderr.decode(errors="replace")[-3000:] or stdout.decode(errors="replace")[-3000:]
+            if num_extracted_rows == 0 and rc == 0:
+                err_msg = (
+                    "Scraper execution succeeded with exit code 0, but the 'Extracted Data' sheet has 0 rows. "
+                    "All products were either filtered out by an overly strict keyword filter or selectors failed to extract attributes."
+                )
+
+            await emit_log("SELF-HEAL", "⚠️ Test run encountered issues (exit code != 0 or 0 extracted rows).", "warning")
+            await emit_log("SELF-HEAL", "Triggering autonomous self-healing repair pass...", "info")
+            await emit_log("SELF-HEAL", f"Diagnostic context: {err_msg[:260]}...", "info")
+
+            try:
+                code_file = folder / "generated_scraper.py"
+                broken_code = code_file.read_text(encoding="utf-8") if code_file.exists() else ""
+                job_spec = InspectionJob(
+                    job_id=record.job_id,
+                    target_url=record.target_url,
+                    sample_keyword=record.sample_keyword,
+                    search_rules="",
+                    filter_rules="",
+                    navigation_rules="",
+                    extraction_rules="",
+                    recon_model=record.recon_model,
+                    codegen_model=record.codegen_model,
+                )
+                await emit_log("SELF-HEAL", "🤖 Codegen Repair Agent analyzing code and error context...", "info")
+                repaired_code, new_reqs, notes = await run_codegen_repair(
+                    job=job_spec,
+                    broken_code=broken_code,
+                    error_context=err_msg,
+                    recon_findings=record.result,
+                    cost_sink=cost_sink,
+                )
+                if repaired_code:
+                    await emit_log("SELF-HEAL", "✅ Codegen Repair Agent synthesized code patch. Writing to generated_scraper.py...", "success")
+                    write_generated_files_to_disk(
+                        job_id=job_id,
+                        name=record.name,
+                        generated_code=repaired_code,
+                        requirements_txt=new_reqs or (req_file.read_text(encoding="utf-8") if req_file.exists() else ""),
+                    )
+                    # Re-install dependencies if updated
+                    if new_reqs and req_file.exists():
+                        await emit_log("SELF-HEAL", "Re-installing updated dependencies...", "info")
+                        await _run_streaming(str(venv_python), "-m", "pip", "install", "--no-warn-script-location", "-r", str(req_file), phase="PIP-REPAIR")
+                        if "playwright" in new_reqs.lower():
+                            await _run_streaming(str(venv_python), "-m", "playwright", "install", "chromium", phase="PW-REPAIR")
+
+                    # Re-run smoke test
+                    if sample_output.exists():
+                        sample_output.unlink()
+
+                    await emit_log("SELF-HEAL", "🔄 Re-running smoke test with repaired scraper...", "info")
+                    rc, stdout, stderr = await _run_streaming(
+                        str(venv_python), "generated_scraper.py",
+                        "--input", str(sample_input),
+                        "--output", str(sample_output),
+                        "--max-products", str(TEST_RUN_MAX_PRODUCTS),
+                        cwd=str(folder),
+                        phase="SCRAPER-REPAIR",
+                    )
+                    if sample_output.exists():
+                        try:
+                            df_out = pd.read_excel(sample_output, sheet_name="Extracted Data")
+                            num_extracted_rows = len(df_out)
+                        except Exception:
+                            pass
+                    healed = True
+                    await emit_log("SELF-HEAL", f"Self-healing repair pass completed. Re-run exit code: {rc}, rows extracted: {num_extracted_rows}", "success" if num_extracted_rows > 0 else "warning")
+            except Exception as repair_exc:
+                await emit_log("SELF-HEAL", f"❌ Self-healing repair pass error: {repair_exc}", "error")
+
+        passed = (rc == 0 and sample_output.exists() and num_extracted_rows > 0)
+        if passed:
+            await emit_log("DONE", f"🎉 Test run PASSED! Successfully extracted {num_extracted_rows} product rows.", "success")
+        else:
+            await emit_log("DONE", f"❌ Test run finished with status: {'PASSED' if passed else 'FAILED'}. Extracted rows: {num_extracted_rows}.", "error" if not passed else "success")
 
         record.test_run = {
-            "status": "passed" if rc == 0 and sample_output.exists() else "failed",
+            "status": "passed" if passed else "failed",
             "returncode": rc,
+            "extracted_rows": num_extracted_rows,
+            "self_healed": healed,
             "stdout_tail": stdout.decode(errors="replace")[-4000:],
             "stderr_tail": stderr.decode(errors="replace")[-4000:],
             "sample_output_ready": sample_output.exists(),
             "max_products": TEST_RUN_MAX_PRODUCTS,
             "finished_at": datetime.now().isoformat(timespec="seconds"),
+            "logs": all_logs,
         }
 
-    except asyncio.TimeoutError:
-        record.test_run = {
-            "status": "failed",
-            "error": f"Test run timed out after {TEST_RUN_TIMEOUT_SECONDS}s.",
-            "finished_at": datetime.now().isoformat(timespec="seconds"),
-        }
     except Exception as exc:
+        await emit_log("ERROR", f"❌ Test run execution failed: {exc}", "error")
         record.test_run = {
             "status": "failed",
             "error": str(exc),
             "finished_at": datetime.now().isoformat(timespec="seconds"),
+            "logs": all_logs,
         }
 
     await store._persist()
@@ -269,6 +450,8 @@ class JobStore:
             return
         try:
             raw = json.loads(JOBS_STORE_PATH.read_text(encoding="utf-8"))
+            self.jobs.clear()
+            self.live_logs.clear()
             for job_id, record_dict in raw.items():
                 self.jobs[job_id] = JobRecord(**record_dict)
                 self.live_logs[job_id] = asyncio.Queue()

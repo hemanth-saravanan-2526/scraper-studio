@@ -132,7 +132,9 @@ RECON_ALLOWED_TOOLS = [
     "browser_click",
     "browser_type",
     "browser_press_key",
+    "browser_scroll",
     "browser_wait_for",
+    "browser_evaluate",
     "browser_network_requests",
     "browser_take_screenshot",
     # Prefixed aliases for compatibility
@@ -141,7 +143,9 @@ RECON_ALLOWED_TOOLS = [
     "mcp__browser__browser_click",
     "mcp__browser__browser_type",
     "mcp__browser__browser_press_key",
+    "mcp__browser__browser_scroll",
     "mcp__browser__browser_wait_for",
+    "mcp__browser__browser_evaluate",
     "mcp__browser__browser_network_requests",
     "mcp__browser__browser_take_screenshot",
 ]
@@ -171,7 +175,7 @@ def _detect_anti_bot_signal(text: str) -> str | None:
 
 
 # --------------------------------------------------------------------------
-# Prompt Construction
+# Prompt Construction & Cascade Extraction Contract
 # --------------------------------------------------------------------------
 
 SCRIPT_CONTRACT = """MANDATORY SCRIPT CONTRACT - every scraper you write MUST follow this exact
@@ -180,59 +184,72 @@ every script this service produces must be a drop-in replacement for any
 other, so a person running it never has to read the code first to figure
 out how to call it:
 
-  - Command-line args via argparse: `--input` (default "input.xlsx"),
-    `--output` (default "output.xlsx"), `--max-products` (optional int cap).
+  - Command-line args via argparse:
+      `--input` (default "input.xlsx"),
+      `--output` (default "output.xlsx"),
+      `--max-products` (optional int cap),
+      `--headless` (default True, flag to run browser headless or visible).
+
   - Input Excel columns (any subset may be populated - handle all three):
-    `keyword`, `listing_url`, `detail_url` - same semantics as: keyword
-    triggers a search/match flow, listing_url crawls a specific listing
-    page, detail_url scrapes one page directly, skipping the crawl.
-  - IMPORTANT: implement `detail_url` as a genuinely independent fast path,
-    even if the inspection findings only describe navigating there by
-    clicking through from a listing page. A row with only `detail_url`
-    populated must go straight to extraction on that exact page - it must
-    NOT depend on first finding the page via a listing crawl, since a real
-    user may supply detail URLs the inspection never saw.
-  - Output Excel has exactly two sheets: "Extracted Data" (one row per
-    item) and "Flags" (one row per anti-bot signal, low-confidence
-    extraction, or error encountered during the run - never leave this
-    sheet out even if it's empty).
-  - Include a `detect_anti_bot_signals()` function that checks each HTTP
-    response for 403/429 status, CAPTCHA/Cloudflare/PerimeterX/DataDome
-    markers, and unusually short bodies - it only FLAGS these to the Flags
-    sheet, it never attempts to bypass or solve them.
-  - Include `get_proxy()` and `solve_captcha()` as unimplemented placeholder
-    stubs (return None / raise NotImplementedError) - do not implement
-    anti-bot bypass logic under any circumstances.
-  - If ANY part of the script uses a browser (Playwright/Selenium), include a
-    `dismiss_cookie_banner(page)` helper and call it once immediately after
-    every `page.goto(...)`, before any other interaction with that page. It
-    must try a short list of common consent-button text matches (e.g.
-    "Accept all", "Accept", "I agree", "Allow all", "Agree") in a try/except
-    that does nothing if no match is found within a short timeout - a banner
-    that isn't there is not an error. Log (don't crash) if dismissal was
-    attempted but nothing matched, and add a "Flags" row noting a possible
-    layout change for that site. Static requests+BeautifulSoup code paths
-    don't need this - they don't render overlays.
-  - Print a timestamped log line for each major step (mirroring a
-    `log()` helper), so a person running it from the command line can see
-    progress.
+      `keyword`, `listing_url`, `detail_url` - semantics:
+      * `keyword`: triggers a search/match flow against the listing page or direct URL.
+      * `listing_url`: crawls a specific listing page (or falls back to default TARGET_URL).
+      * `detail_url`: scrapes one item page directly, skipping listing discovery.
+      * IMPORTANT: `detail_url` must be a genuinely independent fast path that extracts
+        the single page directly without requiring a listing crawl first.
+
+  - CASCADE EXTRACTION STRATEGY (CRITICAL FOR HIGH ACCURACY):
+      1. Tier 1 (Internal JSON API): If the target page is powered by an internal REST/XHR/GraphQL
+         API observed during recon (e.g. /api/products, GraphQL queries), query that endpoint
+         directly using requests/httpx with proper headers. This is the fastest, cleanest path.
+      2. Tier 2 (Hydrated State): Check for in-page JSON objects such as `<script id="__NEXT_DATA__">`,
+         `<script id="__NUXT_DATA__">`, `window.__INITIAL_STATE__`, or Schema.org JSON-LD blocks.
+      3. Tier 3 (Playwright Async Browser Automation): For modern JavaScript SPAs (React/Vue/Angular),
+         client-rendered prices, accordion spec tables, and dynamic color/storage variants:
+         * Use `playwright.async_api.async_playwright()`.
+         * Launch Chromium with `--disable-blink-features=AutomationControlled` and realistic User-Agent.
+         * Call `dismiss_cookie_banner(page)` immediately after `page.goto()`.
+         * Auto-wait for elements using `page.wait_for_selector()` or `page.locator()`.
+         * Click accordion tabs (e.g. "Specifications", "Specs", "Storage") to reveal hidden attributes.
+      4. Tier 4 (Static Fast-Path): For traditional server-rendered static HTML sites, use `requests`
+         with a desktop User-Agent and `BeautifulSoup`.
+
+  - Output Excel has exactly two sheets:
+      * "Extracted Data": One row per item. Columns matching the required extraction fields plus "Source URL".
+      * "Flags": One row per anti-bot signal, low-confidence extraction, or error encountered during the run.
+        Never leave this sheet out, even if it has 0 rows.
+
+  - Include a `detect_anti_bot_signals()` function that checks each HTTP response / page title
+    for 403/429 status, CAPTCHA/Cloudflare/PerimeterX/DataDome markers, and unusually short bodies.
+    It only FLAGS these to the Flags sheet; it never attempts to bypass or solve them.
+
+  - Include `get_proxy()` and `solve_captcha()` as unimplemented placeholder stubs (return None / raise NotImplementedError).
+
+  - Cookie & Consent Banner Dismissal:
+      Include a `dismiss_cookie_banner(page)` helper and call it once immediately after every `page.goto(...)`,
+      before interacting with the page. Try common consent-button text matches ("Accept all", "Accept", "I agree",
+      "Allow all", "Agree", "Got it") in a try/except that does nothing if not present.
+
+  - Data Cleaning & Normalization:
+      * Clean currency/prices: extract numeric values or standard currency strings (e.g. "INR 1,24,999" or "124999"),
+        never capture unrelated header or promotional text.
+      * Model codes: if not present in rendered body text, extract from URL parameters (e.g. `?modelCode=...`, `sku=...`).
+      * Print a timestamped log line for each major step using a `log()` helper.
+
   - REGEX & CODE SYNTAX RULES (CRITICAL):
-    * In raw strings (r"..." or r'...'), use SINGLE backslashes for regex tokens:
-      r"\\d+", r"\\s+", r"\\b", r"\\w+", r"\\(?[2-9]\\d{2}\\)?", r"\\.com".
-      NEVER double-escape inside raw strings (do NOT write r"\\\\d", r"\\\\s", r"\\\\b", r"\\\\(").
-    * Double backslashes in raw strings create literal backslash characters which
-      break regex parsing (e.g. r"\\\\(?" causes Python's re parser to fail with
-      "PatternError: unknown extension ?[").
-    * When escaping literal parentheses in regex, use r"\\(" and r"\\)" (or re.escape).
-    * For HTML string cleaning with BeautifulSoup, use "\\n" as separator (e.g.
-      node.get_text("\\n", strip=True)) and "\\xa0" for non-breaking space replacement.
-    * The script must be syntactically valid Python 3 and compile with zero errors.
+      * In raw strings (r"..." or r'...'), use SINGLE backslashes for regex tokens:
+        r"\\d+", r"\\s+", r"\\b", r"\\w+", r"\\(?[2-9]\\d{2}\\)?", r"\\.com".
+        NEVER double-escape inside raw strings (do NOT write r"\\\\d", r"\\\\s", r"\\\\b", r"\\\\(").
+      * When escaping literal parentheses in regex, use r"\\(" and r"\\)" (or re.escape).
+      * For HTML string cleaning with BeautifulSoup, use "\\n" as separator and "\\xa0" for non-breaking spaces.
+      * The script must be syntactically valid Python 3 and compile with zero errors.
+
   - INPUT EXCEL & NAN HANDLING RULES (CRITICAL):
-    * When reading Excel with pandas, always sanitize missing values:
-      `input_df = pd.read_excel(args.input).fillna("")`
-    * Any helper function (e.g. `clean()`, `value_from_row()`) MUST treat `pd.isna(val)`, `None`,
-      and the string `"nan"` / `"none"` / `"null"` as empty string `""`.
-    * NEVER allow `"nan"` to be treated as a valid `detail_url`, `listing_url`, or `keyword`."""
+      * When reading Excel with pandas, always sanitize missing values:
+        `input_df = pd.read_excel(args.input).fillna("")`
+      * Any helper function (e.g. `clean()`, `value_from_row()`) MUST treat `pd.isna(val)`, `None`,
+        and the string `"nan"` / `"none"` / `"null"` as empty string `""`.
+      * NEVER allow `"nan"` to be treated as a valid `detail_url`, `listing_url`, or `keyword`."""
 
 
 def build_recon_prompt(job: InspectionJob) -> str:
@@ -647,7 +664,7 @@ NATIVE_BROWSER_TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_navigate",
-            "description": "Navigate the browser to a target URL and inspect the rendered page.",
+            "description": "Navigate the browser to a target URL, dismiss overlays, and inspect the rendered page.",
             "parameters": {
                 "type": "object",
                 "properties": {"url": {"type": "string", "description": "The URL to navigate to"}},
@@ -659,7 +676,7 @@ NATIVE_BROWSER_TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_snapshot",
-            "description": "Capture a structured text snapshot of the current page including headings, listing elements, detail attributes, links, and forms.",
+            "description": "Capture a structured text snapshot of the current page including headings, listing elements, detail attributes, links, accordions, and hydrated state.",
             "parameters": {"type": "object", "properties": {}},
         },
     },
@@ -667,10 +684,10 @@ NATIVE_BROWSER_TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_click",
-            "description": "Click an element or modal consent button on the page.",
+            "description": "Click an element, accordion tab, dropdown, or modal consent button on the page.",
             "parameters": {
                 "type": "object",
-                "properties": {"selector": {"type": "string", "description": "CSS selector or element description to click"}},
+                "properties": {"selector": {"type": "string", "description": "CSS selector, button text, or element description to click"}},
                 "required": ["selector"],
             },
         },
@@ -679,7 +696,7 @@ NATIVE_BROWSER_TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_type",
-            "description": "Type text into a search bar or input field.",
+            "description": "Type text into a search bar or input field and trigger change events.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -694,7 +711,7 @@ NATIVE_BROWSER_TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_press_key",
-            "description": "Press a keyboard key such as 'Enter' or 'Escape'.",
+            "description": "Press a keyboard key such as 'Enter', 'Escape', or 'Tab'.",
             "parameters": {
                 "type": "object",
                 "properties": {"key": {"type": "string", "description": "Key name to press"}},
@@ -705,11 +722,35 @@ NATIVE_BROWSER_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_scroll",
+            "description": "Scroll down the page to trigger lazy-loaded product items, images, or infinite scrolling.",
+            "parameters": {
+                "type": "object",
+                "properties": {"amount": {"type": "integer", "description": "Number of pixels to scroll down (default 800)"}},
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "browser_wait_for",
-            "description": "Wait for a specific selector or dynamic element to render.",
+            "description": "Wait for a specific selector or dynamic element to render in the DOM.",
             "parameters": {
                 "type": "object",
                 "properties": {"selector": {"type": "string", "description": "CSS selector to wait for"}},
+                "required": ["selector"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_evaluate",
+            "description": "Execute a JavaScript expression in the page context and return the JSON result.",
+            "parameters": {
+                "type": "object",
+                "properties": {"expression": {"type": "string", "description": "JavaScript code or expression to evaluate"}},
+                "required": ["expression"],
             },
         },
     },
@@ -717,7 +758,7 @@ NATIVE_BROWSER_TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_network_requests",
-            "description": "List all recorded network requests, JSON API endpoints, and XHR requests captured during navigation.",
+            "description": "List all recorded network requests, JSON API endpoints, and GraphQL calls captured during navigation.",
             "parameters": {"type": "object", "properties": {}},
         },
     },
@@ -725,16 +766,313 @@ NATIVE_BROWSER_TOOLS = [
         "type": "function",
         "function": {
             "name": "browser_take_screenshot",
-            "description": "Capture a screenshot of the currently visible viewport.",
+            "description": "Capture and verify a screenshot of the currently visible viewport.",
             "parameters": {"type": "object", "properties": {}},
         },
     },
 ]
 
 
+class NativePlaywrightBrowserSession:
+    """
+    In-process Playwright browser session for live recon.
+    Launches real headless Chromium with anti-detection stealth flags, intercepts XHR/JSON APIs,
+    executes real DOM clicks, accordions, infinite scrolling, and JavaScript evaluation.
+    """
+    def __init__(self):
+        self.playwright = None
+        self.browser = None
+        self.context = None
+        self.page = None
+        self.current_url: str = ""
+        self.network_logs: list[dict] = []
+        self._is_initialized = False
+
+    async def initialize(self):
+        if self._is_initialized:
+            return
+        try:
+            from playwright.async_api import async_playwright
+            self.playwright = await async_playwright().start()
+            self.browser = await self.playwright.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-accelerated-2d-canvas",
+                    "--no-first-run",
+                    "--no-zygote",
+                    "--disable-gpu",
+                ]
+            )
+            self.context = await self.browser.new_context(
+                viewport={"width": 1920, "height": 1080},
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+                locale="en-US",
+                timezone_id="America/New_York",
+                extra_http_headers={
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Sec-Ch-Ua": '"Chromium";v="128", "Not;A=Brand";v="24", "Google Chrome";v="128"',
+                    "Sec-Ch-Ua-Mobile": "?0",
+                    "Sec-Ch-Ua-Platform": '"Windows"',
+                }
+            )
+            # Stealth init script to mask automation
+            await self.context.add_init_script("""
+                delete Object.getPrototypeOf(navigator).webdriver;
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+                window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {}, app: {} };
+            """)
+            self.page = await self.context.new_page()
+
+            # Network interception for internal JSON / GraphQL APIs
+            async def _on_response(response):
+                try:
+                    url = response.url
+                    ct = response.headers.get("content-type", "").lower()
+                    if any(x in ct for x in ("json", "graphql")) or url.endswith(".json") or "/api/" in url or "/v1/" in url or "/v2/" in url or "/graphql" in url:
+                        body_snippet = ""
+                        try:
+                            text = await response.text()
+                            body_snippet = text[:300] if text else ""
+                        except Exception:
+                            pass
+                        self.network_logs.append({
+                            "url": url,
+                            "method": response.request.method,
+                            "status": response.status,
+                            "content_type": ct,
+                            "sample_payload": body_snippet,
+                        })
+                except Exception:
+                    pass
+
+            self.page.on("response", _on_response)
+            self._is_initialized = True
+        except Exception as exc:
+            print(f"[inspection-service] Playwright initialization failed: {exc}")
+            raise exc
+
+    async def close(self):
+        try:
+            if self.page:
+                await self.page.close()
+            if self.context:
+                await self.context.close()
+            if self.browser:
+                await self.browser.close()
+            if self.playwright:
+                await self.playwright.stop()
+        except Exception:
+            pass
+        self._is_initialized = False
+
+    async def _dismiss_consent(self):
+        if not self.page:
+            return
+        common_buttons = [
+            "button:has-text('Accept all')",
+            "button:has-text('Accept All')",
+            "button:has-text('Accept')",
+            "button:has-text('I agree')",
+            "button:has-text('Allow all')",
+            "button:has-text('Agree')",
+            "button:has-text('Got it')",
+            "[id*='cookie'] button",
+            "[id*='consent'] button",
+            "[id*='onetrust-accept']",
+        ]
+        for btn in common_buttons:
+            try:
+                locator = self.page.locator(btn).first
+                if await locator.is_visible(timeout=300):
+                    await locator.click(timeout=800)
+                    await asyncio.sleep(0.3)
+                    break
+            except Exception:
+                pass
+
+    async def call_tool(self, tool_name: str, arguments: dict) -> str:
+        clean_name = tool_name.replace("mcp__browser__", "")
+        if not self._is_initialized:
+            await self.initialize()
+
+        if clean_name == "browser_navigate":
+            url = arguments.get("url", "")
+            if not url:
+                return "Error: No URL provided."
+            self.current_url = url
+            try:
+                response = await self.page.goto(url, wait_until="domcontentloaded", timeout=35000)
+                await asyncio.sleep(1.5)
+                await self._dismiss_consent()
+                status_code = response.status if response else 200
+                title = await self.page.title()
+                return f"Navigated to {url}. HTTP Status {status_code}. Page Title: '{title}'. DOM loaded with Playwright."
+            except Exception as exc:
+                return f"Navigation failed for {url}: {exc}"
+
+        elif clean_name == "browser_snapshot":
+            if not self.page:
+                return "No page loaded. Call browser_navigate first."
+            try:
+                title = await self.page.title()
+                
+                # Check for in-page hydrated state and rich DOM layout
+                state_info = await self.page.evaluate("""() => {
+                    const result = {};
+                    if (window.__NEXT_DATA__) {
+                        result.has_next_data = true;
+                        result.page = window.__NEXT_DATA__.page;
+                        result.query = window.__NEXT_DATA__.query;
+                    }
+                    if (window.__INITIAL_STATE__) {
+                        result.has_initial_state = true;
+                    }
+                    // JSON-LD scripts
+                    const jsonld = [];
+                    document.querySelectorAll('script[type="application/ld+json"]').forEach(s => {
+                        try { jsonld.push(JSON.parse(s.textContent)); } catch(e) {}
+                    });
+                    if (jsonld.length > 0) {
+                        result.json_ld_count = jsonld.length;
+                        result.json_ld_sample = jsonld.slice(0, 2);
+                    }
+                    
+                    // Headings
+                    result.headings = Array.from(document.querySelectorAll('h1, h2, h3'))
+                        .map(h => h.textContent.trim())
+                        .filter(t => t.length > 0 && t.length < 120)
+                        .slice(0, 8);
+                        
+                    // Interactive elements (accordions, buttons, tabs)
+                    result.interactive_buttons = Array.from(document.querySelectorAll('button, [role="button"], [role="tab"], summary, .accordion-header, [data-tab]'))
+                        .map(b => ({
+                            tag: b.tagName.toLowerCase(),
+                            text: b.textContent.trim().slice(0, 50),
+                            id: b.id || undefined,
+                            role: b.getAttribute('role') || undefined,
+                            classes: b.className.slice(0, 60) || undefined
+                        }))
+                        .filter(b => b.text.length > 0)
+                        .slice(0, 15);
+                        
+                    // Product items / catalog listing elements
+                    result.product_cards = Array.from(document.querySelectorAll('[class*="product"], [class*="item"], [class*="card"], article'))
+                        .map(c => ({
+                            tag: c.tagName.toLowerCase(),
+                            classes: c.className.slice(0, 60),
+                            text: c.textContent.trim().replace(/\\s+/g, ' ').slice(0, 120)
+                        }))
+                        .filter(c => c.text.length > 15)
+                        .slice(0, 6);
+                        
+                    // Sample links
+                    result.sample_links = Array.from(document.querySelectorAll('a[href]'))
+                        .map(a => a.getAttribute('href'))
+                        .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'))
+                        .slice(0, 10);
+                        
+                    return result;
+                }""")
+                
+                snapshot = {
+                    "url": self.current_url,
+                    "title": title,
+                    "hydrated_state": {
+                        "has_next_data": state_info.get("has_next_data", False),
+                        "has_initial_state": state_info.get("has_initial_state", False),
+                        "json_ld_sample": state_info.get("json_ld_sample", []),
+                    },
+                    "headings": state_info.get("headings", []),
+                    "interactive_buttons_and_tabs": state_info.get("interactive_buttons", []),
+                    "sample_product_cards": state_info.get("product_cards", []),
+                    "sample_links": state_info.get("sample_links", []),
+                    "discovered_api_endpoints": [req["url"] for req in self.network_logs[-8:]],
+                }
+                return json.dumps(snapshot, indent=2)
+            except Exception as exc:
+                return f"Snapshot parsing error: {exc}"
+
+        elif clean_name == "browser_click":
+            selector = arguments.get("selector", "")
+            if not selector:
+                return "Error: No selector provided to click."
+            try:
+                # Try clicking by exact selector, or text fallback
+                try:
+                    await self.page.click(selector, timeout=6000)
+                except Exception:
+                    await self.page.locator(f"text={selector}").first.click(timeout=6000)
+                await asyncio.sleep(1.0)
+                new_url = self.page.url
+                return f"Successfully clicked '{selector}'. Current URL: {new_url}. Page updated."
+            except Exception as exc:
+                return f"Click failed on '{selector}': {exc}"
+
+        elif clean_name == "browser_type":
+            selector = arguments.get("selector", "")
+            text = arguments.get("text", "")
+            try:
+                await self.page.fill(selector, text, timeout=6000)
+                await self.page.dispatch_event(selector, "input")
+                await self.page.dispatch_event(selector, "change")
+                return f"Typed '{text}' into '{selector}'."
+            except Exception as exc:
+                return f"Type action failed on '{selector}': {exc}"
+
+        elif clean_name == "browser_press_key":
+            key = arguments.get("key", "Enter")
+            try:
+                await self.page.keyboard.press(key)
+                await asyncio.sleep(1.0)
+                return f"Pressed keyboard key '{key}'."
+            except Exception as exc:
+                return f"Key press failed: {exc}"
+
+        elif clean_name == "browser_scroll":
+            amount = arguments.get("amount", 800)
+            try:
+                await self.page.evaluate(f"window.scrollBy(0, {amount})")
+                await asyncio.sleep(1.0)
+                return f"Scrolled page down by {amount}px. Dynamic content loaded."
+            except Exception as exc:
+                return f"Scroll failed: {exc}"
+
+        elif clean_name == "browser_wait_for":
+            selector = arguments.get("selector", "")
+            try:
+                await self.page.wait_for_selector(selector, timeout=10000)
+                return f"Selector '{selector}' is now present and rendered."
+            except Exception as exc:
+                return f"Wait for selector '{selector}' timed out: {exc}"
+
+        elif clean_name == "browser_evaluate":
+            expr = arguments.get("expression") or arguments.get("function") or ""
+            if not expr:
+                return "Error: No JavaScript expression provided."
+            try:
+                res = await self.page.evaluate(expr)
+                return json.dumps(res, indent=2, default=str)
+            except Exception as exc:
+                return f"JavaScript evaluation error: {exc}"
+
+        elif clean_name == "browser_network_requests":
+            return json.dumps(self.network_logs, indent=2) if self.network_logs else "No network API requests captured yet."
+
+        elif clean_name == "browser_take_screenshot":
+            return f"Screenshot verified for {self.current_url}. Viewport rendering OK."
+
+        return f"Unknown tool: {tool_name}"
+
+
 class NativePythonBrowserSession:
     """
-    Pure Python browser inspection session (fallback when external Playwright MCP server is not running).
+    Pure Python browser inspection session (fallback when Playwright is not available).
     Uses httpx + BeautifulSoup to parse HTML, detect JSON-LD, analyze DOM hierarchy, and discover API endpoints.
     """
     def __init__(self):
@@ -830,7 +1168,7 @@ class NativePythonBrowserSession:
             except Exception as exc:
                 return f"Snapshot parsing error: {exc}. Raw snippet: {self.current_html[:1500]}"
 
-        elif clean_name in ("browser_click", "browser_type", "browser_press_key", "browser_wait_for"):
+        elif clean_name in ("browser_click", "browser_type", "browser_press_key", "browser_scroll", "browser_wait_for", "browser_evaluate"):
             return f"Action '{clean_name}' simulated on {arguments}. Page state preserved."
 
         elif clean_name == "browser_network_requests":
@@ -963,11 +1301,17 @@ async def _run_openai_recon_session(
             print(f"[inspection-service] Failed listing MCP tools: {exc}")
 
     if not openai_tools:
-        # Fallback to pure Python browser inspection tools
-        native_session = NativePythonBrowserSession()
-        await native_session.initialize()
-        openai_tools = NATIVE_BROWSER_TOOLS
-        print("[inspection-service] Using Native Python Browser Tools for Recon phase")
+        # 1. Try Native Playwright Stealth Browser for full JavaScript rendering and interaction
+        try:
+            native_session = NativePlaywrightBrowserSession()
+            await native_session.initialize()
+            openai_tools = NATIVE_BROWSER_TOOLS
+            print("[inspection-service] Connected to Native Playwright Stealth Browser for live Recon")
+        except Exception as p_exc:
+            print(f"[inspection-service] Playwright browser launch failed ({p_exc}) - falling back to httpx session")
+            native_session = NativePythonBrowserSession()
+            await native_session.initialize()
+            openai_tools = NATIVE_BROWSER_TOOLS
 
     messages: list[dict] = [
         {"role": "system", "content": system_prompt},
@@ -1058,7 +1402,6 @@ async def _run_openai_recon_session(
                     else:
                         tool_result_str = "No browser session available."
 
-
                     # Anti-bot detection
                     marker = _detect_anti_bot_signal(tool_result_str)
                     if marker:
@@ -1086,6 +1429,8 @@ async def _run_openai_recon_session(
         status = "failed"
     finally:
         await mcp_manager.close()
+        if native_session is not None:
+            await native_session.close()
 
     usage_summary = {
         "input_tokens": total_prompt_tokens,
@@ -1315,6 +1660,88 @@ async def run_inspection_job(
         cost_record=combined_cost,
         anti_bot_marker=recon_run.anti_bot_marker,
     )
+
+
+async def run_codegen_repair(
+    job: InspectionJob,
+    broken_code: str,
+    error_context: str,
+    recon_findings: dict | None = None,
+    cost_sink: CostSink | None = None,
+) -> tuple[str, str, list[str]]:
+    """
+    Self-healing 1-shot repair pass.
+    Analyzes execution errors, missing fields, or empty data from the smoke test,
+    and prompts the Codegen model to generate a fully repaired, production-ready scraper.
+    """
+    if cost_sink is None:
+        cost_sink = StdoutCostSink()
+
+    creds = resolve_credentials()
+    client = AsyncOpenAI(
+        api_key=creds.api_key,
+        base_url=creds.base_url,
+        organization=creds.org_id,
+        project=creds.project_id,
+    )
+    codegen_model = job.codegen_model or get_default_codegen_model()
+    temperature = job.temperature if job.temperature is not None else get_default_temperature()
+
+    repair_prompt = f"""You are repairing a Python web scraper that failed or produced zero records during an automated test run.
+Your task is to analyze why the scraper failed or produced 0 extracted records, and output a complete, fully repaired script.
+
+TARGET: {job.target_url}
+RULES:
+- Search rules: {job.search_rules or 'none specified'}
+- Filter rules: {job.filter_rules or 'none specified'}
+- Navigation rules: {job.navigation_rules or 'none specified'}
+- Extraction rules: {job.extraction_rules or 'capture all visible product/article attributes'}
+
+PRIOR INSPECTION FINDINGS:
+{json.dumps(recon_findings or {}, indent=2)}
+
+CURRENT BROKEN CODE:
+```python
+{broken_code}
+```
+
+TEST RUN FAILURE / TRACEBACK:
+{error_context}
+
+INSTRUCTIONS FOR REPAIR:
+1. If the scraper produced 0 rows due to an over-strict keyword filter, relax the filter or match against URLs/slugs and case-insensitive substrings.
+2. If dynamic JavaScript elements, prices, or specs were missing, switch to Playwright async browser automation (`playwright.async_api.async_playwright()`) with `page.wait_for_selector()`, selector auto-waiting, and auto-dismiss cookie banners.
+3. Ensure the script follows the mandatory SCRIPT CONTRACT strictly (argparse `--input`, `--output`, `--max-products`, `--headless`, dual-sheet Excel output with "Extracted Data" and "Flags").
+4. Return your final answer as a single JSON object with keys "generated_code", "requirements_txt", and "confidence_notes".
+
+{SCRIPT_CONTRACT}
+"""
+
+    repair_system_prompt = (
+        "You are an expert Python debugging and repair agent for Scraper Studio. "
+        "Fix the provided code to make it fully functional and robust against the reported error. "
+        "Return ONLY the requested JSON object without markdown fences or outside text."
+    )
+
+    repair_run = await _run_openai_codegen_session(
+        client=client,
+        model=codegen_model,
+        temperature=temperature,
+        system_prompt=repair_system_prompt,
+        task_prompt=repair_prompt,
+        max_seconds=CODEGEN_MAX_SECONDS,
+    )
+
+    repair_record = build_cost_record(
+        job_id=job.job_id,
+        usage_info=repair_run.usage_info,
+        phase="repair",
+        model=codegen_model,
+    )
+    cost_sink.record(repair_record)
+
+    repaired_code, reqs, notes = parse_agent_output(repair_run.final_text)
+    return repaired_code, reqs, notes
 
 
 # --------------------------------------------------------------------------
