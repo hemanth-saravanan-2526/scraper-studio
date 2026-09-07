@@ -612,7 +612,10 @@ if nav_selection == "⚡ Builder":
             
             # Execute async in streamlit
             with st.spinner("Executing autonomous agent inspection and code synthesis..."):
-                asyncio.run(_run_job_flow())
+                async def __patched():
+                    import sys; sys.set_asyncgen_hooks(finalizer=None)
+                    await _run_job_flow()
+                asyncio.run(__patched())
 
 
 # -----------------------------------------------------------------------------

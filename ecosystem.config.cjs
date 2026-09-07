@@ -33,7 +33,8 @@ module.exports = {
     },
     {
       name: "scraper-studio-mcp",
-      script: "./start-mcp.cmd",
+      script: "C:\\Windows\\System32\\cmd.exe",
+      args: "/c npx -y @playwright/mcp@latest --port 8931 --host 0.0.0.0 --isolated",
       cwd: __dirname,
       interpreter: "none",
       watch: false,
