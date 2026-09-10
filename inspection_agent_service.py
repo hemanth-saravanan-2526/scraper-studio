@@ -126,6 +126,16 @@ class InspectionResult:
 # Playwright MCP Server Configuration & Allowed Tools
 # --------------------------------------------------------------------------
 
+def get_mcp_server_url() -> str:
+    """Resolve Playwright MCP Server URL from environment (.env)."""
+    return (
+        os.environ.get("MCP_SERVER_URL")
+        or os.environ.get("PLAYWRIGHT_MCP_URL")
+        or os.environ.get("MCP_BASE_URL")
+        or "http://localhost:8931"
+    ).rstrip("/")
+
+
 RECON_ALLOWED_TOOLS = [
     "browser_navigate",
     "browser_snapshot",
@@ -601,19 +611,24 @@ def parse_recon_output(final_text: str) -> tuple[dict, list[str]]:
 # --------------------------------------------------------------------------
 
 class MCPClientManager:
-    """Manages connection to Playwright MCP Server (HTTP/SSE or Stdio)."""
+    """Manages connection to Playwright MCP Server (HTTP/SSE)."""
 
-    def __init__(self, base_url: str = "http://localhost:8931"):
-        self.base_url = base_url.rstrip("/")
+    def __init__(self, base_url: str | None = None):
+        self.base_url = (base_url or get_mcp_server_url()).rstrip("/")
         self.session: ClientSession | None = None
         self._exit_stack = None
 
     async def connect(self):
+        # By default, use the faster, in-process Native Playwright Stealth Browser
+        # Set ENABLE_MCP=1 or USE_NATIVE_PLAYWRIGHT=0 to force external MCP
+        if os.environ.get("USE_NATIVE_PLAYWRIGHT", "1").lower() in ("1", "true", "yes") and os.environ.get("ENABLE_MCP", "0").lower() not in ("1", "true", "yes"):
+            return None
+
         if not MCP_AVAILABLE:
             print("[inspection-service] Warning: mcp library not available in environment.")
             return None
 
-        # 1. Try SSE HTTP transport
+        # 1. Try SSE HTTP transport with a short timeout to prevent hanging
         endpoints_to_try = [
             f"{self.base_url}/sse",
             f"{self.base_url}/mcp",
@@ -622,40 +637,29 @@ class MCPClientManager:
         for url in endpoints_to_try:
             try:
                 self._exit_stack = asyncio.LifoQueue()
-                # Create sse client context
-                sse_ctx = sse_client(url)
-                read, write = await sse_ctx.__aenter__()
-                session = ClientSession(read, write)
-                await session.__aenter__()
-                await session.initialize()
+                async def _try_sse():
+                    sse_ctx = sse_client(url)
+                    read, write = await sse_ctx.__aenter__()
+                    session = ClientSession(read, write)
+                    await session.__aenter__()
+                    await session.initialize()
+                    return session
+
+                session = await asyncio.wait_for(_try_sse(), timeout=2.0)
                 self.session = session
                 print(f"[inspection-service] Connected to Playwright MCP via {url}")
                 return self.session
-            except Exception:
+            except BaseException:
                 continue
 
-        # 2. Try Stdio fallback
-        try:
-            params = StdioServerParameters(
-                command="npx",
-                args=["-y", "@playwright/mcp@latest", "--isolated"],
-            )
-            stdio_ctx = stdio_client(params)
-            read, write = await stdio_ctx.__aenter__()
-            session = ClientSession(read, write)
-            await session.__aenter__()
-            await session.initialize()
-            self.session = session
-            print("[inspection-service] Connected to Playwright MCP via stdio process")
-            return self.session
-        except Exception:
-            return None
+        # Do not use stdio npx fallback on Windows - detached stdio pipes trigger AnyIO CancelledError
+        return None
 
     async def close(self):
         if self.session:
             try:
                 await self.session.__aexit__(None, None, None)
-            except Exception:
+            except BaseException:
                 pass
             self.session = None
 
@@ -1273,7 +1277,7 @@ async def _run_openai_recon_session(
     max_seconds: int,
     max_steps: int,
     interceptor: ToolUseInterceptor,
-    mcp_base_url: str = "http://localhost:8931",
+    mcp_base_url: str | None = None,
 ) -> _PhaseRun:
     start_time = time.monotonic()
     status = "completed"
@@ -1284,6 +1288,7 @@ async def _run_openai_recon_session(
     total_cached_tokens = 0
     turns_count = 0
 
+    mcp_base_url = (mcp_base_url or get_mcp_server_url()).rstrip("/")
     mcp_manager = MCPClientManager(base_url=mcp_base_url)
     mcp_session = await mcp_manager.connect()
     native_session = None
@@ -1297,8 +1302,14 @@ async def _run_openai_recon_session(
                 if t.name in RECON_ALLOWED_TOOLS or any(t.name.endswith(a) for a in RECON_ALLOWED_TOOLS)
             ]
             openai_tools = _convert_mcp_tools_to_openai(filtered_tools)
-        except Exception as exc:
-            print(f"[inspection-service] Failed listing MCP tools: {exc}")
+        except BaseException as exc:
+            print(f"[inspection-service] Failed listing MCP tools ({exc}) - falling back to Native Playwright")
+            try:
+                await mcp_manager.close()
+            except BaseException:
+                pass
+            mcp_session = None
+            openai_tools = []
 
     if not openai_tools:
         # 1. Try Native Playwright Stealth Browser for full JavaScript rendering and interaction
@@ -1392,12 +1403,12 @@ async def _run_openai_recon_session(
                                 else:
                                     parts.append(str(c))
                             tool_result_str = "\n".join(parts) or "Tool execution completed."
-                        except Exception as tool_exc:
+                        except BaseException as tool_exc:
                             tool_result_str = f"Tool execution error: {tool_exc}"
                     elif native_session is not None:
                         try:
                             tool_result_str = await native_session.call_tool(fn_name, fn_args)
-                        except Exception as native_exc:
+                        except BaseException as native_exc:
                             tool_result_str = f"Native browser action error: {native_exc}"
                     else:
                         tool_result_str = "No browser session available."
@@ -1421,7 +1432,7 @@ async def _run_openai_recon_session(
                 final_text = msg.content or ""
                 break
 
-    except Exception as exc:
+    except BaseException as exc:
         interceptor.action_log.append({
             "ts": datetime.now().isoformat(timespec="seconds"),
             "error": str(exc),
@@ -1536,10 +1547,11 @@ async def _run_openai_codegen_session(
 
 async def run_inspection_job(
     job: InspectionJob,
-    mcp_base_url: str = "http://localhost:8931",
+    mcp_base_url: str | None = None,
     cost_sink: CostSink | None = None,
     on_log_entry: Callable[[dict], Coroutine[Any, Any, None]] | None = None,
 ) -> InspectionResult:
+    mcp_base_url = (mcp_base_url or get_mcp_server_url()).rstrip("/")
     cost_sink = cost_sink or StdoutCostSink()
     action_log: list[dict] = []
     cost_records: list[CostRecord] = []

@@ -615,7 +615,14 @@ if nav_selection == "⚡ Builder":
                 async def __patched():
                     import sys; sys.set_asyncgen_hooks(finalizer=None)
                     await _run_job_flow()
-                asyncio.run(__patched())
+                try:
+                    asyncio.run(__patched())
+                except BaseException as ex:
+                    import traceback
+                    status_placeholder.error(f"❌ Inspection process halted: {ex}")
+                    st.error(f"**Error Details:** `{ex}`")
+                    with st.expander("Full Traceback"):
+                        st.code(traceback.format_exc(), language="python")
 
 
 # -----------------------------------------------------------------------------

@@ -34,7 +34,7 @@ module.exports = {
     {
       name: "scraper-studio-mcp",
       script: "C:\\Windows\\System32\\cmd.exe",
-      args: "/c npx -y @playwright/mcp@latest --port 8931 --host 0.0.0.0 --isolated",
+      args: `/c npx -y @playwright/mcp@latest --port ${process.env.MCP_PORT || (process.env.MCP_SERVER_URL ? (new URL(process.env.MCP_SERVER_URL).port || "8931") : "8931")} --host 0.0.0.0 --isolated`,
       cwd: __dirname,
       interpreter: "none",
       watch: false,
