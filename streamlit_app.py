@@ -39,10 +39,79 @@ from inspection_agent_service import (
     get_default_codegen_model,
     get_default_temperature,
 )
+import re
+import zipfile
+from openpyxl import Workbook
 import importlib
 import api_service
 importlib.reload(api_service)
 from api_service import store, write_generated_files_to_disk, _build_sample_input_xlsx, TEST_RUN_MAX_PRODUCTS, CreateJobRequest, _run_test_run
+
+
+def _build_scraper_zip(job_record) -> bytes:
+    """
+    Bundles the complete scraper deliverables into a ZIP archive:
+      1. generated_scraper.py (standalone executable Python scraper)
+      2. input.xlsx (standard 3-column input workbook named input.xlsx)
+      3. requirements.txt (Python dependencies)
+    """
+    zip_buffer = io.BytesIO()
+    folder = Path(job_record.saved_to) if getattr(job_record, "saved_to", None) else None
+
+    # 1. Script content
+    code_content = ""
+    if folder and (folder / "generated_scraper.py").exists():
+        try:
+            code_content = (folder / "generated_scraper.py").read_text(encoding="utf-8")
+        except Exception:
+            pass
+    if not code_content and job_record.result:
+        code_content = job_record.result.get("generated_code", "")
+
+    # 2. Requirements content
+    reqs_content = ""
+    if folder and (folder / "requirements.txt").exists():
+        try:
+            reqs_content = (folder / "requirements.txt").read_text(encoding="utf-8")
+        except Exception:
+            pass
+    if not reqs_content and job_record.result:
+        reqs_content = job_record.result.get("requirements_txt", "")
+    if not reqs_content:
+        reqs_content = "pandas\nopenpyxl\nrequests\nbeautifulsoup4\nplaywright\n"
+
+    # 3. input.xlsx content (named input.xlsx, matching sample_input.xlsx)
+    input_xlsx_bytes = None
+    if folder and (folder / "sample_input.xlsx").exists():
+        try:
+            input_xlsx_bytes = (folder / "sample_input.xlsx").read_bytes()
+        except Exception:
+            pass
+    elif folder and (folder / "input.xlsx").exists():
+        try:
+            input_xlsx_bytes = (folder / "input.xlsx").read_bytes()
+        except Exception:
+            pass
+
+    if not input_xlsx_bytes:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Input"
+        ws.append(["keyword", "listing_url", "detail_url"])
+        ws.append([job_record.sample_keyword or None, job_record.target_url, None])
+        bio = io.BytesIO()
+        wb.save(bio)
+        input_xlsx_bytes = bio.getvalue()
+
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        if code_content:
+            zf.writestr("generated_scraper.py", code_content)
+        if reqs_content:
+            zf.writestr("requirements.txt", reqs_content)
+        if input_xlsx_bytes:
+            zf.writestr("input.xlsx", input_xlsx_bytes)
+
+    return zip_buffer.getvalue()
 
 # -----------------------------------------------------------------------------
 # Streamlit Page Config & Custom Styling
@@ -694,24 +763,53 @@ elif nav_selection == "📊 Dashboard":
                         delta=f"{p.get('num_turns',0)} turns • {p.get('cache_read_input_tokens',0)} cached tokens",
                     )
         
-        # Code & Deliverables Tabs
-        st.markdown("#### Generated Deliverables")
-        code_tabs = st.tabs(["📄 generated_scraper.py", "📦 requirements.txt", "🔍 Action Log", "📊 Findings JSON"])
-        
         res = job.result or {}
         code_str = res.get("generated_code", "")
         reqs_str = res.get("requirements_txt", "")
         action_log = res.get("action_log", [])
+
+        # Code & Deliverables Tabs
+        safe_slug = re.sub(r"[^A-Za-z0-9]+", "_", job.name).strip("_").lower() or "scraper"
+        zip_filename = f"{safe_slug}_scraper.zip"
+        zip_bytes = _build_scraper_zip(job) if code_str else None
+
+        col_deliv_title, col_deliv_btn = st.columns([3, 2])
+        with col_deliv_title:
+            st.markdown("#### Generated Deliverables")
+        with col_deliv_btn:
+            if code_str and zip_bytes:
+                st.download_button(
+                    label="📦 Download Complete Scraper (.zip)",
+                    data=zip_bytes,
+                    file_name=zip_filename,
+                    mime="application/zip",
+                    help="Downloads complete standalone scraper package: generated_scraper.py, input.xlsx, and requirements.txt.",
+                    key=f"dl_zip_top_{job.job_id}",
+                )
+
+        code_tabs = st.tabs(["📄 generated_scraper.py", "📦 requirements.txt", "🔍 Action Log", "📊 Findings JSON"])
         
         with code_tabs[0]:
             if code_str:
                 st.code(code_str, language="python", line_numbers=True)
-                st.download_button(
-                    label="📥 Download generated_scraper.py",
-                    data=code_str,
-                    file_name=f"{job.job_id}_generated_scraper.py",
-                    mime="text/x-python",
-                )
+                btn_c1, btn_c2 = st.columns([1, 1])
+                with btn_c1:
+                    st.download_button(
+                        label="📥 Download generated_scraper.py",
+                        data=code_str,
+                        file_name=f"{job.job_id}_generated_scraper.py",
+                        mime="text/x-python",
+                    )
+                with btn_c2:
+                    if zip_bytes:
+                        st.download_button(
+                            label="📦 Download Package (.zip)",
+                            data=zip_bytes,
+                            file_name=zip_filename,
+                            mime="application/zip",
+                            help="Includes generated_scraper.py, input.xlsx, and requirements.txt",
+                            key=f"dl_zip_tab_{job.job_id}",
+                        )
             else:
                 st.info("No code was generated for this job.")
         
@@ -828,3 +926,21 @@ elif nav_selection == "📊 Dashboard":
                             st.dataframe(df_flags, use_container_width=True)
                 except Exception as exc:
                     st.caption(f"Could not load preview: {exc}")
+
+        # Bottom Export Card
+        if code_str and zip_bytes:
+            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+            st.divider()
+            b_col1, b_col2 = st.columns([3, 1])
+            with b_col1:
+                st.markdown("##### 📦 Standalone Scraper Package")
+                st.caption("Complete drop-in scraper ready to run locally: includes `generated_scraper.py`, `input.xlsx`, and `requirements.txt`.")
+            with b_col2:
+                st.download_button(
+                    label="📦 Download Scraper (.zip)",
+                    data=zip_bytes,
+                    file_name=zip_filename,
+                    mime="application/zip",
+                    help="Downloads generated_scraper.py, input.xlsx, and requirements.txt as a ZIP archive.",
+                    key=f"dl_zip_bottom_{job.job_id}",
+                )
