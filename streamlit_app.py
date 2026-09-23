@@ -45,7 +45,7 @@ from openpyxl import Workbook
 import importlib
 import api_service
 importlib.reload(api_service)
-from api_service import store, write_generated_files_to_disk, _build_sample_input_xlsx, TEST_RUN_MAX_PRODUCTS, CreateJobRequest, _run_test_run
+from api_service import store, write_generated_files_to_disk, _build_sample_input_xlsx, TEST_RUN_MAX_PRODUCTS, CreateJobRequest, _run_test_run, refine_job_backend
 
 
 def _build_scraper_zip(job_record) -> bytes:
@@ -768,16 +768,43 @@ elif nav_selection == "📊 Dashboard":
         reqs_str = res.get("requirements_txt", "")
         action_log = res.get("action_log", [])
 
+        # Check for Revisions / Iteration History
+        revisions = getattr(job, "revisions", []) or []
+        view_code = code_str
+        view_reqs = reqs_str
+        active_ver_label = f"v{len(revisions)}" if revisions else "v1"
+
+        if revisions and len(revisions) > 1:
+            def _format_rev(r):
+                ver = r.get("version", 1)
+                lbl = r.get("label") or f"v{ver}"
+                prompt = (r.get("prompt") or "Generation")[:50]
+                return f"📌 {lbl} — {prompt}"
+
+            rev_opts = {r["version"]: _format_rev(r) for r in revisions}
+            selected_v = st.selectbox(
+                "📜 Scraper Iteration History & Version Switcher",
+                options=list(rev_opts.keys()),
+                format_func=lambda v: rev_opts[v],
+                index=len(revisions) - 1,
+                help="Inspect previous versions of this scraper generated across refinement cycles."
+            )
+            selected_rev_obj = next((r for r in revisions if r["version"] == selected_v), None)
+            if selected_rev_obj:
+                view_code = selected_rev_obj.get("generated_code", code_str)
+                view_reqs = selected_rev_obj.get("requirements_txt", reqs_str)
+                active_ver_label = selected_rev_obj.get("label", f"v{selected_v}")
+
         # Code & Deliverables Tabs
         safe_slug = re.sub(r"[^A-Za-z0-9]+", "_", job.name).strip("_").lower() or "scraper"
         zip_filename = f"{safe_slug}_scraper.zip"
-        zip_bytes = _build_scraper_zip(job) if code_str else None
+        zip_bytes = _build_scraper_zip(job) if view_code else None
 
         col_deliv_title, col_deliv_btn = st.columns([3, 2])
         with col_deliv_title:
-            st.markdown("#### Generated Deliverables")
+            st.markdown(f"#### Generated Deliverables ({active_ver_label})")
         with col_deliv_btn:
-            if code_str and zip_bytes:
+            if view_code and zip_bytes:
                 st.download_button(
                     label="📦 Download Complete Scraper (.zip)",
                     data=zip_bytes,
@@ -790,13 +817,13 @@ elif nav_selection == "📊 Dashboard":
         code_tabs = st.tabs(["📄 generated_scraper.py", "📦 requirements.txt", "🔍 Action Log", "📊 Findings JSON"])
         
         with code_tabs[0]:
-            if code_str:
-                st.code(code_str, language="python", line_numbers=True)
+            if view_code:
+                st.code(view_code, language="python", line_numbers=True)
                 btn_c1, btn_c2 = st.columns([1, 1])
                 with btn_c1:
                     st.download_button(
                         label="📥 Download generated_scraper.py",
-                        data=code_str,
+                        data=view_code,
                         file_name=f"{job.job_id}_generated_scraper.py",
                         mime="text/x-python",
                     )
@@ -814,11 +841,11 @@ elif nav_selection == "📊 Dashboard":
                 st.info("No code was generated for this job.")
         
         with code_tabs[1]:
-            if reqs_str:
-                st.code(reqs_str, language="text")
+            if view_reqs:
+                st.code(view_reqs, language="text")
                 st.download_button(
                     label="📥 Download requirements.txt",
-                    data=reqs_str,
+                    data=view_reqs,
                     file_name="requirements.txt",
                     mime="text/plain",
                 )
@@ -838,6 +865,146 @@ elif nav_selection == "📊 Dashboard":
         with code_tabs[3]:
             st.json(res)
         
+        st.divider()
+
+        # =====================================================================
+        # 💡 INTERACTIVE SCRAPER REFINEMENT & FEEDBACK STUDIO
+        # =====================================================================
+        st.markdown("""
+        <div class="banner-panel" style="border-left: 4px solid #ff5722; margin: 12px 0 20px 0;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <span style="font-size:24px;">💡</span>
+                <div>
+                    <h3 style="margin:0; font-size:18px; font-weight:700; color:#0f172a;">Interactive Scraper Refinement Studio</h3>
+                    <div style="font-size:11.5px; color:#ea580c; font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Autonomous Recon + Codegen + Sandbox Validation</div>
+                </div>
+            </div>
+            <div style="font-size:13px; color:#475569; line-height:1.5;">
+                Need updates or new data points? Describe your desired changes in plain English below.
+                The agent will autonomously perform a <strong>targeted live inspection (Recon)</strong> using Playwright to discover the new selectors/APIs,
+                <strong>synthesize the updated Python scraper (Codegen)</strong>, and <strong>smoke-test it against the live site</strong> in the isolated sandbox.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        prompt_key = f"refine_prompt_val_{job.job_id}"
+        if prompt_key not in st.session_state:
+            st.session_state[prompt_key] = ""
+
+        # Quick Suggestion Chips
+        st.markdown("<div style='font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; margin-bottom:6px;'>Quick Prompt Inspirations:</div>", unsafe_allow_html=True)
+        col_c1, col_c2, col_c3, col_c4 = st.columns(4)
+        
+        with col_c1:
+            if st.button("➕ Add Ratings & SKU", key=f"btn_p1_{job.job_id}", use_container_width=True):
+                st.session_state[prompt_key] = "Add customer ratings, total review count, and SKU / Model Code fields. Ensure they are extracted into the 'Extracted Data' Excel sheet."
+                st.rerun()
+        with col_c2:
+            if st.button("📄 Multi-Page Crawl", key=f"btn_p2_{job.job_id}", use_container_width=True):
+                st.session_state[prompt_key] = "Implement multi-page pagination crawl up to --max-products limit. Click the 'Next' page button or navigate page numbers cleanly."
+                st.rerun()
+        with col_c3:
+            if st.button("🔍 Relax Search Filter", key=f"btn_p3_{job.job_id}", use_container_width=True):
+                st.session_state[prompt_key] = "Adapt search and filter logic to match titles case-insensitively, and relax strict keyword filters so more products match."
+                st.rerun()
+        with col_c4:
+            if st.button("⏱️ Extra Stealth & Tabs", key=f"btn_p4_{job.job_id}", use_container_width=True):
+                st.session_state[prompt_key] = "Click open any accordion tabs like 'Specifications' or 'Details' before scraping, and auto-dismiss any regional cookie overlays."
+                st.rerun()
+
+        # Refinement Input Form
+        refine_triggered = False
+        with st.form(key=f"refine_form_{job.job_id}"):
+            refine_user_instructions = st.text_area(
+                "What changes or additions do you need in the scraper?",
+                value=st.session_state.get(prompt_key, ""),
+                placeholder="e.g. Add product ratings, customer review count, and SKU fields. Also click through pagination up to 3 pages, and extract the tech specifications table.",
+                height=110,
+                help="Describe any new data points, different keywords, pagination needs, or DOM navigation changes.",
+            )
+            
+            c_rf1, c_rf2 = st.columns([1, 1])
+            with c_rf1:
+                refine_keyword = st.text_input(
+                    "Sample Keyword (Optional Override)",
+                    value=job.sample_keyword or "",
+                    placeholder="e.g. Galaxy S25 Ultra",
+                    help="Leave unchanged or provide a new keyword to test search/filtering flow.",
+                )
+            with c_rf2:
+                with st.expander("⚙️ Refinement Models & Temperature"):
+                    ref_recon_model = st.selectbox(
+                        "Recon Model",
+                        ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol", "gpt-4o", "gpt-4o-mini"],
+                        index=0,
+                        key=f"ref_recon_m_{job.job_id}",
+                    )
+                    ref_codegen_model = st.selectbox(
+                        "Codegen Model",
+                        ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol", "gpt-4o", "gpt-4o-mini"],
+                        index=0,
+                        key=f"ref_codegen_m_{job.job_id}",
+                    )
+
+            btn_submit_refine = st.form_submit_button("🚀 Refine & Re-Generate Scraper", use_container_width=True)
+            if btn_submit_refine:
+                if not refine_user_instructions.strip():
+                    st.error("Please enter instructions describing what changes or data points you need.")
+                else:
+                    refine_triggered = True
+
+        refine_terminal_placeholder = st.empty()
+        refine_status_banner = st.empty()
+
+        if refine_triggered:
+            live_refine_logs = []
+            refine_status_banner.info("⏳ **Refinement In Progress...** Running targeted Recon (Playwright live DOM inspection) ➔ Synthesizing updated Python scraper (Codegen) ➔ Executing automated smoke test in sandbox.")
+
+            async def _on_refine_stream_log(entry):
+                live_refine_logs.append(entry)
+                refine_terminal_placeholder.markdown(
+                    render_sandbox_terminal(live_refine_logs, is_running=True),
+                    unsafe_allow_html=True,
+                )
+
+            with st.spinner("Refining scraper: Recon ➔ Codegen ➔ Automated Sandbox Verification..."):
+                try:
+                    asyncio.run(api_service.refine_job_backend(
+                        job_id=job.job_id,
+                        refinement_instructions=refine_user_instructions,
+                        sample_keyword=refine_keyword,
+                        recon_model=ref_recon_model,
+                        codegen_model=ref_codegen_model,
+                        on_stream_log=_on_refine_stream_log,
+                    ))
+                except Exception as ref_exc:
+                    importlib.reload(api_service)
+                    asyncio.run(api_service.refine_job_backend(
+                        job_id=job.job_id,
+                        refinement_instructions=refine_user_instructions,
+                        sample_keyword=refine_keyword,
+                        recon_model=ref_recon_model,
+                        codegen_model=ref_codegen_model,
+                        on_stream_log=_on_refine_stream_log,
+                    ))
+
+            # Reload updated job store from disk
+            store.load_from_disk()
+            job = store.jobs.get(job.job_id, job)
+            revisions_count = len(getattr(job, "revisions", []))
+            test_run_info = job.test_run or {}
+            final_status = test_run_info.get("status", "completed")
+            final_rows = test_run_info.get("extracted_rows", 0)
+
+            refine_terminal_placeholder.markdown(
+                render_sandbox_terminal(live_refine_logs, is_running=False, status_override=final_status),
+                unsafe_allow_html=True,
+            )
+            refine_status_banner.success(f"🎉 **Scraper Successfully Refined (v{revisions_count})!** Updated code synthesized and verified in sandbox with **{final_rows}** extracted records.")
+            st.session_state[prompt_key] = ""
+            time.sleep(1.2)
+            st.rerun()
+
         st.divider()
         
         # Test Run Section

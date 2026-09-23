@@ -406,6 +406,146 @@ CODEGEN_SYSTEM_PROMPT = (
 CODEGEN_MAX_TURNS = 6
 CODEGEN_MAX_SECONDS = 180
 
+REFINEMENT_RECON_SYSTEM_PROMPT = (
+    "You are a specialized web-inspection agent for Scraper Studio performing a targeted refinement pass. "
+    "Your goal is to inspect the live target website specifically for the new data points, DOM selectors, "
+    "interactions, or navigation flows requested by the user to refine an existing scraper. "
+    "You only observe pages through the browser tool provided. You do not write code in this phase. "
+    "Report real, verified facts as a compact structured JSON findings object."
+)
+
+REFINEMENT_CODEGEN_SYSTEM_PROMPT = (
+    "You are an expert Python code-generation and refactoring agent for Scraper Studio. "
+    "Your goal is to update an existing scraper to incorporate the user's specific refinement instructions, "
+    "new data points, and the latest inspection findings. "
+    "You have no browser access in this step. Ensure the updated scraper follows the mandatory SCRIPT CONTRACT "
+    "strictly, preserves all existing working features, compiles with valid Python 3 syntax, and extracts the "
+    "newly requested fields with clean column names in the 'Extracted Data' Excel sheet."
+)
+
+
+def build_refinement_recon_prompt(
+    job: InspectionJob,
+    prior_code: str,
+    prior_findings: dict | None,
+    refinement_instructions: str,
+) -> str:
+    keyword_line = (
+        f"Sample keyword to test with: {job.sample_keyword}"
+        if job.sample_keyword
+        else "No sample keyword given - use a representative sample item during inspection."
+    )
+    prior_findings_json = json.dumps(prior_findings or {}, indent=2)
+    truncated_prior_code = prior_code[:8000] if len(prior_code) > 8000 else prior_code
+
+    return f"""You are performing an interactive REFINEMENT inspection on a live website for an existing scraper in Scraper Studio.
+YOU DO NOT WRITE CODE IN THIS PHASE. Your only output is an updated, compact JSON findings object.
+
+TARGET: {job.target_url}
+{keyword_line}
+
+USER REFINEMENT REQUEST / DESIRED CHANGES:
+\"\"\"{refinement_instructions}\"\"\"
+
+EXISTING SCRAPER RULES:
+- Search rules: {job.search_rules or 'none specified'}
+- Filter rules: {job.filter_rules or 'none specified'}
+- Navigation rules: {job.navigation_rules or 'none specified'}
+- Extraction rules: {job.extraction_rules or 'none specified'}
+
+PRIOR INSPECTION FINDINGS:
+{prior_findings_json}
+
+CURRENT SCRAPER CODE EXCERPT:
+```python
+{truncated_prior_code}
+```
+
+YOUR TASK FOR THIS REFINEMENT:
+1. Navigate to the target page or relevant detail page using the browser tool.
+2. Focus specifically on the USER'S REFINEMENT REQUEST:
+   - If the user requested NEW DATA POINTS or EXTRACTION FIELDS (e.g. SKU, discount, rating, seller name, specs, stock):
+     * Locate the exact HTML elements, attributes, or API responses containing these values.
+     * Record the concrete CSS selectors or XPath patterns for them.
+     * Record real sample extracted values you observed.
+   - If the user requested DIFFERENT KEYWORDS or SEARCH LOGIC:
+     * Test the search or filter with the requested keyword.
+   - If the user requested PAGINATION or NAVIGATION CHANGES (e.g. multi-page crawl, clicking tabs/accordions):
+     * Test clicking the pagination buttons ("Next", page numbers) or infinite scroll, and note the selectors and URL pattern.
+     * Test clicking accordions/tabs (e.g. "Specifications", "Tech Specs") to verify how they expand.
+   - If the page is backed by an internal JSON/XHR endpoint that provides the requested data, record that API endpoint.
+3. Dismiss any cookie banners or overlays encountered.
+4. Do not solve CAPTCHAs or bypass anti-bot blocks - note them if encountered and exit.
+
+Return your final answer as a single JSON object with exactly these keys:
+  "page_type"              - "listing" | "detail" | "both"
+  "cookie_banner"          - what was present and how dismissed
+  "search_flow"            - updated search/filter flow, if tested
+  "navigation_path"        - updated listing to detail navigation or pagination steps
+  "listing_selectors"      - updated selectors for listing items
+  "detail_selectors"       - updated selectors on detail page, including selectors for NEWLY requested fields
+  "network_api"            - any clean JSON API observed, or "none observed"
+  "sample_extracted_fields"- dictionary of sample extracted values, including the NEW data points requested by the user
+  "refinement_notes"       - short bullet points describing what was discovered for the user's specific request
+  "confidence_notes"       - list of strings for anything unverified or uncertain
+
+CRITICAL FORMATTING RULE: your final message must be ONLY that JSON object -
+no markdown code fences, no explanation before or after it, no prose of any
+kind outside the JSON. It must parse cleanly with Python's json.loads().
+"""
+
+
+def build_refinement_codegen_prompt(
+    job: InspectionJob,
+    prior_code: str,
+    prior_findings: dict | None,
+    new_recon_findings: dict,
+    refinement_instructions: str,
+) -> str:
+    merged_findings = {**(prior_findings or {}), **new_recon_findings}
+    return f"""You are modifying and updating an existing Python web scraper based on an interactive user refinement request.
+You do NOT have browser access in this step - work from the existing code, the user's requested changes, and the latest inspection findings.
+
+TARGET: {job.target_url}
+
+USER REFINEMENT REQUEST / DESIRED CHANGES:
+\"\"\"{refinement_instructions}\"\"\"
+
+LATEST INSPECTION FINDINGS (from live browser session):
+{json.dumps(merged_findings, indent=2)}
+
+EXISTING SCRAPER CODE:
+```python
+{prior_code}
+```
+
+REFINEMENT INSTRUCTIONS:
+1. Update the existing scraper to completely fulfill the USER'S REFINEMENT REQUEST.
+   - If new data points were requested, extract them accurately using the discovered selectors/APIs, and include them as explicit columns in the "Extracted Data" sheet.
+   - If pagination or multi-page crawling was requested, implement robust pagination loop handling `--max-products`.
+   - If keywords or search logic changed, adapt the matching logic accordingly.
+   - If accordion/tab clicking is required, use Playwright async locators (`await page.locator(...).click()`, `await page.wait_for_timeout(...)`).
+2. Maintain all existing working capabilities of the scraper:
+   - Command-line arguments (`--input`, `--output`, `--max-products`, `--headless`).
+   - Universal dual-sheet Excel output ("Extracted Data" and "Flags").
+   - Cookie dismissal (`dismiss_cookie_banner`).
+   - Anti-bot detection (`detect_anti_bot_signals`).
+   - Clean NaN handling (`input_df = pd.read_excel(args.input).fillna("")`).
+3. Follow Python syntax rules strictly:
+   - Use standard raw strings (r"\\d+", r"\\s+", r"\\b", r"\\(") without double escaping.
+   - Clean HTML strings with "\\n" and "\\xa0".
+4. Return your final answer as a single JSON object with keys:
+   "generated_code"    - string, the complete, updated standalone .py script
+   "requirements_txt"  - string, the pip requirements list needed by the updated script
+   "confidence_notes"  - list of strings detailing the changes made and anything requiring verification
+
+CRITICAL FORMATTING RULE: your final message must be ONLY that JSON object -
+no markdown code fences (no ```json or ```), no explanation before or after
+it, no prose outside the JSON. It must parse cleanly with Python's json.loads().
+
+{SCRIPT_CONTRACT}
+"""
+
 
 # --------------------------------------------------------------------------
 # Output Parsing & Code Sanitization
@@ -1754,6 +1894,131 @@ INSTRUCTIONS FOR REPAIR:
 
     repaired_code, reqs, notes = parse_agent_output(repair_run.final_text)
     return repaired_code, reqs, notes
+
+
+async def run_refinement_job(
+    job: InspectionJob,
+    prior_code: str,
+    refinement_instructions: str,
+    prior_findings: dict | None = None,
+    mcp_base_url: str | None = None,
+    cost_sink: CostSink | None = None,
+    on_log_entry: Callable[[dict], Coroutine[Any, Any, None]] | None = None,
+) -> tuple[InspectionResult, dict]:
+    """
+    Executes an autonomous interactive refinement cycle:
+    1. Targeted Recon Phase: Explores the live target site specifically for user-requested
+       data points, new selectors, interactions, or pagination logic.
+    2. Targeted Codegen Phase: Modifies and updates the prior scraper to incorporate
+       the requested changes, adhering strictly to SCRIPT_CONTRACT.
+    Returns: (InspectionResult, updated_recon_findings)
+    """
+    mcp_base_url = (mcp_base_url or get_mcp_server_url()).rstrip("/")
+    cost_sink = cost_sink or StdoutCostSink()
+    action_log: list[dict] = []
+    cost_records: list[CostRecord] = []
+
+    # Resolve OpenAI credentials & Client
+    creds = resolve_credentials()
+    client = AsyncOpenAI(
+        api_key=creds.api_key,
+        base_url=creds.base_url,
+        organization=creds.org_id,
+        project=creds.project_id,
+    )
+
+    # Resolve Models and Temperature
+    recon_model = job.recon_model or get_default_recon_model()
+    codegen_model = job.codegen_model or get_default_codegen_model()
+    temperature = job.temperature if job.temperature is not None else get_default_temperature()
+
+    total_budget = resolve_budget_ceiling(job.max_budget_usd)
+    recon_budget, codegen_budget = split_budget_ceiling(total_budget)
+
+    # ---- Phase 1: Targeted Recon (Browser Tools) ----
+    recon_call_counter = {"count": 0}
+    recon_interceptor = ToolUseInterceptor(
+        job=job,
+        action_log=action_log,
+        call_counter=recon_call_counter,
+        max_steps=min(job.max_steps, 25),
+        phase_label="refine_recon",
+        on_log_entry=on_log_entry,
+    )
+
+    recon_run = await _run_openai_recon_session(
+        client=client,
+        model=recon_model,
+        temperature=temperature,
+        system_prompt=REFINEMENT_RECON_SYSTEM_PROMPT,
+        task_prompt=build_refinement_recon_prompt(job, prior_code, prior_findings, refinement_instructions),
+        max_seconds=min(job.max_seconds, 300),
+        max_steps=min(job.max_steps, 25),
+        interceptor=recon_interceptor,
+        mcp_base_url=mcp_base_url,
+    )
+
+    recon_record = build_cost_record(
+        job_id=job.job_id,
+        usage_info=recon_run.usage_info,
+        phase="refine_recon",
+        model=recon_model,
+    )
+    cost_sink.record(recon_record)
+    cost_records.append(recon_record)
+
+    new_recon_findings, recon_confidence_notes = parse_recon_output(recon_run.final_text)
+    confidence_notes = list(recon_confidence_notes)
+
+    if recon_run.anti_bot_marker:
+        confidence_notes.append(
+            f"Refinement inspection encountered anti-bot marker ('{recon_run.anti_bot_marker}'). "
+            "Proceeding with available discoveries."
+        )
+
+    # Merge prior findings with newly discovered findings
+    merged_findings = {**(prior_findings or {}), **new_recon_findings}
+
+    # ---- Phase 2: Targeted Codegen (Fresh Context) ----
+    codegen_run = await _run_openai_codegen_session(
+        client=client,
+        model=codegen_model,
+        temperature=temperature,
+        system_prompt=REFINEMENT_CODEGEN_SYSTEM_PROMPT,
+        task_prompt=build_refinement_codegen_prompt(
+            job, prior_code, prior_findings, new_recon_findings, refinement_instructions
+        ),
+        max_seconds=CODEGEN_MAX_SECONDS,
+    )
+
+    codegen_record = build_cost_record(
+        job_id=job.job_id,
+        usage_info=codegen_run.usage_info,
+        phase="refine_codegen",
+        model=codegen_model,
+    )
+    cost_sink.record(codegen_record)
+    cost_records.append(codegen_record)
+
+    generated_code, requirements_txt, codegen_notes = parse_agent_output(codegen_run.final_text)
+    confidence_notes.extend(codegen_notes)
+
+    status = recon_run.status if recon_run.status not in ("completed", "") else codegen_run.status
+    combined_cost = combine_cost_records(cost_records)
+
+    result = InspectionResult(
+        job_id=job.job_id,
+        status=status,
+        generated_code=generated_code,
+        requirements_txt=requirements_txt,
+        confidence_notes=confidence_notes,
+        action_log=action_log,
+        total_tool_calls=recon_call_counter["count"],
+        total_cost_usd=combined_cost["total_cost_usd"],
+        cost_record=combined_cost,
+        anti_bot_marker=recon_run.anti_bot_marker,
+    )
+    return result, merged_findings
 
 
 # --------------------------------------------------------------------------

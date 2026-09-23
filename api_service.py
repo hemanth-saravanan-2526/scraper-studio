@@ -35,7 +35,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
-from inspection_agent_service import InspectionJob, InspectionResult, run_inspection_job, run_codegen_repair, sanitize_generated_code
+from inspection_agent_service import (
+    InspectionJob,
+    InspectionResult,
+    run_inspection_job,
+    run_codegen_repair,
+    run_refinement_job,
+    sanitize_generated_code,
+)
 from auth_config import require_credentials_at_startup, CredentialError
 from cost_metering import JSONLCostSink
 
@@ -112,7 +119,7 @@ class CreateJobRequest(BaseModel):
 class JobRecord(BaseModel):
     job_id: str
     name: str
-    status: str  # "queued" | "running" | "completed" | "failed" | "step_limit_hit" | "time_limit_hit" | "budget_limit_hit" | "anti_bot_detected"
+    status: str  # "queued" | "running" | "completed" | "failed" | "step_limit_hit" | "time_limit_hit" | "budget_limit_hit" | "anti_bot_detected" | "refining"
     created_at: str
     target_url: str
     sample_keyword: str | None = None
@@ -123,6 +130,15 @@ class JobRecord(BaseModel):
     saved_to: str | None = None
     anti_bot_marker: str | None = None
     test_run: dict | None = None
+    revisions: list[dict] = []
+
+
+class RefineJobRequest(BaseModel):
+    refinement_instructions: str
+    sample_keyword: str | None = None
+    recon_model: str | None = None
+    codegen_model: str | None = None
+    temperature: float | None = None
 
 
 # --------------------------------------------------------------------------
@@ -626,3 +642,189 @@ async def stream_job_log(job_id: str):
             yield f"data: {item}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+# --------------------------------------------------------------------------
+# Scraper Refinement & Re-Generation
+# --------------------------------------------------------------------------
+
+async def refine_job_backend(
+    job_id: str,
+    refinement_instructions: str,
+    sample_keyword: str | None = None,
+    recon_model: str | None = None,
+    codegen_model: str | None = None,
+    temperature: float | None = None,
+    on_stream_log=None,
+) -> JobRecord:
+    record = store.get(job_id)
+
+    # 1. Retrieve current code and requirements
+    prior_code = ""
+    if record.saved_to:
+        folder = Path(record.saved_to)
+        script_path = folder / "generated_scraper.py"
+        if script_path.exists():
+            try:
+                prior_code = script_path.read_text(encoding="utf-8")
+            except Exception:
+                pass
+    if not prior_code and record.result:
+        prior_code = record.result.get("generated_code", "")
+
+    if not prior_code:
+        raise HTTPException(status_code=400, detail="Cannot refine a job with no existing scraper code.")
+
+    prior_reqs = ""
+    if record.saved_to:
+        folder = Path(record.saved_to)
+        reqs_path = folder / "requirements.txt"
+        if reqs_path.exists():
+            try:
+                prior_reqs = reqs_path.read_text(encoding="utf-8")
+            except Exception:
+                pass
+    if not prior_reqs and record.result:
+        prior_reqs = record.result.get("requirements_txt", "")
+
+    # 2. Archive current version to revisions history
+    if not hasattr(record, "revisions") or record.revisions is None:
+        record.revisions = []
+
+    # If first refinement, save v1 initial state
+    if len(record.revisions) == 0:
+        record.revisions.append({
+            "version": 1,
+            "label": "v1 (Initial Generation)",
+            "created_at": record.created_at,
+            "prompt": "Initial Scraper Generation",
+            "generated_code": prior_code,
+            "requirements_txt": prior_reqs,
+            "cost": record.cost,
+            "status": record.status,
+            "sample_keyword": record.sample_keyword,
+        })
+
+    # Set status to refining
+    record.status = "refining"
+    await store._persist()
+
+    queue = store.live_logs.get(job_id)
+    if queue is None:
+        queue = asyncio.Queue()
+        store.live_logs[job_id] = queue
+
+    async def push_live(entry: dict):
+        if on_stream_log:
+            try:
+                res = on_stream_log(entry)
+                if asyncio.iscoroutine(res):
+                    await res
+            except Exception:
+                pass
+        await queue.put(json.dumps(entry))
+
+    # 3. Build InspectionJob for refinement
+    active_keyword = sample_keyword.strip() if sample_keyword and sample_keyword.strip() else record.sample_keyword
+    job = InspectionJob(
+        job_id=job_id,
+        target_url=record.target_url,
+        sample_keyword=active_keyword,
+        recon_model=recon_model or record.recon_model,
+        codegen_model=codegen_model or record.codegen_model,
+        temperature=temperature,
+    )
+
+    prior_findings = record.result if record.result else {}
+
+    # 4. Execute Refinement Pipeline (Targeted Recon + Codegen)
+    result, merged_findings = await run_refinement_job(
+        job=job,
+        prior_code=prior_code,
+        refinement_instructions=refinement_instructions,
+        prior_findings=prior_findings,
+        cost_sink=cost_sink,
+        on_log_entry=push_live,
+    )
+
+    # 5. Update record with new result
+    new_version_num = len(record.revisions) + 1
+    record.status = result.status
+    record.sample_keyword = active_keyword
+    record.result = {
+        "generated_code": result.generated_code,
+        "requirements_txt": result.requirements_txt,
+        "confidence_notes": result.confidence_notes,
+        "total_tool_calls": result.total_tool_calls,
+        "action_log": result.action_log,
+        "refinement_instructions": refinement_instructions,
+        "version": new_version_num,
+    }
+
+    if result.cost_record:
+        if record.cost and "phases" in record.cost:
+            merged_phases = list(record.cost.get("phases", [])) + list(result.cost_record.get("phases", []))
+            total_cost = sum(p.get("total_cost_usd", 0) or 0 for p in merged_phases)
+            record.cost["phases"] = merged_phases
+            record.cost["total_cost_usd"] = round(total_cost, 6)
+        else:
+            record.cost = result.cost_record
+
+    record.anti_bot_marker = result.anti_bot_marker
+
+    # 6. Write updated files to disk
+    if result.generated_code:
+        record.saved_to = write_generated_files_to_disk(
+            job_id=job_id,
+            name=record.name,
+            generated_code=result.generated_code,
+            requirements_txt=result.requirements_txt,
+        )
+        if record.saved_to:
+            try:
+                _build_sample_input_xlsx(Path(record.saved_to) / "sample_input.xlsx", record.target_url, active_keyword)
+                _build_sample_input_xlsx(Path(record.saved_to) / "input.xlsx", record.target_url, active_keyword)
+            except Exception:
+                pass
+
+    # Save new version in revisions
+    record.revisions.append({
+        "version": new_version_num,
+        "label": f"v{new_version_num} (Refined)",
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "prompt": refinement_instructions,
+        "generated_code": result.generated_code,
+        "requirements_txt": result.requirements_txt,
+        "cost": result.cost_record,
+        "status": result.status,
+        "sample_keyword": active_keyword,
+    })
+
+    await store._persist()
+    await queue.put(None)
+
+    # 7. Automated Smoke Test Verification
+    if result.generated_code and record.saved_to:
+        await _run_test_run(job_id)
+
+    return record
+
+
+@app.post("/jobs/{job_id}/refine")
+async def refine_job(job_id: str, req: RefineJobRequest):
+    record = store.get(job_id)
+    if not record.saved_to and not (record.result and record.result.get("generated_code")):
+        raise HTTPException(status_code=400, detail="Cannot refine a job that has no existing code.")
+    if record.status in ("running", "refining"):
+        return {"status": "already_running"}
+
+    asyncio.create_task(refine_job_backend(
+        job_id=job_id,
+        refinement_instructions=req.refinement_instructions,
+        sample_keyword=req.sample_keyword,
+        recon_model=req.recon_model,
+        codegen_model=req.codegen_model,
+        temperature=req.temperature,
+    ))
+    return {"status": "refinement_started", "job_id": job_id}
+
