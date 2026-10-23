@@ -120,6 +120,7 @@ class InspectionResult:
     total_cost_usd: float | None = None
     cost_record: dict | None = None
     anti_bot_marker: str | None = None
+    prompts: dict = field(default_factory=dict)
 
 
 # --------------------------------------------------------------------------
@@ -170,9 +171,14 @@ REPEATABLE_WITHOUT_PROGRESS = {
 }
 
 ANTI_BOT_MARKERS = [
-    "captcha", "cloudflare", "perimeterx", "datadome", "access denied",
-    "unusual traffic", "are you a robot", "verify you are human",
+    "captcha", "cloudflare", "turnstile", "perimeterx", "datadome", "access denied",
+    "unusual traffic", "are you a robot", "verify you are human", "robot or human",
     "403 forbidden", "429 too many requests", "request blocked",
+    "incapsula", "_incapsula_resource", "imperva", "incident id",
+    "kasada", "akamai", "shieldsquare", "security challenge",
+    "pardon our interruption", "potential security risk",
+    "detected automated scripts", "additional security check",
+    "i am human", "hcaptcha", "press & hold",
 ]
 
 
@@ -198,7 +204,8 @@ out how to call it:
       `--input` (default "input.xlsx"),
       `--output` (default "output.xlsx"),
       `--max-products` (optional int cap),
-      `--headless` (default True, flag to run browser headless or visible).
+      `--headless` (default True, flag to run browser headless or visible),
+      `--mask-reviews` (default True, flag to mask reviewer PII and skip review accordions).
 
   - Input Excel columns (any subset may be populated - handle all three):
       `keyword`, `listing_url`, `detail_url` - semantics:
@@ -208,43 +215,124 @@ out how to call it:
       * IMPORTANT: `detail_url` must be a genuinely independent fast path that extracts
         the single page directly without requiring a listing crawl first.
 
-  - CASCADE EXTRACTION STRATEGY (CRITICAL FOR HIGH ACCURACY):
-      1. Tier 1 (Internal JSON API): If the target page is powered by an internal REST/XHR/GraphQL
-         API observed during recon (e.g. /api/products, GraphQL queries), query that endpoint
-         directly using requests/httpx with proper headers. This is the fastest, cleanest path.
-      2. Tier 2 (Hydrated State): Check for in-page JSON objects such as `<script id="__NEXT_DATA__">`,
-         `<script id="__NUXT_DATA__">`, `window.__INITIAL_STATE__`, or Schema.org JSON-LD blocks.
-      3. Tier 3 (Playwright Async Browser Automation): For modern JavaScript SPAs (React/Vue/Angular),
-         client-rendered prices, accordion spec tables, and dynamic color/storage variants:
+  - CANONICAL PRODUCT IDENTIFIERS & PROVENANCE URLS (MANDATORY SCHEMA):
+      Every extracted record MUST contain these three standardized columns:
+      1. `product_id`: Single deterministic primary key.
+         * Resolution hierarchy:
+           - Priority 1: Official SKU, model code, or MPN (e.g. from JSON-LD `sku`/`productID` or page metadata).
+           - Priority 2: Canonical URL slug / product ID extracted from the product URL via a consistent regex pattern.
+           - STRICT: Use the exact same ID strategy across all rows in the dataset; NEVER arbitrarily mix SKU for one product and URL slug for another.
+      2. `product_url`: Direct canonical URL of the product detail page.
+      3. `source_listing_url`: The category or listing URL from which the item was discovered (or "DIRECT_INPUT" if passed directly via input.xlsx detail_url).
+      * NOTE: Do NOT output a duplicate "Source URL" column that mirrors "product_url".
+
+  - STRICT ELEMENT-SCOPED PRICE EXTRACTION & NUMBER ISOLATION (CRITICAL):
+      * Prices MUST be extracted EXCLUSIVELY from within the product's primary pricing container
+        or buy box (e.g. `[itemprop="price"]`, `.price`, `.product-price`, `.current-price`, or JSON-LD `offers.price`).
+      * NEVER execute price regexes or digit extractors against product headings (`h1`, `h2`, `h3`, `.title`, `.product-name`),
+        description paragraphs, promo banners, or recommendation carousels (`.carousel`, `.recommendations`, `.related-products`).
+      * Title Digits Trap: Numbers in product titles (e.g., "250 North American Birds Sound Book") are NOT prices!
+      * Currency Anchoring: For text extraction, anchor to currency symbols or ISO codes:
+        e.g., `r'(?i)(?:[\\$£€₹]|USD|CAD|EUR|GBP)\\s*(\\d{1,5}(?:[.,]\\d{2})?)'`
+        Reject raw standalone numbers without currency indicators found in prose or headings.
+
+  - CRAWL FUNNEL TELEMETRY & LOUD FAILURE ON EMPTY:
+      * Scrapers must track and log crawl funnel metrics using `log()`:
+        `categories_discovered`, `links_discovered`, `links_processed`, `records_extracted`.
+        Example: `log(f"Crawl Funnel: {num_categories} categories, {num_links} links discovered, {num_processed} processed, {num_extracted} extracted.")`
+      * FAIL LOUDLY: If the crawl completes with 0 records extracted, the script MUST log:
+        `ERROR: Zero product records were extracted. Aborting.` and exit with `sys.exit(1)`.
+      * DIAGNOSTIC SCREENSHOT ON ZERO RECORDS: If 0 product records are found on the target listing/detail page,
+        take a full-page screenshot using Playwright saved to `diagnostic_screenshot.png`, capture the HTTP status code
+        and page `<title>`, and log: `log(f"No product records found: HTTP {status}, Title: '{title}', Screenshot: diagnostic_screenshot.png")`.
+
+  - EXCEL CELL LENGTH LIMIT PROTECTION (32,767 CHARACTERS):
+      * Excel cells corrupt or truncate if text exceeds 32,767 characters.
+      * Every script MUST define and use a `sanitize_cell_value(val, max_len=32000)` helper:
+        ```python
+        def sanitize_cell_value(val, max_len=32000):
+            if val is None:
+                return ""
+            if isinstance(val, (dict, list)):
+                s = json.dumps(val, ensure_ascii=False)
+            else:
+                s = str(val)
+            if len(s) > max_len:
+                return s[:max_len - 35] + "... [TRUNCATED_EXCEL_LIMIT]"
+            return s
+        ```
+      * Pass all field values through `sanitize_cell_value()` before exporting to DataFrame / Excel.
+
+  - CLICK INTERCEPTION & MODAL OVERLAY ERROR LOGGING:
+      * When clicks are blocked or intercepted by overlays/popups, catch the exception, log the real error:
+        `log(f"Click blocked on locator '{selector}': {exc}")`
+      * Record in Flags sheet: `{"Type": "Click Intercepted", "URL": url, "Message": f"Element {selector} blocked: {str(exc)[:200]}"}`
+      * Fallbacks: try pressing Escape (`await page.keyboard.press("Escape")`), dismiss modal overlays,
+        or dispatch JS click (`await locator.evaluate("el => el.click()")`).
+
+  - BOT PROTECTION FAST-FAIL (NO FUTILE RETRIES):
+      * In `detect_anti_bot_signals()`: If HTTP status is 403, 429, or page contains WAF challenge markers:
+        Always inspect both HTTP status and HTML text (lowercase). Include all enterprise and state WAF signatures:
+        markers = (
+            "cloudflare turnstile", "cf-browser-verification", "ray id:", "just a moment...",
+            "datadome", "perimeterx", "px-captcha", "distil networks", "press & hold",
+            "incapsula", "_incapsula_resource", "imperva", "incident id", "kasada",
+            "akamai", "shieldsquare", "security challenge", "pardon our interruption",
+            "potential security risk", "detected automated scripts", "additional security check",
+            "i am human", "hcaptcha", "access denied", "robot or human"
+        )
+        Classify as "Blocked by bot protection", log to Flags, and STOP RETRYING immediately. Exit cleanly with anti-bot status.
+
+  - SAFE PAGE TITLE & BEAUTIFULSOUP PARSING:
+      * Never call `.title.get_text()` without guarding against None:
+        `safe_title = soup.title.get_text(strip=True) if getattr(soup, "title", None) else ""`
+
+
+  - PERSONAL DATA & REVIEW ACCORDION FILTERING:
+      * When expanding accordions to discover specs, DO NOT click review accordions:
+        Skip any selector matching `[class*='review' i]`, `[id*='review' i]`, `button:has-text('Review')`, `button:has-text('Rating')`.
+      * If `--mask-reviews` is True (default) and review text is extracted:
+        Apply regex masking to reviewer names (`John Doe` -> `J*** D.`) and email addresses (`***@***.***`).
+
+  - OUTPUT EXCEL SHEETS (EXTENSIBLE CONTRACT):
+      * Must contain at least two sheets:
+        1. "Extracted Data": One row per item.
+        2. "Flags": One row per anti-bot signal, missing field, low-confidence extraction, or error.
+           Include entries if core fields (e.g. brand, category, price) are missing on a product.
+      * MULTI-SHEET EXTENSIBILITY: Scrapers may also write additional custom sheets if requested
+        (e.g., "Recommendations", "Variants", "Categories"). Repair agents and scripts MUST PRESERVE all custom sheets.
+
+  - CASCADE EXTRACTION STRATEGY:
+      1. Tier 1 (Internal JSON API): If observed during recon, query endpoint directly using requests/httpx.
+      2. Tier 2 (Hydrated State): Check for `<script id="__NEXT_DATA__">`, `<script id="__NUXT_DATA__">`,
+         `window.__INITIAL_STATE__`, or Schema.org JSON-LD blocks.
+      3. Tier 3 (Playwright Async Browser Automation): For modern JavaScript SPAs, client-rendered prices,
+         accordion spec tables, dynamic color/storage variants, and ASP.NET WebForms:
          * Use `playwright.async_api.async_playwright()`.
-         * Launch Chromium with `--disable-blink-features=AutomationControlled` and realistic User-Agent.
+         * Launch Chromium with `--disable-blink-features=AutomationControlled`, `--no-sandbox`, and realistic User-Agent.
+         * Set viewport and inject stealth script immediately after creating context:
+           ```python
+           context = await browser.new_context(
+               user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",
+               viewport={"width": 1920, "height": 1080},
+           )
+           await context.add_init_script("Object.defineProperty(navigator, 'webdriver', { get: () => undefined }); window.chrome = { runtime: {} };")
+           ```
          * Call `dismiss_cookie_banner(page)` immediately after `page.goto()`.
          * Auto-wait for elements using `page.wait_for_selector()` or `page.locator()`.
-         * Click accordion tabs (e.g. "Specifications", "Specs", "Storage") to reveal hidden attributes.
+         * For ASP.NET / form submits that trigger navigation, wrap submits:
+           `async with page.expect_navigation(wait_until="domcontentloaded"): await submit_btn.click()`
+           or wait for the results grid directly after clicking.
+         * Click accordion tabs to reveal hidden specs (skipping review accordions).
       4. Tier 4 (Static Fast-Path): For traditional server-rendered static HTML sites, use `requests`
          with a desktop User-Agent and `BeautifulSoup`.
 
-  - Output Excel has exactly two sheets:
-      * "Extracted Data": One row per item. Columns matching the required extraction fields plus "Source URL".
-      * "Flags": One row per anti-bot signal, low-confidence extraction, or error encountered during the run.
-        Never leave this sheet out, even if it has 0 rows.
-
-  - Include a `detect_anti_bot_signals()` function that checks each HTTP response / page title
-    for 403/429 status, CAPTCHA/Cloudflare/PerimeterX/DataDome markers, and unusually short bodies.
-    It only FLAGS these to the Flags sheet; it never attempts to bypass or solve them.
-
-  - Include `get_proxy()` and `solve_captcha()` as unimplemented placeholder stubs (return None / raise NotImplementedError).
-
   - Cookie & Consent Banner Dismissal:
-      Include a `dismiss_cookie_banner(page)` helper and call it once immediately after every `page.goto(...)`,
-      before interacting with the page. Try common consent-button text matches ("Accept all", "Accept", "I agree",
-      "Allow all", "Agree", "Got it") in a try/except that does nothing if not present.
+      Include a `dismiss_cookie_banner(page)` helper and call it once immediately after every `page.goto(...)`.
 
   - Data Cleaning & Normalization:
-      * Clean currency/prices: extract numeric values or standard currency strings (e.g. "INR 1,24,999" or "124999"),
-        never capture unrelated header or promotional text.
-      * Model codes: if not present in rendered body text, extract from URL parameters (e.g. `?modelCode=...`, `sku=...`).
-      * Print a timestamped log line for each major step using a `log()` helper.
+      * Clean currency/prices: extract clean formatted strings (e.g. "$24.99", "USD 120.00").
+      * Print timestamped log lines for each major step using a `log()` helper.
 
   - REGEX & CODE SYNTAX RULES (CRITICAL):
       * In raw strings (r"..." or r'...'), use SINGLE backslashes for regex tokens:
@@ -255,8 +343,14 @@ out how to call it:
       * The script must be syntactically valid Python 3 and compile with zero errors.
 
   - INPUT EXCEL & NAN HANDLING RULES (CRITICAL):
-      * When reading Excel with pandas, always sanitize missing values:
+      * When reading a single sheet from Excel with pandas:
         `input_df = pd.read_excel(args.input).fillna("")`
+      * If reading multiple sheets with `sheet_name=None`, pandas returns a dict of DataFrames.
+        Apply `.fillna("")` to each DataFrame inside the dict:
+        `sheets = pd.read_excel(args.input, sheet_name=None)`
+        `sheets = {k: v.fillna("") for k, v in sheets.items()}`
+        `input_df = sheets.get("Extracted Data") or next(iter(sheets.values()), pd.DataFrame())`
+        NEVER call `.fillna("")` directly on the dict returned by `pd.read_excel(..., sheet_name=None)`!
       * Any helper function (e.g. `clean()`, `value_from_row()`) MUST treat `pd.isna(val)`, `None`,
         and the string `"nan"` / `"none"` / `"null"` as empty string `""`.
       * NEVER allow `"nan"` to be treated as a valid `detail_url`, `listing_url`, or `keyword`."""
@@ -548,6 +642,233 @@ it, no prose outside the JSON. It must parse cleanly with Python's json.loads().
 
 
 # --------------------------------------------------------------------------
+# Diagnostic Recon & Codegen Prompts for Self-Healing Loop
+# --------------------------------------------------------------------------
+
+DIAGNOSTIC_RECON_SYSTEM_PROMPT = (
+    "You are a specialized diagnostic web-inspection agent for Scraper Studio performing an autonomous self-healing repair pass. "
+    "Your mission is to inspect the live target website to determine why an existing scraper failed during a test run "
+    "(e.g. raised unhandled exceptions, failed to find elements, was blocked by modal overlays or anti-bot defenses, or extracted 0 meaningful product rows). "
+    "You only observe and interact with the live page through the browser tool provided. You do NOT write code in this phase. "
+    "Diagnose the real failure on the live website, verify working selectors on the real DOM, test interactions, "
+    "and output a compact structured JSON findings object with verified diagnostic facts."
+)
+
+
+def build_diagnostic_recon_prompt(
+    job: InspectionJob,
+    broken_code: str,
+    error_context: str,
+    recon_findings: dict | None = None,
+    run_details: dict | None = None,
+    attempt_history: list[dict] | None = None,
+) -> str:
+    run_details = run_details or {}
+    existing_fields, existing_sheets = _extract_schema_from_code(broken_code)
+    fields_clause = f"\n- EXISTING COLUMNS REQUIRED: {existing_fields}" if existing_fields else ""
+    sheets_clause = f"\n- EXISTING SHEETS REQUIRED: {existing_sheets}" if existing_sheets else ""
+
+    exit_code = run_details.get("exit_code", "unknown")
+    num_extracted = run_details.get("num_extracted_rows", 0)
+    stderr_text = run_details.get("stderr", "") or error_context
+    stdout_text = run_details.get("stdout_tail", "") or run_details.get("stdout", "")
+    error_summary = run_details.get("error_summary", error_context)
+
+    truncated_code = broken_code[:7000] if len(broken_code) > 7000 else broken_code
+    stderr_snippet = stderr_text[-3000:] if len(stderr_text) > 3000 else stderr_text
+    stdout_snippet = stdout_text[-1500:] if len(stdout_text) > 1500 else stdout_text
+
+    keyword_line = (
+        f"Sample keyword tested: {job.sample_keyword}"
+        if job.sample_keyword
+        else "No sample keyword specified."
+    )
+
+    attempt_history_clause = ""
+    if attempt_history:
+        attempt_lines = []
+        for att in attempt_history:
+            attempt_num = att.get("attempt", att.get("version", "?"))
+            err = att.get("error_summary", att.get("stderr", "Unknown error"))
+            diag = att.get("diagnostic_summary", "")
+            fixes = att.get("fixes_attempted", att.get("notes", ""))
+            attempt_lines.append(
+                f"- Attempt {attempt_num}: Error: {err} | Prior Diagnosis: {diag} | Fixes Tried: {fixes}"
+            )
+        attempt_history_clause = (
+            "\nPRIOR REPAIR ATTEMPTS & CUMULATIVE OUTCOMES (CONTEXT RETENTION ACROSS RETRIES):\n"
+            + "\n".join(attempt_lines)
+            + "\nCRITICAL: Do not repeat failed inspection assumptions or selectors that failed in prior attempts.\n"
+        )
+
+    return f"""You are performing an autonomous DIAGNOSTIC LIVE INSPECTION for a failing web scraper in Scraper Studio.
+YOU DO NOT WRITE CODE IN THIS PHASE. You must use the browser tool to inspect the live target website, identify the true root cause of failure, and discover working selectors.
+
+TARGET URL: {job.target_url}
+{keyword_line}
+
+SCRAPER INTENT & USER RULES:
+- Search rules: {job.search_rules or 'none specified'}
+- Filter rules: {job.filter_rules or 'none specified'}
+- Navigation rules: {job.navigation_rules or 'none specified'}
+- Extraction rules: {job.extraction_rules or 'capture all visible product/article attributes'}
+{fields_clause}
+{sheets_clause}
+
+TEST RUN FAILURE DETAILS:
+- Exit code: {exit_code}
+- Meaningful extracted rows: {num_extracted}
+- Failure summary: {error_summary}
+{attempt_history_clause}
+
+STANDARD ERROR / TRACEBACK:
+```
+{stderr_snippet}
+```
+
+STANDARD OUTPUT SNIPPET (Funnel / Logs):
+```
+{stdout_snippet}
+```
+
+PRIOR INSPECTION FINDINGS:
+{json.dumps(recon_findings or {}, indent=2)}
+
+CURRENT BROKEN CODE EXCERPT:
+```python
+{truncated_code}
+```
+
+YOUR DIAGNOSTIC MISSIONS (USE BROWSER TOOLS):
+1. Navigate to TARGET URL ({job.target_url}) using `browser_navigate`.
+2. Inspect the live rendered DOM with `browser_snapshot`:
+   - Check if the page loaded normally or if an HTTP error (403, 404, 500) occurred.
+   - Detect and dismiss any cookie-consent banners, popups, or modal overlays that may be intercepting clicks. Record how they were dismissed!
+   - Check for anti-bot challenges (Cloudflare, CAPTCHA, WAF). If present, record the anti-bot marker and halt.
+3. Diagnose the selectors from the broken code:
+   - Why did the script fail or extract 0 rows? Did the listing container selector fail to match? Did detail link selectors break?
+   - If the script failed on prices: locate the product's primary pricing container / buy box. Verify currency-anchored price selectors ($xx.xx). Ensure prices are NOT being read from titles or banners!
+   - If the script failed on missing fields: find where title, brand, category, specs, or images live in the live DOM.
+   - If the script required clicking tabs/accordions: verify the exact locators and whether click interception occurred.
+4. Check network requests with `browser_network_requests`:
+   - Is there a clean JSON/XHR endpoint that provides the required data directly?
+5. Verify working selectors by observing real sample values for all required columns.
+
+Return your final answer as a single JSON object with exactly these keys:
+  "root_cause"               - clear diagnosis of why the test run failed or yielded 0 rows
+  "page_type"                - "listing" | "detail" | "both"
+  "cookie_banner"            - what overlay/banner was present and how it was dismissed
+  "working_listing_selectors"- verified selectors for product cards and detail page links
+  "working_detail_selectors" - verified selectors on the detail page for required fields
+  "working_price_selector"   - verified selector scoped strictly inside the pricing / buy box container
+  "search_flow"              - verified search or filter flow, if tested
+  "navigation_path"          - verified navigation steps from listing to item details
+  "network_api"              - clean JSON API endpoint if observed, or "none observed"
+  "sample_extracted_fields"  - dictionary of real sample values observed on the live page
+  "diagnostic_notes"         - concise list of actionable recommendations for the codegen repair phase
+  "confidence_notes"         - list of strings for anything unverified or uncertain
+
+CRITICAL FORMATTING RULE: your final message must be ONLY that JSON object -
+no markdown code fences, no explanation before or after it, no prose outside the JSON. It must parse cleanly with Python's json.loads().
+"""
+
+
+def build_diagnostic_codegen_prompt(
+    job: InspectionJob,
+    broken_code: str,
+    error_context: str,
+    recon_findings: dict | None = None,
+    diagnostic_findings: dict | None = None,
+    run_details: dict | None = None,
+    attempt_history: list[dict] | None = None,
+) -> str:
+    run_details = run_details or {}
+    diagnostic_findings = diagnostic_findings or {}
+    existing_fields, existing_sheets = _extract_schema_from_code(broken_code)
+    fields_clause = f"\n- EXISTING COLUMNS: {existing_fields}" if existing_fields else ""
+    sheets_clause = f"\n- EXISTING SHEETS: {existing_sheets}" if existing_sheets else ""
+
+    exit_code = run_details.get("exit_code", "unknown")
+    num_extracted = run_details.get("num_extracted_rows", 0)
+    stderr_text = run_details.get("stderr", "") or error_context
+    stdout_text = run_details.get("stdout_tail", "") or run_details.get("stdout", "")
+    error_summary = run_details.get("error_summary", error_context)
+
+    attempt_history_clause = ""
+    if attempt_history:
+        attempt_lines = []
+        for att in attempt_history:
+            attempt_num = att.get("attempt", att.get("version", "?"))
+            err = att.get("error_summary", att.get("stderr", "Unknown error"))
+            diag = att.get("diagnostic_summary", "")
+            fixes = att.get("fixes_attempted", att.get("notes", ""))
+            attempt_lines.append(
+                f"- Attempt {attempt_num}: Error: {err} | Prior Diagnosis: {diag} | Fixes Tried: {fixes}"
+            )
+        attempt_history_clause = (
+            "\nPRIOR REPAIR ATTEMPTS & CUMULATIVE OUTCOMES (CONTEXT RETENTION ACROSS RETRIES):\n"
+            + "\n".join(attempt_lines)
+            + "\nCRITICAL: Analyze why previous attempts failed. Do NOT repeat strategies or selectors that previously failed.\n"
+        )
+
+    return f"""You are repairing a Python web scraper that failed or produced zero records during an automated test run.
+A live diagnostic inspection session was just conducted using browser tools to verify the live website state.
+Your task is to synthesize a complete, fully repaired, regression-proof scraper.
+
+CRITICAL REGRESSION INVARIANTS:
+1. DO NOT DROP PREVIOUSLY WORKING FIELDS. You MUST preserve all existing extraction fields ({fields_clause or 'e.g. Title, Price, Description, Modules, Categories, Images'}). Never blank out or drop Title, Price, or custom modules!
+2. MULTI-SHEET PRESERVATION: You MUST preserve all existing Excel sheets ({sheets_clause or "'Extracted Data', 'Flags', 'Recommendations'"}). Never drop custom sheets like 'Recommendations' or 'Variants'!
+3. CANONICAL PRODUCT IDENTIFIERS: Output 'product_id', 'product_url', and 'source_listing_url'. Do not duplicate 'Source URL'.
+4. STRICT PRICE SCOPING: Extract prices only from within product buy-box / pricing elements. NEVER extract digits from product titles (e.g. '250 North American Birds Sound Book' is NOT price 250!). Anchor to currency symbols ($xx.xx).
+5. EXCEL 32K LIMIT: Include and use `sanitize_cell_value(val, max_len=32000)` on all output values before Excel export.
+6. CRAWL FUNNEL & FAIL LOUDLY: Log crawl funnel metrics. If 0 records are extracted, exit with sys.exit(1) and take a diagnostic screenshot.
+7. CLICK TELEMETRY: Wrap clicks in try/except, log real errors, and provide overlay dismissal / JS evaluate fallback.
+8. BOT PROTECTION: Classify 403 or WAF challenge pages as 'Blocked by bot protection' and halt immediately without retrying.
+
+TARGET: {job.target_url}
+RULES:
+- Search rules: {job.search_rules or 'none specified'}
+- Filter rules: {job.filter_rules or 'none specified'}
+- Navigation rules: {job.navigation_rules or 'none specified'}
+- Extraction rules: {job.extraction_rules or 'capture all visible product/article attributes'}
+
+FAILED TEST RUN TELEMETRY:
+- Exit Code: {exit_code}
+- Extracted Rows: {num_extracted}
+- Failure Summary: {error_summary}
+{attempt_history_clause}
+- Traceback / Error:
+```
+{stderr_text[-3000:]}
+```
+- Standard Output:
+```
+{stdout_text[-1500:]}
+```
+
+LIVE DIAGNOSTIC FINDINGS (VERIFIED ON LIVE DOM VIA BROWSER TOOLS):
+{json.dumps(diagnostic_findings, indent=2)}
+
+PRIOR INSPECTION FINDINGS:
+{json.dumps(recon_findings or {}, indent=2)}
+
+CURRENT BROKEN CODE:
+```python
+{broken_code}
+```
+
+INSTRUCTIONS FOR REPAIR:
+1. Incorporate the verified working selectors and findings discovered during the live diagnostic inspection session.
+2. If dynamic JavaScript elements, prices, or specs were missing, or if click interactions failed, use Playwright async browser automation (`playwright.async_api.async_playwright()`) with `page.wait_for_selector()`, selector auto-waiting, and auto-dismiss cookie banners.
+3. If 0 rows were extracted due to overly restrictive keyword/category filtering, relax the matching logic or match against URL slugs.
+4. Ensure the script follows the mandatory SCRIPT CONTRACT strictly.
+5. Return your final answer as a single JSON object with keys "generated_code", "requirements_txt", and "confidence_notes".
+
+{SCRIPT_CONTRACT}
+"""
+
+
+# --------------------------------------------------------------------------
 # Output Parsing & Code Sanitization
 # --------------------------------------------------------------------------
 
@@ -568,6 +889,61 @@ def sanitize_regex_in_raw_string(content: str) -> str:
         return "\\" + m.group(1)
         
     return re.sub(pattern, replacer, content)
+
+
+def _inject_playwright_stealth(code: str) -> str:
+    """Safely injects stealth script and Chrome runtime into Playwright browser context creation."""
+    if "async_playwright" not in code or "new_context" not in code or "navigator.webdriver" in code:
+        return code
+
+    pattern = re.compile(r'^([ \t]*)(\w+)\s*=\s*await\s+browser\.new_context\(', re.MULTILINE)
+    match = pattern.search(code)
+    if not match:
+        return code
+
+    indent = match.group(1)
+    var_name = match.group(2)
+    start_call = match.end() - 1  # opening '('
+
+    depth = 0
+    in_single_quote = False
+    in_double_quote = False
+    escape = False
+    end_call = -1
+
+    for i in range(start_call, len(code)):
+        char = code[i]
+        if escape:
+            escape = False
+            continue
+        if char == '\\':
+            escape = True
+            continue
+        if char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+            continue
+        if char == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+            continue
+        if in_single_quote or in_double_quote:
+            continue
+
+        if char == '(':
+            depth += 1
+        elif char == ')':
+            depth -= 1
+            if depth == 0:
+                end_call = i + 1
+                break
+
+    if end_call == -1:
+        return code
+
+    newline_pos = code.find('\n', end_call)
+    insert_pos = (newline_pos + 1) if newline_pos != -1 else end_call
+
+    stealth_stmt = indent + 'await ' + var_name + '.add_init_script("Object.defineProperty(navigator, \'webdriver\', { get: () => undefined }); window.chrome = { runtime: {} };")\n'
+    return code[:insert_pos] + stealth_stmt + code[insert_pos:]
 
 
 def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
@@ -632,11 +1008,57 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
         'def clean(value):\n    if value is None or pd.isna(value) or str(value).strip().lower() in ("", "nan", "none", "null"):\n        return ""',
         sanitized
     )
+    # 4a. Strip invalid .fillna() chained directly to dict-returning pd.read_excel calls (e.g. sheet_name=None or list)
     sanitized = re.sub(
-        r'(pd\.read_excel\([^)\n]+)\)(?!\s*\.\s*fillna)',
-        r'\1).fillna("")',
+        r'(pd\.read_excel\([^)\n]*(?:sheet_name\s*=\s*(?:None|\[[^\]]*\])|,\s*None\s*[,)])[^)\n]*\))\s*\.\s*fillna\([^)]*\)',
+        r'\1',
         sanitized
     )
+
+    # 4b. Ensure single-DataFrame pd.read_excel calls sanitize NaNs via .fillna(""), while skipping dict-returning calls
+    def _sanitize_read_excel(m):
+        call_content = m.group(1)
+        full_call = f"{call_content})"
+        if re.search(r'(?:sheet_name\s*=\s*(?:None|\[)|,\s*None\s*[,)])', call_content):
+            return full_call
+        return f'{full_call}.fillna("")'
+
+    sanitized = re.sub(
+        r'(pd\.read_excel\([^)\n]+)\)(?!\s*\.\s*(?:fillna|copy|get|items|values|keys))',
+        _sanitize_read_excel,
+        sanitized
+    )
+
+    # 4c. Auto-inject stealth webdriver masking in Playwright scripts if missing
+    sanitized = _inject_playwright_stealth(sanitized)
+
+    # 4d. Normalize headless Linux user-agent to standard Windows desktop Chrome
+    sanitized = re.sub(
+        r'user_agent\s*=\s*["\']Mozilla/5\.0\s*\([^"\']*Linux[^"\']*\)[^"\']*["\']',
+        'user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"',
+        sanitized
+    )
+
+    # 4e. Guard against unsafe BeautifulSoup .title.get_text() calls when <title> tag is missing
+    sanitized = re.sub(
+        r'BeautifulSoup\(([^)]*)\)\.title\.get_text\([^)]*\)',
+        r'(BeautifulSoup(\1).title.get_text(strip=True) if getattr(BeautifulSoup(\1), "title", None) else "")',
+        sanitized
+    )
+    sanitized = re.sub(
+        r'(\b\w+)\.title\.get_text\(\s*(?:strip\s*=\s*True)?\s*\)',
+        r'(\1.title.get_text(strip=True) if getattr(\1, "title", None) else "")',
+        sanitized
+    )
+
+    # 4f. Ensure generated detect_anti_bot_signals contains enterprise WAF / state IT security markers
+    if "def detect_anti_bot_signals" in sanitized and "potential security risk" not in sanitized:
+        sanitized = re.sub(
+            r'(markers\s*=\s*(?:\(|\[))([^()\[\]]+)(?:\)|\])',
+            r'\1\2, "potential security risk", "detected automated scripts", "additional security check", "i am human", "incapsula", "_incapsula_resource", "imperva", "incident id", "access denied")',
+            sanitized,
+            count=1
+        )
 
     # 5. Fix row value access: str(row.get(...) or "") where nan string could be created
     sanitized = re.sub(
@@ -1724,12 +2146,13 @@ async def run_inspection_job(
         on_log_entry=on_log_entry,
     )
 
+    recon_task_prompt = build_recon_prompt(job)
     recon_run = await _run_openai_recon_session(
         client=client,
         model=recon_model,
         temperature=temperature,
         system_prompt=RECON_SYSTEM_PROMPT,
-        task_prompt=build_recon_prompt(job),
+        task_prompt=recon_task_prompt,
         max_seconds=job.max_seconds,
         max_steps=job.max_steps,
         interceptor=recon_interceptor,
@@ -1773,15 +2196,20 @@ async def run_inspection_job(
             total_cost_usd=combined_cost["total_cost_usd"],
             cost_record=combined_cost,
             anti_bot_marker=recon_run.anti_bot_marker,
+            prompts={
+                "recon_system_prompt": RECON_SYSTEM_PROMPT,
+                "recon_task_prompt": recon_task_prompt,
+            },
         )
 
     # ---- Phase 2: Codegen (Fresh Context) ----
+    codegen_task_prompt = build_codegen_prompt(job, recon_findings)
     codegen_run = await _run_openai_codegen_session(
         client=client,
         model=codegen_model,
         temperature=temperature,
         system_prompt=CODEGEN_SYSTEM_PROMPT,
-        task_prompt=build_codegen_prompt(job, recon_findings),
+        task_prompt=codegen_task_prompt,
         max_seconds=CODEGEN_MAX_SECONDS,
     )
 
@@ -1800,6 +2228,13 @@ async def run_inspection_job(
     status = recon_run.status if recon_run.status != "completed" else codegen_run.status
     combined_cost = combine_cost_records(cost_records)
 
+    prompts = {
+        "recon_system_prompt": RECON_SYSTEM_PROMPT,
+        "recon_task_prompt": recon_task_prompt,
+        "codegen_system_prompt": CODEGEN_SYSTEM_PROMPT,
+        "codegen_task_prompt": codegen_task_prompt,
+    }
+
     return InspectionResult(
         job_id=job.job_id,
         status=status,
@@ -1811,7 +2246,67 @@ async def run_inspection_job(
         total_cost_usd=combined_cost["total_cost_usd"],
         cost_record=combined_cost,
         anti_bot_marker=recon_run.anti_bot_marker,
+        prompts=prompts,
     )
+
+
+def _extract_schema_from_code(code_str: str) -> tuple[list[str], list[str]]:
+    fields = []
+    sheets = ["Extracted Data", "Flags"]
+    try:
+        tree = ast.parse(code_str)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id == "FIELDS":
+                        if isinstance(node.value, (ast.List, ast.Tuple)):
+                            for elt in node.value.elts:
+                                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                                    fields.append(elt.value)
+            if isinstance(node, ast.Call):
+                for kw in node.keywords:
+                    if kw.arg == "sheet_name" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                        if kw.value.value not in sheets:
+                            sheets.append(kw.value.value)
+    except Exception:
+        pass
+    return fields, sheets
+
+
+class RepairResult(tuple):
+    """
+    Result returned by run_codegen_repair.
+    Subclasses tuple for 100% backward compatibility with legacy 3-element unpack:
+        repaired_code, requirements_txt, notes = await run_codegen_repair(...)
+    While exposing object attributes including live diagnostic_findings, action_log, and prompts:
+        res.repaired_code, res.requirements_txt, res.confidence_notes, res.diagnostic_findings, res.action_log, res.prompts
+    """
+    def __new__(
+        cls,
+        repaired_code: str,
+        requirements_txt: str,
+        confidence_notes: list[str],
+        diagnostic_findings: dict | None = None,
+        action_log: list[dict] | None = None,
+        prompts: dict | None = None,
+    ):
+        return super().__new__(cls, (repaired_code, requirements_txt, confidence_notes))
+
+    def __init__(
+        self,
+        repaired_code: str,
+        requirements_txt: str,
+        confidence_notes: list[str],
+        diagnostic_findings: dict | None = None,
+        action_log: list[dict] | None = None,
+        prompts: dict | None = None,
+    ):
+        self.repaired_code = repaired_code
+        self.requirements_txt = requirements_txt
+        self.confidence_notes = confidence_notes
+        self.diagnostic_findings = diagnostic_findings or {}
+        self.action_log = action_log or []
+        self.prompts = prompts or {}
 
 
 async def run_codegen_repair(
@@ -1819,15 +2314,32 @@ async def run_codegen_repair(
     broken_code: str,
     error_context: str,
     recon_findings: dict | None = None,
+    run_details: dict | None = None,
+    attempt_history: list[dict] | None = None,
+    mcp_base_url: str | None = None,
     cost_sink: CostSink | None = None,
-) -> tuple[str, str, list[str]]:
+    on_log_entry: Callable[[dict], Coroutine[Any, Any, None]] | None = None,
+) -> RepairResult:
     """
-    Self-healing 1-shot repair pass.
-    Analyzes execution errors, missing fields, or empty data from the smoke test,
-    and prompts the Codegen model to generate a fully repaired, production-ready scraper.
+    Autonomous two-phase self-healing repair pass with live MCP diagnostic recon:
+    Phase 1 (Diagnostic Live Recon via MCP / Browser Tools):
+      - Connects to Playwright MCP (or native browser fallback) to inspect live failure on target URL.
+      - Live-inspects DOM structure, tests selectors, checks buy-box pricing containers,
+        dismisses cookie banners or modal overlays, and checks internal network requests.
+      - Retains all input context (target URL, sample keyword, rules) and full run details
+        (exit code, traceback, extracted row count, stdout funnel telemetry) across retries.
+      - Produces verified, structured diagnostic findings detailing true root cause
+        and working selectors.
+    Phase 2 (Codegen Synthesis):
+      - Feeds verified live facts, broken code, error traceback, prior attempts, and runtime details
+        into the Codegen model in a fresh context.
+      - Enforces strict SCRIPT_CONTRACT compliance and regression protection
+        (preserving existing columns and sheets like 'Recommendations').
     """
-    if cost_sink is None:
-        cost_sink = StdoutCostSink()
+    mcp_base_url = (mcp_base_url or get_mcp_server_url()).rstrip("/")
+    cost_sink = cost_sink or StdoutCostSink()
+    action_log: list[dict] = []
+    cost_records: list[CostRecord] = []
 
     creds = resolve_credentials()
     client = AsyncOpenAI(
@@ -1836,64 +2348,131 @@ async def run_codegen_repair(
         organization=creds.org_id,
         project=creds.project_id,
     )
+    recon_model = job.recon_model or get_default_recon_model()
     codegen_model = job.codegen_model or get_default_codegen_model()
     temperature = job.temperature if job.temperature is not None else get_default_temperature()
 
-    repair_prompt = f"""You are repairing a Python web scraper that failed or produced zero records during an automated test run.
-Your task is to analyze why the scraper failed or produced 0 extracted records, and output a complete, fully repaired script.
+    diagnostic_findings: dict = {}
+    confidence_notes: list[str] = []
 
-TARGET: {job.target_url}
-RULES:
-- Search rules: {job.search_rules or 'none specified'}
-- Filter rules: {job.filter_rules or 'none specified'}
-- Navigation rules: {job.navigation_rules or 'none specified'}
-- Extraction rules: {job.extraction_rules or 'capture all visible product/article attributes'}
+    # --------------------------------------------------------------------------
+    # Phase 1: Diagnostic Live Recon (using Playwright MCP / Browser Tools)
+    # --------------------------------------------------------------------------
+    recon_call_counter = {"count": 0}
+    recon_interceptor = ToolUseInterceptor(
+        job=job,
+        action_log=action_log,
+        call_counter=recon_call_counter,
+        max_steps=min(job.max_steps, 20),
+        phase_label="repair_recon",
+        on_log_entry=on_log_entry,
+    )
 
-PRIOR INSPECTION FINDINGS:
-{json.dumps(recon_findings or {}, indent=2)}
+    recon_task_prompt = ""
+    try:
+        recon_task_prompt = build_diagnostic_recon_prompt(
+            job=job,
+            broken_code=broken_code,
+            error_context=error_context,
+            recon_findings=recon_findings,
+            run_details=run_details,
+            attempt_history=attempt_history,
+        )
+        recon_run = await _run_openai_recon_session(
+            client=client,
+            model=recon_model,
+            temperature=temperature,
+            system_prompt=DIAGNOSTIC_RECON_SYSTEM_PROMPT,
+            task_prompt=recon_task_prompt,
+            max_seconds=min(job.max_seconds, 240),
+            max_steps=min(job.max_steps, 20),
+            interceptor=recon_interceptor,
+            mcp_base_url=mcp_base_url,
+        )
 
-CURRENT BROKEN CODE:
-```python
-{broken_code}
-```
+        recon_record = build_cost_record(
+            job_id=job.job_id,
+            usage_info=recon_run.usage_info,
+            phase="repair_recon",
+            model=recon_model,
+        )
+        cost_sink.record(recon_record)
+        cost_records.append(recon_record)
 
-TEST RUN FAILURE / TRACEBACK:
-{error_context}
+        parsed_diag, diag_notes = parse_recon_output(recon_run.final_text)
+        diagnostic_findings = parsed_diag
+        confidence_notes.extend(diag_notes)
+        if recon_run.anti_bot_marker:
+            confidence_notes.append(
+                f"Diagnostic live recon encountered anti-bot marker ('{recon_run.anti_bot_marker}')."
+            )
+            diagnostic_findings["anti_bot_detected"] = recon_run.anti_bot_marker
+    except Exception as recon_exc:
+        confidence_notes.append(
+            f"Diagnostic live recon encountered exception: {recon_exc}. Proceeding with error-context codegen repair."
+        )
+        diagnostic_findings = {
+            "root_cause": f"Live browser inspection unavailable ({recon_exc}) - synthesized from error traceback",
+            "fallback": True,
+        }
 
-INSTRUCTIONS FOR REPAIR:
-1. If the scraper produced 0 rows due to an over-strict keyword filter, relax the filter or match against URLs/slugs and case-insensitive substrings.
-2. If dynamic JavaScript elements, prices, or specs were missing, switch to Playwright async browser automation (`playwright.async_api.async_playwright()`) with `page.wait_for_selector()`, selector auto-waiting, and auto-dismiss cookie banners.
-3. Ensure the script follows the mandatory SCRIPT CONTRACT strictly (argparse `--input`, `--output`, `--max-products`, `--headless`, dual-sheet Excel output with "Extracted Data" and "Flags").
-4. Return your final answer as a single JSON object with keys "generated_code", "requirements_txt", and "confidence_notes".
-
-{SCRIPT_CONTRACT}
-"""
+    # --------------------------------------------------------------------------
+    # Phase 2: Codegen Synthesis (Clean context, Strict SCRIPT_CONTRACT & Regression Protection)
+    # --------------------------------------------------------------------------
+    codegen_task_prompt = build_diagnostic_codegen_prompt(
+        job=job,
+        broken_code=broken_code,
+        error_context=error_context,
+        recon_findings=recon_findings,
+        diagnostic_findings=diagnostic_findings,
+        run_details=run_details,
+        attempt_history=attempt_history,
+    )
 
     repair_system_prompt = (
         "You are an expert Python debugging and repair agent for Scraper Studio. "
-        "Fix the provided code to make it fully functional and robust against the reported error. "
+        "Fix the provided code to make it fully functional, regression-proof, and robust against the reported error. "
+        "Incorporate the live diagnostic findings and working selectors discovered during browser inspection. "
+        "Preserve all existing schema fields and Excel sheets. "
         "Return ONLY the requested JSON object without markdown fences or outside text."
     )
 
-    repair_run = await _run_openai_codegen_session(
+    codegen_run = await _run_openai_codegen_session(
         client=client,
         model=codegen_model,
         temperature=temperature,
         system_prompt=repair_system_prompt,
-        task_prompt=repair_prompt,
+        task_prompt=codegen_task_prompt,
         max_seconds=CODEGEN_MAX_SECONDS,
     )
 
     repair_record = build_cost_record(
         job_id=job.job_id,
-        usage_info=repair_run.usage_info,
-        phase="repair",
+        usage_info=codegen_run.usage_info,
+        phase="repair_codegen",
         model=codegen_model,
     )
     cost_sink.record(repair_record)
+    cost_records.append(repair_record)
 
-    repaired_code, reqs, notes = parse_agent_output(repair_run.final_text)
-    return repaired_code, reqs, notes
+    repaired_code, reqs, notes = parse_agent_output(codegen_run.final_text)
+    confidence_notes.extend(notes)
+
+    prompts = {
+        "recon_system_prompt": DIAGNOSTIC_RECON_SYSTEM_PROMPT,
+        "recon_task_prompt": recon_task_prompt,
+        "codegen_system_prompt": repair_system_prompt,
+        "codegen_task_prompt": codegen_task_prompt,
+    }
+
+    return RepairResult(
+        repaired_code=repaired_code,
+        requirements_txt=reqs,
+        confidence_notes=confidence_notes,
+        diagnostic_findings=diagnostic_findings,
+        action_log=action_log,
+        prompts=prompts,
+    )
 
 
 async def run_refinement_job(
@@ -1946,12 +2525,13 @@ async def run_refinement_job(
         on_log_entry=on_log_entry,
     )
 
+    refine_recon_prompt = build_refinement_recon_prompt(job, prior_code, prior_findings, refinement_instructions)
     recon_run = await _run_openai_recon_session(
         client=client,
         model=recon_model,
         temperature=temperature,
         system_prompt=REFINEMENT_RECON_SYSTEM_PROMPT,
-        task_prompt=build_refinement_recon_prompt(job, prior_code, prior_findings, refinement_instructions),
+        task_prompt=refine_recon_prompt,
         max_seconds=min(job.max_seconds, 300),
         max_steps=min(job.max_steps, 25),
         interceptor=recon_interceptor,
@@ -1980,14 +2560,15 @@ async def run_refinement_job(
     merged_findings = {**(prior_findings or {}), **new_recon_findings}
 
     # ---- Phase 2: Targeted Codegen (Fresh Context) ----
+    refine_codegen_prompt = build_refinement_codegen_prompt(
+        job, prior_code, prior_findings, new_recon_findings, refinement_instructions
+    )
     codegen_run = await _run_openai_codegen_session(
         client=client,
         model=codegen_model,
         temperature=temperature,
         system_prompt=REFINEMENT_CODEGEN_SYSTEM_PROMPT,
-        task_prompt=build_refinement_codegen_prompt(
-            job, prior_code, prior_findings, new_recon_findings, refinement_instructions
-        ),
+        task_prompt=refine_codegen_prompt,
         max_seconds=CODEGEN_MAX_SECONDS,
     )
 
@@ -2006,6 +2587,13 @@ async def run_refinement_job(
     status = recon_run.status if recon_run.status not in ("completed", "") else codegen_run.status
     combined_cost = combine_cost_records(cost_records)
 
+    prompts = {
+        "recon_system_prompt": REFINEMENT_RECON_SYSTEM_PROMPT,
+        "recon_task_prompt": refine_recon_prompt,
+        "codegen_system_prompt": REFINEMENT_CODEGEN_SYSTEM_PROMPT,
+        "codegen_task_prompt": refine_codegen_prompt,
+    }
+
     result = InspectionResult(
         job_id=job.job_id,
         status=status,
@@ -2017,6 +2605,7 @@ async def run_refinement_job(
         total_cost_usd=combined_cost["total_cost_usd"],
         cost_record=combined_cost,
         anti_bot_marker=recon_run.anti_bot_marker,
+        prompts=prompts,
     )
     return result, merged_findings
 

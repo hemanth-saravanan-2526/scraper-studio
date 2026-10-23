@@ -605,6 +605,8 @@ if nav_selection == "⚡ Builder":
             with c3:
                 temperature = st.slider("Temperature", min_value=0.0, max_value=2.0, value=float(get_default_temperature()), step=0.1)
                 max_budget = st.number_input("Max Budget ($USD)", min_value=0.10, max_value=10.0, value=1.50, step=0.25)
+            
+            mask_reviews = st.checkbox("Mask Reviewer PII & Skip Review Accordions", value=True, help="Excludes customer review accordions from spec extraction and masks reviewer personal names/emails.")
         
         submit_btn = st.form_submit_button("🚀 Generate Scraper")
 
@@ -613,14 +615,39 @@ if nav_selection == "⚡ Builder":
             st.error("Please provide a valid Target URL.")
         else:
             effective_job_name = job_name.strip() if job_name and job_name.strip() else "Custom Scraper"
+            effective_extraction = extraction_rules.strip() if extraction_rules else ""
+            if mask_reviews:
+                effective_extraction = (effective_extraction + "\nMask reviewer PII and skip review accordions.").strip()
+
+            # Process uploaded Excel if present
+            uploaded_excel_bytes = None
+            extracted_keyword = None
+            if uploaded_excel is not None:
+                try:
+                    uploaded_excel_bytes = uploaded_excel.getvalue()
+                    import io
+                    import pandas as pd
+                    df_up = pd.read_excel(io.BytesIO(uploaded_excel_bytes), header=None)
+                    for val in df_up.iloc[:, 0].dropna():
+                        s = str(val).strip()
+                        if s and s.lower() not in ("keyword", "keywords", "search", "nan", "none"):
+                            extracted_keyword = s
+                            break
+                    if not extracted_keyword and not df_up.empty:
+                        extracted_keyword = str(df_up.iloc[0, 0]).strip()
+                except Exception as up_err:
+                    print(f"Warning: could not parse uploaded excel: {up_err}")
+
+            active_sample_keyword = sample_keyword.strip() if sample_keyword else (extracted_keyword or None)
+
             job_req = InspectionJob(
                 job_id=str(time.time()).replace(".", "-"),
                 target_url=target_url.strip(),
-                sample_keyword=sample_keyword.strip() if sample_keyword else None,
+                sample_keyword=active_sample_keyword,
                 search_rules=search_rules.strip() if search_rules else "",
                 filter_rules=filter_rules.strip() if filter_rules else "",
                 navigation_rules=navigation_rules.strip() if navigation_rules else "",
-                extraction_rules=extraction_rules.strip() if extraction_rules else "",
+                extraction_rules=effective_extraction,
                 max_steps=max_steps,
                 max_seconds=max_seconds,
                 max_budget_usd=max_budget,
@@ -634,11 +661,11 @@ if nav_selection == "⚡ Builder":
                 record = await store.create(api_service.CreateJobRequest(
                     name=effective_job_name,
                     target_url=target_url.strip(),
-                    sample_keyword=sample_keyword.strip() if sample_keyword else None,
+                    sample_keyword=active_sample_keyword,
                     search_rules=search_rules.strip() if search_rules else "",
                     filter_rules=filter_rules.strip() if filter_rules else "",
                     navigation_rules=navigation_rules.strip() if navigation_rules else "",
-                    extraction_rules=extraction_rules.strip() if extraction_rules else "",
+                    extraction_rules=effective_extraction,
                     max_steps=max_steps,
                     max_seconds=max_seconds,
                     max_budget_usd=max_budget,
@@ -664,6 +691,17 @@ if nav_selection == "⚡ Builder":
                 job_req.job_id = record.job_id
                 res = await run_inspection_job(job_req, on_log_entry=_on_log)
                 await store.update_status(record.job_id, res.status, res)
+
+                # Persist uploaded Excel file to generated script folder if available
+                rec_fresh = store.jobs.get(record.job_id)
+                if rec_fresh and rec_fresh.saved_to and uploaded_excel_bytes:
+                    try:
+                        dest_f = Path(rec_fresh.saved_to)
+                        dest_f.mkdir(parents=True, exist_ok=True)
+                        (dest_f / "sample_input.xlsx").write_bytes(uploaded_excel_bytes)
+                        (dest_f / "input.xlsx").write_bytes(uploaded_excel_bytes)
+                    except Exception as ex_save:
+                        print(f"Warning: could not write uploaded excel to disk: {ex_save}")
                 
                 if res.status == "completed":
                     status_placeholder.success(f"✅ Scraper successfully generated! Total spend: **${res.total_cost_usd:.4f}** • Tool calls: **{res.total_tool_calls}**")
@@ -814,7 +852,7 @@ elif nav_selection == "📊 Dashboard":
                     key=f"dl_zip_top_{job.job_id}",
                 )
 
-        code_tabs = st.tabs(["📄 generated_scraper.py", "📦 requirements.txt", "🔍 Action Log", "📊 Findings JSON"])
+        code_tabs = st.tabs(["📄 generated_scraper.py", "📦 requirements.txt", "🔍 Action Log", "📊 Findings JSON", "🛡️ Audit Vault & Retries"])
         
         with code_tabs[0]:
             if view_code:
@@ -864,6 +902,188 @@ elif nav_selection == "📊 Dashboard":
         
         with code_tabs[3]:
             st.json(res)
+
+        with code_tabs[4]:
+            st.markdown("#### 🛡️ Audit Vault & Retry Verification")
+            st.markdown(
+                "<div style='font-size:12.5px; color:#64748b; margin-bottom:12px;'>"
+                "Immutable, disk-backed audit log capturing prompt contexts, scripts, diffs, agent decisions, "
+                "runtime errors, fixes, and smoke test outcomes across all generation and self-healing retries."
+                "</div>",
+                unsafe_allow_html=True,
+            )
+
+            audit_history = list(getattr(job, "audit_history", []) or [])
+            saved_folder = Path(job.saved_to) if getattr(job, "saved_to", None) else None
+            trail_file = (saved_folder / "audit" / "audit_trail.jsonl") if saved_folder else None
+
+            # Auto-discover any additional attempt folders on disk if present
+            if saved_folder and (saved_folder / "audit").exists():
+                known_attempts = {e.get("attempt") for e in audit_history if e.get("attempt")}
+                attempt_dirs = sorted(
+                    (saved_folder / "audit").glob("attempt_*"),
+                    key=lambda p: int(p.name.split("_")[-1]) if p.name.split("_")[-1].isdigit() else 0,
+                )
+                for a_dir in attempt_dirs:
+                    try:
+                        num = int(a_dir.name.split("_")[-1])
+                    except ValueError:
+                        continue
+                    if num not in known_attempts:
+                        entry = {
+                            "attempt": num,
+                            "phase": "initial_generation" if num == 1 else "self_healing_retry",
+                            "timestamp": datetime.fromtimestamp(a_dir.stat().st_mtime).isoformat(timespec="seconds"),
+                            "prompts": {},
+                            "code_length": 0,
+                            "diff_summary": "",
+                            "agent_decisions": {},
+                            "errors": {},
+                            "fixes": {},
+                            "outcome": None,
+                            "audit_path": str(a_dir.resolve()),
+                        }
+                        if (a_dir / "outcome.json").exists():
+                            try:
+                                entry["outcome"] = json.loads((a_dir / "outcome.json").read_text(encoding="utf-8"))
+                            except Exception:
+                                pass
+                        if (a_dir / "agent_decisions.json").exists():
+                            try:
+                                entry["agent_decisions"] = json.loads((a_dir / "agent_decisions.json").read_text(encoding="utf-8"))
+                            except Exception:
+                                pass
+                        if (a_dir / "errors.json").exists():
+                            try:
+                                entry["errors"] = json.loads((a_dir / "errors.json").read_text(encoding="utf-8"))
+                            except Exception:
+                                pass
+                        if (a_dir / "fixes.json").exists():
+                            try:
+                                entry["fixes"] = json.loads((a_dir / "fixes.json").read_text(encoding="utf-8"))
+                            except Exception:
+                                pass
+                        audit_history.append(entry)
+                audit_history.sort(key=lambda x: x.get("attempt", 0))
+
+            # Download button for audit_trail.jsonl
+            if trail_file and trail_file.exists():
+                try:
+                    trail_bytes = trail_file.read_bytes()
+                    st.download_button(
+                        label="📥 Download audit_trail.jsonl",
+                        data=trail_bytes,
+                        file_name=f"{job.job_id}_audit_trail.jsonl",
+                        mime="application/x-ndjson",
+                        key=f"dl_audit_{job.job_id}",
+                    )
+                except Exception:
+                    pass
+
+            if not audit_history:
+                st.info("No retry audit records logged yet. Run a test run or refinement to generate audit records.")
+            else:
+                for entry in reversed(audit_history):
+                    att_num = entry.get("attempt", 1)
+                    phase = entry.get("phase", "generation").replace("_", " ").title()
+                    ts = entry.get("timestamp", "")
+                    attempt_dir = (saved_folder / "audit" / f"attempt_{att_num}") if saved_folder else None
+                    outcome = entry.get("outcome") or {}
+                    if not outcome and attempt_dir and (attempt_dir / "outcome.json").exists():
+                        try:
+                            outcome = json.loads((attempt_dir / "outcome.json").read_text(encoding="utf-8"))
+                        except Exception:
+                            pass
+                    out_status = outcome.get("status", "unknown").upper()
+                    status_badge = "🟢 PASSED" if out_status == "PASSED" else ("🔴 FAILED" if out_status == "FAILED" else "⚪ RUNNING/PENDING")
+
+                    with st.expander(f"Attempt #{att_num} — {phase} ({ts}) — {status_badge}", expanded=(att_num == len(audit_history))):
+                        m1, m2, m3, m4 = st.columns(4)
+                        with m1:
+                            st.metric("Attempt", f"#{att_num}")
+                        with m2:
+                            st.metric("Phase", phase)
+                        with m3:
+                            st.metric("Outcome", out_status)
+                        with m4:
+                            rows = outcome.get("extracted_rows", "—")
+                            st.metric("Extracted Rows", rows)
+
+                        t_dec, t_err, t_fix, t_diff, t_prm = st.tabs([
+                            "🧠 Decisions & Diagnosis",
+                            "⚠️ Errors",
+                            "🔧 Fixes Applied",
+                            "📜 Code Diff",
+                            "📋 Prompts Context",
+                        ])
+
+                        with t_dec:
+                            dec = entry.get("agent_decisions", {})
+                            if attempt_dir and (attempt_dir / "agent_decisions.json").exists():
+                                try:
+                                    dec = json.loads((attempt_dir / "agent_decisions.json").read_text(encoding="utf-8"))
+                                except Exception:
+                                    pass
+                            if dec:
+                                root_c = dec.get("root_cause")
+                                if root_c:
+                                    st.markdown(f"**Root Cause Diagnosed:** `{root_c}`")
+                                st.json(dec)
+                            else:
+                                st.info("No decision metadata recorded for this attempt.")
+
+                        with t_err:
+                            errs = entry.get("errors", {})
+                            if attempt_dir and (attempt_dir / "errors.json").exists():
+                                try:
+                                    errs = json.loads((attempt_dir / "errors.json").read_text(encoding="utf-8"))
+                                except Exception:
+                                    pass
+                            if errs:
+                                st.json(errs)
+                            else:
+                                st.success("No errors recorded for this attempt.")
+
+                        with t_fix:
+                            fixes = entry.get("fixes", {})
+                            if attempt_dir and (attempt_dir / "fixes.json").exists():
+                                try:
+                                    fixes = json.loads((attempt_dir / "fixes.json").read_text(encoding="utf-8"))
+                                except Exception:
+                                    pass
+                            if fixes:
+                                st.json(fixes)
+                            else:
+                                st.info("No explicit fixes object recorded.")
+
+                        with t_diff:
+                            diff_content = ""
+                            if attempt_dir and (attempt_dir / "diff_from_previous.patch").exists():
+                                try:
+                                    diff_content = (attempt_dir / "diff_from_previous.patch").read_text(encoding="utf-8")
+                                except Exception:
+                                    pass
+                            if diff_content:
+                                st.code(diff_content, language="diff")
+                            else:
+                                st.caption("No diff recorded or initial script creation.")
+
+                        with t_prm:
+                            prompt_files = list((attempt_dir / "prompts").glob("*.txt")) if (attempt_dir and (attempt_dir / "prompts").exists()) else []
+                            if prompt_files:
+                                for p_file in sorted(prompt_files):
+                                    with st.expander(f"📄 {p_file.name}", expanded=False):
+                                        st.text_area(
+                                            p_file.name,
+                                            value=p_file.read_text(encoding="utf-8"),
+                                            height=200,
+                                            disabled=True,
+                                            key=f"p_{job.job_id}_{att_num}_{p_file.stem}",
+                                        )
+                            elif entry.get("prompts"):
+                                st.json(entry.get("prompts"))
+                            else:
+                                st.info("No prompt text files captured.")
         
         st.divider()
 
@@ -1014,19 +1234,42 @@ elif nav_selection == "📊 Dashboard":
 
         run_triggered = False
         with col_test1:
-            if st.button("🚀 Run Test Run Script", disabled=test_disabled, help="Runs the scraper in an isolated sandbox with zero timeouts, streaming execution logs, and autonomous self-healing."):
+            test_max_products = st.number_input(
+                "Max Products for Test Run",
+                min_value=1,
+                max_value=50,
+                value=10,
+                step=1,
+                help="Controls how many products the sandbox crawls to test pagination and second-category crawling.",
+                key=f"max_prod_{job.job_id}",
+            )
+            if st.button("🚀 Run Test Run Script", disabled=test_disabled, help="Runs the scraper in an isolated sandbox with zero timeouts, streaming execution logs, and autonomous self-healing.", key=f"run_btn_{job.job_id}"):
                 run_triggered = True
         
         test_run_info = job.test_run
         with col_test2:
             if test_run_info and not run_triggered:
-                st.markdown(f"**Status:** `{test_run_info.get('status','').upper()}`")
-                if test_run_info.get("self_healed"):
-                    st.info("✨ **Self-Healing Auto-Repair Triggered**: Initial blockers were automatically resolved by the self-healing repair pass!")
+                status_str = test_run_info.get("status", "").upper()
+                st.markdown(f"**Status:** `{status_str}`")
+
+                # Crawl Funnel Metrics display
+                funnel = test_run_info.get("funnel")
+                if funnel and isinstance(funnel, dict):
+                    f1, f2, f3, f4 = st.columns(4)
+                    with f1:
+                        st.metric("Categories", funnel.get("categories_discovered", 1))
+                    with f2:
+                        st.metric("Discovered", funnel.get("links_discovered", 0))
+                    with f3:
+                        st.metric("Processed", funnel.get("links_processed", 0))
+                    with f4:
+                        st.metric("Extracted", funnel.get("records_extracted", 0))
                 
                 if test_run_info.get("status") == "passed":
+                    if test_run_info.get("self_healed"):
+                        st.info("✨ **Self-Healing Auto-Repair Triggered**: Initial blockers were automatically resolved by the self-healing repair pass!")
                     extracted_count = test_run_info.get("extracted_rows", "sample")
-                    st.success(f"✅ Test run passed! Collected **{extracted_count}** product records.")
+                    st.success(f"✅ Test run passed! Collected **{extracted_count}** meaningful product records.")
                     if job.saved_to:
                         sample_output_path = Path(job.saved_to) / "sample_output.xlsx"
                         if sample_output_path.exists():
@@ -1036,18 +1279,40 @@ elif nav_selection == "📊 Dashboard":
                                     data=f.read(),
                                     file_name=f"{job.name}_sample_output.xlsx",
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    key=f"dl_sample_out_{job.job_id}",
                                 )
                 elif test_run_info.get("status") == "failed":
-                    st.error(f"Test run failed: {test_run_info.get('error', 'Check execution log below')}")
+                    if test_run_info.get("self_heal_attempted"):
+                        st.warning("⚠️ **Self-Healing Attempted**: A repair pass was synthesized, but the smoke test still failed. Check diagnostics below.")
+                    else:
+                        st.error(f"❌ Test run failed: {test_run_info.get('error', 'Zero meaningful product records extracted or execution error.')}")
                     if test_run_info.get("stderr_tail"):
                         st.code(test_run_info["stderr_tail"], language="text")
+
+                if test_run_info.get("diagnostic_recon_findings"):
+                    with st.expander("🛠️ Live Diagnostic Recon Findings (Playwright MCP)", expanded=False):
+                        st.json(test_run_info["diagnostic_recon_findings"])
+
+                # Diagnostic screenshot / message viewer (Huckberry & empty runs)
+                diag = test_run_info.get("diagnostic") or {}
+                diag_msg = diag.get("diagnostic_message")
+                diag_img = diag.get("screenshot_path")
+                if not diag_img and job.saved_to:
+                    candidate_img = Path(job.saved_to) / "diagnostic_screenshot.png"
+                    if candidate_img.exists():
+                        diag_img = str(candidate_img)
+
+                if diag_msg:
+                    st.warning(f"🔍 **Diagnostic Note**: {diag_msg}")
+                if diag_img and Path(diag_img).exists():
+                    st.image(str(diag_img), caption="Diagnostic screenshot captured during run", use_container_width=True)
 
         terminal_placeholder = st.empty()
         status_banner_placeholder = st.empty()
 
         if run_triggered:
             live_logs = []
-            status_banner_placeholder.info("⏳ Test run executing with zero timeouts... Streaming real-time environment creation, package installations, scraper outputs, and self-healing actions below.")
+            status_banner_placeholder.info(f"⏳ Test run executing (max {int(test_max_products)} products) with zero timeouts... Streaming real-time environment creation, package installations, scraper outputs, and self-healing actions below.")
 
             async def _on_test_stream_log(entry):
                 live_logs.append(entry)
@@ -1055,10 +1320,10 @@ elif nav_selection == "📊 Dashboard":
 
             with st.spinner("Executing smoke test in isolated sandbox (no timeout)..."):
                 try:
-                    asyncio.run(api_service._run_test_run(job.job_id, on_log=_on_test_stream_log))
+                    asyncio.run(api_service._run_test_run(job.job_id, on_log=_on_test_stream_log, max_products=int(test_max_products)))
                 except TypeError:
                     importlib.reload(api_service)
-                    asyncio.run(api_service._run_test_run(job.job_id, on_log=_on_test_stream_log))
+                    asyncio.run(api_service._run_test_run(job.job_id, on_log=_on_test_stream_log, max_products=int(test_max_products)))
 
             # Reload updated job from store
             store.load_from_disk()
@@ -1069,7 +1334,7 @@ elif nav_selection == "📊 Dashboard":
 
             terminal_placeholder.markdown(render_sandbox_terminal(live_logs, is_running=False, status_override=final_status), unsafe_allow_html=True)
             if final_status == "passed":
-                status_banner_placeholder.success(f"🎉 Smoke test PASSED without timeouts! Successfully extracted **{final_rows}** product records.")
+                status_banner_placeholder.success(f"🎉 Smoke test PASSED without timeouts! Successfully extracted **{final_rows}** meaningful product records.")
             else:
                 status_banner_placeholder.error(f"Smoke test ended with status: **{final_status}**. Check log trace above.")
             st.rerun()
@@ -1085,6 +1350,16 @@ elif nav_selection == "📊 Dashboard":
                 try:
                     df_preview = pd.read_excel(sample_output_path, sheet_name="Extracted Data")
                     st.dataframe(df_preview, use_container_width=True)
+
+                    # Check for unflagged blank attributes (UG Iter12 feedback)
+                    blank_cols = []
+                    for col in ["brand", "category", "price", "image_url", "images", "title", "product_id"]:
+                        matching = [c for c in df_preview.columns if col in c.lower()]
+                        for m in matching:
+                            if df_preview[m].dropna().astype(str).str.strip().eq("").all():
+                                blank_cols.append(m)
+                    if blank_cols:
+                        st.warning(f"⚠️ **Attribute Warning**: The following column(s) are completely blank across all rows: `{', '.join(blank_cols)}`. Consider adding targeted extraction rules.")
                     
                     # Also check Flags sheet
                     df_flags = pd.read_excel(sample_output_path, sheet_name="Flags")
