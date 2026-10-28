@@ -38,6 +38,7 @@ from inspection_agent_service import (
     get_default_recon_model,
     get_default_codegen_model,
     get_default_temperature,
+    sanitize_generated_code,
 )
 import re
 import zipfile
@@ -67,6 +68,12 @@ def _build_scraper_zip(job_record) -> bytes:
             pass
     if not code_content and job_record.result:
         code_content = job_record.result.get("generated_code", "")
+
+    if code_content:
+        try:
+            code_content, _ = sanitize_generated_code(code_content)
+        except Exception:
+            pass
 
     # 2. Requirements content
     reqs_content = ""
@@ -803,6 +810,11 @@ elif nav_selection == "📊 Dashboard":
         
         res = job.result or {}
         code_str = res.get("generated_code", "")
+        if code_str:
+            try:
+                code_str, _ = sanitize_generated_code(code_str)
+            except Exception:
+                pass
         reqs_str = res.get("requirements_txt", "")
         action_log = res.get("action_log", [])
 
@@ -1351,13 +1363,14 @@ elif nav_selection == "📊 Dashboard":
                     df_preview = pd.read_excel(sample_output_path, sheet_name="Extracted Data")
                     st.dataframe(df_preview, use_container_width=True)
 
-                    # Check for unflagged blank attributes (UG Iter12 feedback)
+                    # Check for unflagged blank attributes only when records were successfully extracted
                     blank_cols = []
-                    for col in ["brand", "category", "price", "image_url", "images", "title", "product_id"]:
-                        matching = [c for c in df_preview.columns if col in c.lower()]
-                        for m in matching:
-                            if df_preview[m].dropna().astype(str).str.strip().eq("").all():
-                                blank_cols.append(m)
+                    if len(df_preview) > 0:
+                        for col in ["brand", "category", "price", "image_url", "images", "title", "product_id"]:
+                            matching = [c for c in df_preview.columns if col in c.lower()]
+                            for m in matching:
+                                if df_preview[m].dropna().astype(str).str.strip().eq("").all():
+                                    blank_cols.append(m)
                     if blank_cols:
                         st.warning(f"⚠️ **Attribute Warning**: The following column(s) are completely blank across all rows: `{', '.join(blank_cols)}`. Consider adding targeted extraction rules.")
                     

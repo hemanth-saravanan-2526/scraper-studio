@@ -138,6 +138,17 @@ def get_mcp_server_url() -> str:
 
 
 RECON_ALLOWED_TOOLS = [
+    # Custom Playwright MCP Toolbox (Primary)
+    "navigate",
+    "snapshot",
+    "click",
+    "type_text",
+    "scroll",
+    "load_all",
+    "run_js",
+    "save_items",
+    "extract_sample_rows",
+    # Legacy Playwright MCP / Native Tools (Fallback)
     "browser_navigate",
     "browser_snapshot",
     "browser_click",
@@ -162,7 +173,10 @@ RECON_ALLOWED_TOOLS = [
 ]
 
 REPEATABLE_WITHOUT_PROGRESS = {
+    "snapshot",
     "browser_snapshot",
+    "run_js",
+    "browser_evaluate",
     "browser_network_requests",
     "browser_take_screenshot",
     "mcp__browser__browser_snapshot",
@@ -215,36 +229,47 @@ out how to call it:
       * IMPORTANT: `detail_url` must be a genuinely independent fast path that extracts
         the single page directly without requiring a listing crawl first.
 
-  - CANONICAL PRODUCT IDENTIFIERS & PROVENANCE URLS (MANDATORY SCHEMA):
-      Every extracted record MUST contain these three standardized columns:
-      1. `product_id`: Single deterministic primary key.
+  - CANONICAL PRIMARY IDENTIFIERS & PROVENANCE URLS (POLYMORPHIC SCHEMA ACROSS ALL DOMAINS):
+      Every extracted record MUST contain these three standardized columns, regardless of whether the site is
+      e-commerce, a public/government registry, a job board, real estate, a directory, or media:
+      1. `product_id`: Universal Primary Entity Key.
          * Resolution hierarchy:
-           - Priority 1: Official SKU, model code, or MPN (e.g. from JSON-LD `sku`/`productID` or page metadata).
-           - Priority 2: Canonical URL slug / product ID extracted from the product URL via a consistent regex pattern.
-           - STRICT: Use the exact same ID strategy across all rows in the dataset; NEVER arbitrarily mix SKU for one product and URL slug for another.
-      2. `product_url`: Direct canonical URL of the product detail page.
-      3. `source_listing_url`: The category or listing URL from which the item was discovered (or "DIRECT_INPUT" if passed directly via input.xlsx detail_url).
+           - For E-Commerce: Official SKU, model code, or MPN (e.g. from JSON-LD `sku`/`productID` or page metadata).
+           - For Public / Government Registries & Directories: Registration number, license number, or record ID (e.g., `Nº`, `RNET nº`, `EIN`).
+           - For Job Boards / Careers: Job requisition ID or posting ID.
+           - For Real Estate / Travel: Property ID or listing ID.
+           - General Fallback: Canonical URL slug / deterministic entity ID extracted from the detail URL via regex.
+         * DUAL-MAPPING: If the user requests domain-specific ID columns (e.g. "Nº", "RNET nº", "Job ID", "License No"),
+           extract them cleanly into their requested column AND ALSO populate `product_id` with that same identifier so the canonical key is always populated.
+         * STRICT: Use the exact same ID strategy across all rows in the dataset; NEVER arbitrarily mix strategies.
+      2. `product_url`: Direct canonical URL of the entity detail page (product, dossier, job posting, property, article).
+      3. `source_listing_url`: The category, search, or listing URL from which the item was discovered (or "DIRECT_INPUT" if passed directly via input.xlsx detail_url).
       * NOTE: Do NOT output a duplicate "Source URL" column that mirrors "product_url".
 
-  - STRICT ELEMENT-SCOPED PRICE EXTRACTION & NUMBER ISOLATION (CRITICAL):
-      * Prices MUST be extracted EXCLUSIVELY from within the product's primary pricing container
-        or buy box (e.g. `[itemprop="price"]`, `.price`, `.product-price`, `.current-price`, or JSON-LD `offers.price`).
-      * NEVER execute price regexes or digit extractors against product headings (`h1`, `h2`, `h3`, `.title`, `.product-name`),
-        description paragraphs, promo banners, or recommendation carousels (`.carousel`, `.recommendations`, `.related-products`).
-      * Title Digits Trap: Numbers in product titles (e.g., "250 North American Birds Sound Book") are NOT prices!
-      * Currency Anchoring: For text extraction, anchor to currency symbols or ISO codes:
-        e.g., `r'(?i)(?:[\\$£€₹]|USD|CAD|EUR|GBP)\\s*(\\d{1,5}(?:[.,]\\d{2})?)'`
-        Reject raw standalone numbers without currency indicators found in prose or headings.
+  - DOMAIN-ADAPTIVE EXTRACTION ARCHETYPES (CONDITIONAL RULES):
+      Scraper Studio generates scrapers for any website archetype. Apply the rules relevant to the observed target:
+      * Commerce Archetype (Products, Subscriptions, Pricing):
+        - Prices MUST be extracted EXCLUSIVELY from within the product's primary pricing container or buy box (e.g. `[itemprop="price"]`, `.price`, `.product-price`, `.current-price`, or JSON-LD `offers.price`).
+        - NEVER execute price regexes against product headings (`h1`, `h2`, `h3`, `.title`), promo banners, or carousels.
+        - Currency Anchoring: Anchor to currency symbols or ISO codes: `r'(?i)(?:[$£€₹]|USD|CAD|EUR|GBP)\\s*(\\d{1,5}(?:[.,]\\d{2})?)'`. Reject raw standalone numbers found in prose.
+      * Registry & Directory Archetype (Public Records, Accommodations, Businesses, Licenses):
+        - Extract structured fields via label-value pair mapping (e.g., `tr:has(th, td)`, `dt`/`dd`, `div.label`/`div.value`, or table column header mapping).
+        - Capture registration dates, tax/VAT IDs (`NIF`, `NIPC`, `EIN`), operating entities, addresses, and contact info.
+      * Career & Job Archetype (Job Boards, Postings):
+        - Extract job title, department, employment type (Remote, Hybrid, Full-time), compensation ranges, and direct application links.
+      * Content & Article Archetype (News, Blogs, Documentation):
+        - Extract headline, author byline, publication timestamp, lead text, and body content.
+      * Universal: Never hallucinate or demand pricing or buy-box fields on non-commerce websites!
 
   - CRAWL FUNNEL TELEMETRY & LOUD FAILURE ON EMPTY:
       * Scrapers must track and log crawl funnel metrics using `log()`:
         `categories_discovered`, `links_discovered`, `links_processed`, `records_extracted`.
         Example: `log(f"Crawl Funnel: {num_categories} categories, {num_links} links discovered, {num_processed} processed, {num_extracted} extracted.")`
       * FAIL LOUDLY: If the crawl completes with 0 records extracted, the script MUST log:
-        `ERROR: Zero product records were extracted. Aborting.` and exit with `sys.exit(1)`.
-      * DIAGNOSTIC SCREENSHOT ON ZERO RECORDS: If 0 product records are found on the target listing/detail page,
+        `ERROR: Zero records were extracted. Aborting.` and exit with `sys.exit(1)`.
+      * DIAGNOSTIC SCREENSHOT ON ZERO RECORDS: If 0 records are found on the target listing/detail page,
         take a full-page screenshot using Playwright saved to `diagnostic_screenshot.png`, capture the HTTP status code
-        and page `<title>`, and log: `log(f"No product records found: HTTP {status}, Title: '{title}', Screenshot: diagnostic_screenshot.png")`.
+        and page `<title>`, and log: `log(f"No records found: HTTP {status}, Title: '{title}', Screenshot: diagnostic_screenshot.png")`.
 
   - EXCEL CELL LENGTH LIMIT PROTECTION (32,767 CHARACTERS):
       * Excel cells corrupt or truncate if text exceeds 32,767 characters.
@@ -320,9 +345,44 @@ out how to call it:
            ```
          * Call `dismiss_cookie_banner(page)` immediately after `page.goto()`.
          * Auto-wait for elements using `page.wait_for_selector()` or `page.locator()`.
-         * For ASP.NET / form submits that trigger navigation, wrap submits:
-           `async with page.expect_navigation(wait_until="domcontentloaded"): await submit_btn.click()`
-           or wait for the results grid directly after clicking.
+         * DYNAMIC FORM & AJAX / POSTBACK SYNCHRONIZATION (UNIVERSAL TIMING RULE):
+           - When submitting searches, filters, or clicking pagination buttons that update content dynamically (e.g. ASP.NET AJAX, UpdatePanels, React, Vue, HTMX, Angular):
+             1. SAFE INPUT CLEARING & COLLISION GUARD:
+                - To enter a new search query, clear the input using native Playwright: `await search_input.fill("")` or `await search_input.press("Control+A"); await search_input.press("Backspace")`.
+                - NEVER click a page's "Clear", "Reset", or "Limpar" button on the first keyword or if the input is already empty. Clicking reset buttons triggers asynchronous postbacks that race against and cancel subsequent search submissions! If a physical reset button is clicked between iterations, ALWAYS wait for network idle before typing the next query.
+             2. CONTAINER VISIBILITY TRAP AVOIDANCE:
+                - NEVER wait solely on a table container or element locator with default `state="visible"` if that container starts hidden or empty in the DOM (e.g. `<table class="... Empty">` or `display: none`). Playwright will timeout waiting for the empty container to be visible!
+                - ALWAYS wait for either:
+                  a) Network & DOM stabilization:
+                     ```python
+                     try:
+                         await page.wait_for_load_state("networkidle", timeout=6000)
+                     except Exception:
+                         await asyncio.sleep(1.0)
+                     ```
+                  b) Populated child rows or result cards:
+                     `await page.locator("tr:has(td), [data-testid*='item'], .product-card, .job-card, .result-item, .card").first.wait_for(state="attached", timeout=15000)`
+                  c) Counter / result text mutation indicating results updated:
+                     `await page.wait_for_function("() => (document.querySelector('.counter, .total, .results-count') || {}).innerText?.trim()?.length > 0", timeout=15000)`
+           - For traditional form submits that trigger a full page navigation, wrap submits:
+             `async with page.expect_navigation(wait_until="domcontentloaded"): await submit_btn.click()`
+         * CLASS-AGNOSTIC TABLE & LISTING ROW EXTRACTION (CRITICAL):
+           - NEVER assume alternating row zebra classes (e.g. `tr.TableRecords_OddLine, tr.TableRecords_EvenLine`, `tr.odd, tr.even`, `tr.row-0, tr.row-1`).
+           - Many dynamic frameworks, CMS platforms, or paginated table states render rows with empty classes (`class=""`) or custom utility classes. Relying on zebra classes causes 0 items to be extracted!
+           - ALWAYS select table rows semantically:
+             `rows = [tr for tr in table.select("tr") if tr.select("td") and not tr.select("th")]` or `table.select("tr:has(td)")`.
+           - Validate that each row contains at least one link or expected minimum data cells before parsing.
+         * PAGINATION ANTI-STALL & EMPTY-PAGE CIRCUIT BREAKER (CRITICAL):
+           - In every pagination loop (e.g. `while not self.stop_for_antibot:` or `while page_num < max_pages:`):
+             Always verify that items were found on the current page before continuing to the next page:
+             ```python
+             items = await self.parse_listing_page(page, source_url)
+             if not items:
+                 log("No records discovered on current listing page. Ending pagination loop.")
+                 break
+             ```
+           - NEVER continue clicking "Next" pagination controls if the current page extracted zero items or if the page content/URL did not advance. This prevents infinite or runaway loops across dozens/hundreds of blank pages.
+           - Log crawl progress on every page: `log(f"Listing page {page_num}: discovered {len(items)} items. Total extracted: {self.records_extracted}")`.
          * Click accordion tabs to reveal hidden specs (skipping review accordions).
       4. Tier 4 (Static Fast-Path): For traditional server-rendered static HTML sites, use `requests`
          with a desktop User-Agent and `BeautifulSoup`.
@@ -339,8 +399,11 @@ out how to call it:
         r"\\d+", r"\\s+", r"\\b", r"\\w+", r"\\(?[2-9]\\d{2}\\)?", r"\\.com".
         NEVER double-escape inside raw strings (do NOT write r"\\\\d", r"\\\\s", r"\\\\b", r"\\\\(").
       * When escaping literal parentheses in regex, use r"\\(" and r"\\)" (or re.escape).
-      * For HTML string cleaning with BeautifulSoup, use "\\n" as separator and "\\xa0" for non-breaking spaces.
       * The script must be syntactically valid Python 3 and compile with zero errors.
+      * PLAYWRIGHT PYTHON WAIT_FOR_FUNCTION SIGNATURE (CRITICAL):
+        In Playwright Python, `page.wait_for_function(expression, *, arg=None, timeout=None)` accepts `arg` ONLY as a keyword argument.
+        NEVER pass `arg` positionally as the 2nd argument (do NOT write `page.wait_for_function(expr, arg_val)`).
+        ALWAYS pass it as keyword: `page.wait_for_function(expr, arg=arg_val, timeout=...)`.
 
   - INPUT EXCEL & NAN HANDLING RULES (CRITICAL):
       * When reading a single sheet from Excel with pandas:
@@ -379,34 +442,17 @@ RULES (as described by the requester, in plain language):
 - Navigation rules: {job.navigation_rules or 'none specified'}
 - Extraction rules (data points to capture): {job.extraction_rules or 'capture all visible product/article attributes'}
 
-YOUR TASK:
-1. Navigate to the target URL using the browser tool.
-2. Take a snapshot to see the real rendered structure (not guessed selectors).
-   This is how you determine whether you're looking at a listing page (many
-   items) or a detail page (one item) - not something to assume beforehand.
-   Do not re-snapshot the same page state more than once - if you need to
-   check something specific after an action, take one fresh snapshot, not
-   several of the same state.
-3. If a cookie-consent banner, GDPR modal, or similar overlay is blocking the
-   page, dismiss it before doing anything else (click "Accept"/"Accept all"/
-   "I agree", or the closest equivalent) - don't attempt to click through or
-   around it, and don't try to read data hidden behind it. Record that a
-   consent banner was present and how you dismissed it, so the generated
-   script can replicate the same dismissal step.
-4. If this involves search/filter interaction, perform it once with the
-   sample keyword (if given) to confirm the flow actually works.
-5. Check the network requests once - if the page is backed by a clean JSON
-   API, prefer noting that API over describing rendered-HTML selectors.
-6. If you're on a listing page, identify the navigation path to detail pages
-   and inspect one detail page the same way (dismissing any consent banner
-   there too, if a fresh one appears). If you're already on a detail page,
-   this step is not applicable.
-7. For every fact you were NOT able to verify with high confidence, add an
-   explicit note explaining what should be manually checked before a
-   production run.
-8. Do not attempt to solve CAPTCHAs or defeat any anti-bot mechanism you
-   encounter - if you hit one, note it and stop inspecting immediately;
-   don't keep exploring past a block.
+YOUR TASK (USING CUSTOM PLAYWRIGHT MCP TOOLBOX WITH IN-TOOL HEALING):
+1. Navigate to the target URL using `navigate(url)`.
+2. Take a `snapshot()` to inspect the real rendered structure (headings, product cards, interactive elements, JSON-LD).
+3. If search or filter interaction is required, use `type_text(selector, text, press_enter=...)` and `click(selector)`.
+   (Note: `click` automatically dismisses blocking cookie banners, overlays, and modals via in-tool healing).
+4. If testing catalog pagination or infinite scroll, use `load_all(item_selector=...)` to automatically test item growth.
+5. If you're on a listing page, identify the navigation path to detail pages and inspect a sample detail page.
+6. Stage observed sample rows using `save_items(sample_records=..., schema=..., item_selector=...)`.
+   (Note: `save_items` automatically checks for empty fields and re-evaluates selectors on the live DOM if any fields are blank).
+7. If the page is backed by an internal clean JSON/GraphQL API, record that endpoint.
+8. Do not attempt to solve CAPTCHAs or defeat anti-bot WAFs - if encountered, record the marker and halt immediately.
 
 Return your final answer as a single JSON object with exactly these keys
 (keep every value CONCISE - a few sentences or short bullet-style strings per
@@ -477,14 +523,13 @@ in confidence_notes - never as text surrounding the JSON object.
 
 
 RECON_SYSTEM_PROMPT = (
-    "You are a careful web-inspection agent for Scraper Studio. You only "
-    "observe pages through the browser tool provided - you never attempt to "
-    "bypass CAPTCHAs, proxies, or IP blocks. Your ONLY job this phase is to "
-    "gather and report real, observed facts about the target site as "
-    "compact structured findings. You do not write any code in this phase - "
-    "a separate step handles code generation from what you report. Be "
-    "concise: every extra sentence you write is context another step has "
-    "to pay to read."
+    "You are a careful web-inspection agent for Scraper Studio powered by the Custom Playwright MCP Toolbox "
+    "with embedded in-tool micro-healing loops. You observe and interact with live pages through the provided tools "
+    "(navigate, snapshot, click, type_text, scroll, load_all, run_js, save_items). You never attempt to "
+    "bypass CAPTCHAs, proxies, or IP blocks. Your ONLY job this phase is to test interactions, verify pagination and selectors, "
+    "stage sample rows, and gather and report real, observed facts about the target site as "
+    "compact structured findings. You do not write any code in this phase - a separate step handles code generation "
+    "from what you report. Be concise: every extra sentence you write is context another step has to pay to read."
 )
 
 CODEGEN_SYSTEM_PROMPT = (
@@ -818,8 +863,8 @@ Your task is to synthesize a complete, fully repaired, regression-proof scraper.
 CRITICAL REGRESSION INVARIANTS:
 1. DO NOT DROP PREVIOUSLY WORKING FIELDS. You MUST preserve all existing extraction fields ({fields_clause or 'e.g. Title, Price, Description, Modules, Categories, Images'}). Never blank out or drop Title, Price, or custom modules!
 2. MULTI-SHEET PRESERVATION: You MUST preserve all existing Excel sheets ({sheets_clause or "'Extracted Data', 'Flags', 'Recommendations'"}). Never drop custom sheets like 'Recommendations' or 'Variants'!
-3. CANONICAL PRODUCT IDENTIFIERS: Output 'product_id', 'product_url', and 'source_listing_url'. Do not duplicate 'Source URL'.
-4. STRICT PRICE SCOPING: Extract prices only from within product buy-box / pricing elements. NEVER extract digits from product titles (e.g. '250 North American Birds Sound Book' is NOT price 250!). Anchor to currency symbols ($xx.xx).
+3. CANONICAL PRIMARY IDENTIFIERS: Output 'product_id' (Universal Primary Entity Key), 'product_url' (Direct Detail URL), and 'source_listing_url'. Do not duplicate 'Source URL'.
+4. STRICT PRICE SCOPING & DOMAIN-ADAPTIVE EXTRACTION: If scraping e-commerce, extract prices strictly from pricing containers/buy boxes and anchor to currency symbols. If scraping public registries, job boards, real estate, or directories, extract structured label-value pairs, registration/tax IDs, addresses, or job attributes without inventing pricing fields.
 5. EXCEL 32K LIMIT: Include and use `sanitize_cell_value(val, max_len=32000)` on all output values before Excel export.
 6. CRAWL FUNNEL & FAIL LOUDLY: Log crawl funnel metrics. If 0 records are extracted, exit with sys.exit(1) and take a diagnostic screenshot.
 7. CLICK TELEMETRY: Wrap clicks in try/except, log real errors, and provide overlay dismissal / JS evaluate fallback.
@@ -1059,6 +1104,85 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
             sanitized,
             count=1
         )
+
+    # 4g. Class-agnostic table row selector normalization:
+    # Replace brittle alternating zebra class selectors (e.g. TableRecords_OddLine, odd, even)
+    # with robust semantic row selectors: tr:has(td)
+    sanitized = re.sub(
+        r'["\'](?:tr\.(?:TableRecords_(?:Odd|Even)Line|odd|even)\s*,\s*tr\.(?:TableRecords_(?:Odd|Even)Line|odd|even)|tr\.(?:TableRecords_(?:Odd|Even)Line|odd|even))["\']',
+        '"tr:has(td)"',
+        sanitized
+    )
+
+    # 4h. Postback / AJAX search and pagination stabilization:
+    # If a wait_results / wait_for_results helper waits for DOM elements but lacks networkidle / sleep stabilization,
+    # inject networkidle stabilization with sleep fallback to ensure AJAX postbacks complete before reading the DOM.
+    if re.search(r'async\s+def\s+wait_(?:for_)?results\s*\([^)]*\)\s*:', sanitized):
+        if "networkidle" not in sanitized:
+            sanitized = re.sub(
+                r'(async\s+def\s+wait_(?:for_)?results\s*\(\s*(?:self\s*,\s*)?(\w+)[^)]*\)\s*:\s*\n)(\s+)(?:try\s*:)?',
+                lambda m: f"{m.group(1)}{m.group(3)}try:\n{m.group(3)}    await {m.group(2)}.wait_for_load_state('networkidle', timeout=5000)\n{m.group(3)}except Exception:\n{m.group(3)}    await asyncio.sleep(1.0)\n{m.group(3)}try:" if "try:" in m.group(0) else f"{m.group(1)}{m.group(3)}try:\n{m.group(3)}    await {m.group(2)}.wait_for_load_state('networkidle', timeout=5000)\n{m.group(3)}except Exception:\n{m.group(3)}    await asyncio.sleep(1.0)\n",
+                sanitized,
+                count=1
+            )
+
+    # 4i. Pagination anti-stall circuit breaker:
+    # If crawl_listing parses items inside a while loop, ensure an empty-items circuit breaker is present
+    if "crawl_listing" in sanitized and "if not items:" not in sanitized:
+        sanitized = re.sub(
+            r'((\s+)items\s*=\s*(?:await\s+)?self\.parse_listing(?:_page)?\([^)\n]*\)\n)',
+            r'\1\2if not items:\n\2    log("No items discovered on listing page. Halting pagination loop.")\n\2    break\n',
+            sanitized,
+            count=1
+        )
+
+    # 4j. Table and container visibility timeout protection:
+    # If a script waits on a table container using wait_for_selector without specifying state,
+    # normalize it to state='attached' to avoid hanging on hidden empty tables
+    def _normalize_table_wait(m):
+        full = m.group(0)
+        table_ref = m.group(1)
+        timeout_part = m.group(2) or ""
+        if "state=" not in full:
+            return f'await page.wait_for_selector({table_ref}, state="attached"{timeout_part})'
+        return full
+
+    sanitized = re.sub(
+        r'await\s+page\.wait_for_selector\(\s*([A-Za-z0-9_]+(?:TABLE|GRID|CONTAINER))\s*(,\s*timeout=[^)]+)?\)',
+        _normalize_table_wait,
+        sanitized
+    )
+
+    # 4k. Safe clear button postback stabilization:
+    # If a script clicks a clear/reset button followed immediately by fill() and search click,
+    # ensure postback stabilization is present so clear does not cancel search in flight
+    if "CLEAR_BUTTON" in sanitized and "SEARCH_BUTTON" in sanitized:
+        if 'await page.wait_for_load_state("networkidle"' not in sanitized:
+            sanitized = re.sub(
+                r'(await\s+safe_click\([^)]*CLEAR_BUTTON[^)]*\)\s*\n)',
+                r'\1                    try:\n                        await page.wait_for_load_state("networkidle", timeout=3000)\n                    except Exception:\n                        await asyncio.sleep(0.5)\n',
+                sanitized,
+                count=1
+            )
+
+    # 4l. Playwright wait_for_function keyword-only argument normalization:
+    # In Playwright Python, Page.wait_for_function(expression, *, arg=None, ...) requires arg as keyword-only.
+    # LLMs frequently pass arg positionally (from JS Playwright syntax), raising TypeError.
+    def _fix_wait_for_function(text):
+        def repl(m):
+            prefix = m.group(1)
+            expr = m.group(2)
+            sep = m.group(3)
+            second_arg = m.group(4).strip()
+            rest = m.group(5)
+            if re.match(r'^[a-zA-Z_]\w*\s*=', second_arg):
+                return m.group(0)
+            return f"{prefix}{expr}{sep}arg={second_arg}{rest}"
+
+        pattern = r'(\.wait_for_function\s*\(\s*)((?:"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"[^"\n]*"|\'[^\'\n]*\'))(\s*,\s*)([^,)]+)(.*?\))'
+        return re.sub(pattern, repl, text)
+
+    sanitized = _fix_wait_for_function(sanitized)
 
     # 5. Fix row value access: str(row.get(...) or "") where nan string could be created
     sanitized = re.sub(
@@ -1850,41 +1974,55 @@ async def _run_openai_recon_session(
     total_cached_tokens = 0
     turns_count = 0
 
+    # Primary: Custom Playwright MCP Toolbox with embedded micro-healing
+    # Fallback: Legacy Playwright Adapter / external Playwright MCP server
+    toolbox_mgr = None
+    openai_tools = []
+    try:
+        from mcp_toolbox import MCPToolboxManager
+        toolbox_mgr = MCPToolboxManager()
+        await toolbox_mgr.initialize()
+        openai_tools = toolbox_mgr.get_tool_definitions()
+    except Exception as exc:
+        print(f"[inspection-service] MCPToolboxManager init error ({exc}), falling back to legacy")
+        toolbox_mgr = None
+
     mcp_base_url = (mcp_base_url or get_mcp_server_url()).rstrip("/")
     mcp_manager = MCPClientManager(base_url=mcp_base_url)
-    mcp_session = await mcp_manager.connect()
+    mcp_session = None
     native_session = None
 
-    openai_tools = []
-    if mcp_session:
-        try:
-            tools_list = await mcp_session.list_tools()
-            filtered_tools = [
-                t for t in tools_list.tools
-                if t.name in RECON_ALLOWED_TOOLS or any(t.name.endswith(a) for a in RECON_ALLOWED_TOOLS)
-            ]
-            openai_tools = _convert_mcp_tools_to_openai(filtered_tools)
-        except BaseException as exc:
-            print(f"[inspection-service] Failed listing MCP tools ({exc}) - falling back to Native Playwright")
-            try:
-                await mcp_manager.close()
-            except BaseException:
-                pass
-            mcp_session = None
-            openai_tools = []
-
     if not openai_tools:
-        # 1. Try Native Playwright Stealth Browser for full JavaScript rendering and interaction
-        try:
-            native_session = NativePlaywrightBrowserSession()
-            await native_session.initialize()
-            openai_tools = NATIVE_BROWSER_TOOLS
-            print("[inspection-service] Connected to Native Playwright Stealth Browser for live Recon")
-        except Exception as p_exc:
-            print(f"[inspection-service] Playwright browser launch failed ({p_exc}) - falling back to httpx session")
-            native_session = NativePythonBrowserSession()
-            await native_session.initialize()
-            openai_tools = NATIVE_BROWSER_TOOLS
+        mcp_session = await mcp_manager.connect()
+        if mcp_session:
+            try:
+                tools_list = await mcp_session.list_tools()
+                filtered_tools = [
+                    t for t in tools_list.tools
+                    if t.name in RECON_ALLOWED_TOOLS or any(t.name.endswith(a) for a in RECON_ALLOWED_TOOLS)
+                ]
+                openai_tools = _convert_mcp_tools_to_openai(filtered_tools)
+            except BaseException as exc:
+                print(f"[inspection-service] Failed listing MCP tools ({exc}) - falling back to Native Playwright")
+                try:
+                    await mcp_manager.close()
+                except BaseException:
+                    pass
+                mcp_session = None
+                openai_tools = []
+
+        if not openai_tools:
+            # 1. Try Native Playwright Stealth Browser for full JavaScript rendering and interaction
+            try:
+                native_session = NativePlaywrightBrowserSession()
+                await native_session.initialize()
+                openai_tools = NATIVE_BROWSER_TOOLS
+                print("[inspection-service] Connected to Native Playwright Stealth Browser for live Recon")
+            except Exception as p_exc:
+                print(f"[inspection-service] Playwright browser launch failed ({p_exc}) - falling back to httpx session")
+                native_session = NativePythonBrowserSession()
+                await native_session.initialize()
+                openai_tools = NATIVE_BROWSER_TOOLS
 
     messages: list[dict] = [
         {"role": "system", "content": system_prompt},
@@ -1953,6 +2091,11 @@ async def _run_openai_recon_session(
                     allowed, deny_reason = await interceptor.before_tool_call(fn_name, fn_args)
                     if not allowed:
                         tool_result_str = f"DENIED: {deny_reason}"
+                    elif toolbox_mgr is not None:
+                        try:
+                            tool_result_str = await toolbox_mgr.call_tool(fn_name, fn_args)
+                        except BaseException as tool_exc:
+                            tool_result_str = f"Tool execution error: {tool_exc}"
                     elif mcp_session is not None:
                         try:
                             mcp_res = await mcp_session.call_tool(fn_name, fn_args)
@@ -2001,6 +2144,18 @@ async def _run_openai_recon_session(
         })
         status = "failed"
     finally:
+        if toolbox_mgr is not None:
+            try:
+                telemetry = toolbox_mgr.get_telemetry()
+                for h_evt in telemetry.get("in_tool_healing_events", []):
+                    interceptor.action_log.append({
+                        "ts": datetime.now().isoformat(timespec="seconds"),
+                        "phase": interceptor.phase_label,
+                        "micro_healing": h_evt,
+                    })
+                await toolbox_mgr.close()
+            except Exception:
+                pass
         await mcp_manager.close()
         if native_session is not None:
             await native_session.close()

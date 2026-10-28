@@ -220,6 +220,71 @@ async def run():
         self.assertIn("detected automated scripts", sanitized_signals)
         self.assertIn("incapsula", sanitized_signals)
 
+        # 7. Class-agnostic table row selector normalization
+        zebra_code = 'rows = table.select("tr.TableRecords_OddLine, tr.TableRecords_EvenLine")'
+        sanitized_zebra, _ = sanitize_generated_code(zebra_code)
+        self.assertIn('"tr:has(td)"', sanitized_zebra)
+        self.assertNotIn("TableRecords_OddLine", sanitized_zebra)
+
+        # 8. Postback / AJAX search and pagination stabilization
+        wait_code = """
+async def wait_results(self, page):
+    try:
+        await page.wait_for_selector("#table_id", timeout=30000)
+    except Exception as exc:
+        pass
+"""
+        sanitized_wait, _ = sanitize_generated_code(wait_code)
+        self.assertIn("networkidle", sanitized_wait)
+
+        # 9. Pagination anti-stall circuit breaker
+        crawl_code = """
+async def crawl_listing(self, page, context, listing_url, keyword=""):
+    while not self.stop_for_antibot:
+        items = await self.parse_listing_page(page, page.url)
+        for item in items:
+            pass
+        next_btn = page.locator(".next").first
+        await next_btn.click()
+"""
+        sanitized_crawl, _ = sanitize_generated_code(crawl_code)
+        self.assertIn("if not items:", sanitized_crawl)
+        self.assertIn("Halting pagination loop", sanitized_crawl)
+
+        # 10. Table and container visibility timeout protection
+        wait_table_code = 'await page.wait_for_selector(LISTING_TABLE, timeout=20000)'
+        sanitized_table, _ = sanitize_generated_code(wait_table_code)
+        self.assertIn('state="attached"', sanitized_table)
+
+        # 11. Safe clear button postback stabilization
+        clear_search_code = """
+CLEAR_BUTTON = "#clear"
+SEARCH_BUTTON = "#search"
+if await clear.is_visible():
+    await safe_click(page, clear, CLEAR_BUTTON, flags, url)
+search = page.locator("#input")
+await search.fill(keyword)
+await safe_click(page, button, SEARCH_BUTTON, flags, url)
+"""
+        sanitized_clear, _ = sanitize_generated_code(clear_search_code)
+        # 12. Playwright wait_for_function positional arg normalization to arg=
+        wff_code = 'await page.wait_for_function("old => document.body.innerText.includes(old) === false", old_snapshot[:30], timeout=10000)'
+        sanitized_wff, _ = sanitize_generated_code(wff_code)
+        self.assertIn('arg=old_snapshot[:30]', sanitized_wff)
+        self.assertNotIn('", old_snapshot[:30]', sanitized_wff)
+
+    def test_dynamic_rules_in_contract(self):
+        """Verify SCRIPT_CONTRACT mandates AJAX postback sync, class-agnostic rows, and pagination anti-stall."""
+        self.assertIn("DYNAMIC FORM & AJAX / POSTBACK SYNCHRONIZATION", SCRIPT_CONTRACT)
+        self.assertIn("CLASS-AGNOSTIC TABLE & LISTING ROW EXTRACTION", SCRIPT_CONTRACT)
+        self.assertIn("PAGINATION ANTI-STALL & EMPTY-PAGE CIRCUIT BREAKER", SCRIPT_CONTRACT)
+        self.assertIn("CANONICAL PRIMARY IDENTIFIERS & PROVENANCE URLS", SCRIPT_CONTRACT)
+        self.assertIn("DOMAIN-ADAPTIVE EXTRACTION ARCHETYPES", SCRIPT_CONTRACT)
+        self.assertIn("SAFE INPUT CLEARING & COLLISION GUARD", SCRIPT_CONTRACT)
+        self.assertIn("CONTAINER VISIBILITY TRAP AVOIDANCE", SCRIPT_CONTRACT)
+        self.assertIn("PLAYWRIGHT PYTHON WAIT_FOR_FUNCTION SIGNATURE", SCRIPT_CONTRACT)
+
 
 if __name__ == "__main__":
     unittest.main()
+
