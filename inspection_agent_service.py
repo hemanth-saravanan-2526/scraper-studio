@@ -326,6 +326,30 @@ out how to call it:
            Include entries if core fields (e.g. brand, category, price) are missing on a product.
       * MULTI-SHEET EXTENSIBILITY: Scrapers may also write additional custom sheets if requested
         (e.g., "Recommendations", "Variants", "Categories"). Repair agents and scripts MUST PRESERVE all custom sheets.
+      * UNIFIED ENTITY RECORDS & ROW CONSOLIDATION (CRITICAL):
+        - Exactly ONE row per unique entity in "Extracted Data". NEVER produce split or disjoint rows!
+        - When a listing crawl loop visits a detail page for each item:
+          The detail helper MUST return the extracted attributes (e.g. `data = await scrape_detail(...)`),
+          and the listing loop MUST enrich the existing item dictionary: `item.update(data)` BEFORE appending
+          to `records`:
+          ```python
+          # CORRECT:
+          detail_data = await scrape_detail(context, item["product_url"], ...)
+          if detail_data:
+              item.update(detail_data)
+          records.append(item)
+          ```
+          NEVER call `records.append(item)` in the listing loop AND `records.append(data)` inside `scrape_detail`!
+          Doing so creates two disjoint rows per item where half the cells in each row are empty (`NaN`).
+        - In `write_output(records, flags, output_path)`: Always consolidate records sharing the same primary key
+          (`product_url` or `product_id`) by merging complementary non-empty fields before writing to Excel.
+      * HEADER-DRIVEN TABLE EXTRACTION & INDEX RESILIENCE (CRITICAL):
+        - When extracting tabular rows, dynamically map cells using table column headers (`<th>` or the first `<tr>`).
+        - NEVER rely on rigid, hardcoded numeric column indices (e.g. `cells[2]`, `cells[3]`) without verifying the column header! Hidden status icons, action buttons, or checkbox columns will shift indices and misplace values into wrong columns.
+      * VALUE HYGIENE & LABEL PREFIX CLEANING (CRITICAL):
+        - Use `unicodedata.normalize('NFKC', text)` in `clean(val)` to standardize Unicode representations (preserving `ç`, `ã`, `é`, `í`, `ü`, `ñ`, etc.).
+        - Strip redundant label prefixes from scraped text (e.g. clean `"Nome: CASA DO PADRE"` or `"Nome CASA DO PADRE"` -> `"CASA DO PADRE"`, `"Data: 2026-10-20"` -> `"2026-10-20"`).
+        - Normalize integer-valued floats (`13702.0` -> `"13702"`).
 
   - CASCADE EXTRACTION STRATEGY:
       1. Tier 1 (Internal JSON API): If observed during recon, query endpoint directly using requests/httpx.
@@ -1183,6 +1207,50 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
         return re.sub(pattern, repl, text)
 
     sanitized = _fix_wait_for_function(sanitized)
+
+    # 4m. Universal record consolidation injection into write_output:
+    # Ensures that if an LLM generates dual-appends or disjoint rows sharing product_url/product_id,
+    # they are cleanly merged into one unified row per entity before writing to Excel.
+    if "def write_output" in sanitized and "_merged_records" not in sanitized:
+        consolidation_code = (
+            r'\1'
+            r'    # Universal entity consolidation: merge disjoint or duplicate records\n'
+            r'    if records:\n'
+            r'        _merged_records = {}\n'
+            r'        _record_order = []\n'
+            r'        for _r in records:\n'
+            r'            _pk = _r.get("product_url") or _r.get("product_id") or _r.get("detail_url") or id(_r)\n'
+            r'            if _pk not in _merged_records:\n'
+            r'                _merged_records[_pk] = dict(_r)\n'
+            r'                _record_order.append(_pk)\n'
+            r'            else:\n'
+            r'                for _k, _v in _r.items():\n'
+            r'                    _v_clean = str(_v or "").strip()\n'
+            r'                    _t_clean = str(_merged_records[_pk].get(_k) or "").strip()\n'
+            r'                    if _v_clean and not _t_clean:\n'
+            r'                        _merged_records[_pk][_k] = _v\n'
+            r'                    elif _v_clean and _t_clean and len(_v_clean) > len(_t_clean):\n'
+            r'                        if _k != "product_id":\n'
+            r'                            _merged_records[_pk][_k] = _v\n'
+            r'        records = [_merged_records[_pk] for _pk in _record_order]\n'
+        )
+        sanitized = re.sub(
+            r'(def\s+write_output\s*\([^)]*\)\s*:\n)',
+            consolidation_code,
+            sanitized,
+            count=1
+        )
+
+    # 4n. Unicode NFKC normalization in clean(value):
+    if "def clean(" in sanitized and "unicodedata.normalize" not in sanitized:
+        if "import unicodedata" not in sanitized:
+            sanitized = "import unicodedata\n" + sanitized
+        sanitized = re.sub(
+            r'(text\s*=\s*str\(value\)[^\n]*)',
+            r'\1\n    text = unicodedata.normalize("NFKC", text)',
+            sanitized,
+            count=1
+        )
 
     # 5. Fix row value access: str(row.get(...) or "") where nan string could be created
     sanitized = re.sub(

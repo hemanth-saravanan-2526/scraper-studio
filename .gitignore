@@ -41,3 +41,5 @@ env/
 # Temporary files & logs
 *.log
 scratch/
+
+*.zip

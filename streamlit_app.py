@@ -117,6 +117,12 @@ def _build_scraper_zip(job_record) -> bytes:
             zf.writestr("requirements.txt", reqs_content)
         if input_xlsx_bytes:
             zf.writestr("input.xlsx", input_xlsx_bytes)
+        sanitizer_file = Path(__file__).parent / "output_sanitizer.py"
+        if sanitizer_file.exists():
+            try:
+                zf.writestr("output_sanitizer.py", sanitizer_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
 
     return zip_buffer.getvalue()
 

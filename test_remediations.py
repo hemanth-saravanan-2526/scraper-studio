@@ -273,6 +273,26 @@ await safe_click(page, button, SEARCH_BUTTON, flags, url)
         self.assertIn('arg=old_snapshot[:30]', sanitized_wff)
         self.assertNotIn('", old_snapshot[:30]', sanitized_wff)
 
+        # 13. Universal record consolidation injection into write_output
+        raw_write_code = """
+def write_output(records, flags, output_path):
+    safe_records = [{k: str(v) for k, v in r.items()} for r in records]
+    pd.DataFrame(safe_records).to_excel(output_path, index=False)
+"""
+        sanitized_write, _ = sanitize_generated_code(raw_write_code)
+        self.assertIn("_merged_records", sanitized_write)
+        self.assertIn("_pk = _r.get(\"product_url\")", sanitized_write)
+
+        # 14. Unicode NFKC normalization injection into clean(value)
+        clean_code = """
+def clean(value):
+    text = str(value).replace("\\xa0", " ").strip()
+    return text
+"""
+        sanitized_clean, _ = sanitize_generated_code(clean_code)
+        self.assertIn("unicodedata.normalize", sanitized_clean)
+        self.assertIn("import unicodedata", sanitized_clean)
+
     def test_dynamic_rules_in_contract(self):
         """Verify SCRIPT_CONTRACT mandates AJAX postback sync, class-agnostic rows, and pagination anti-stall."""
         self.assertIn("DYNAMIC FORM & AJAX / POSTBACK SYNCHRONIZATION", SCRIPT_CONTRACT)
@@ -283,8 +303,62 @@ await safe_click(page, button, SEARCH_BUTTON, flags, url)
         self.assertIn("SAFE INPUT CLEARING & COLLISION GUARD", SCRIPT_CONTRACT)
         self.assertIn("CONTAINER VISIBILITY TRAP AVOIDANCE", SCRIPT_CONTRACT)
         self.assertIn("PLAYWRIGHT PYTHON WAIT_FOR_FUNCTION SIGNATURE", SCRIPT_CONTRACT)
+        self.assertIn("UNIFIED ENTITY RECORDS & ROW CONSOLIDATION", SCRIPT_CONTRACT)
+        self.assertIn("HEADER-DRIVEN TABLE EXTRACTION & INDEX RESILIENCE", SCRIPT_CONTRACT)
+        self.assertIn("VALUE HYGIENE & LABEL PREFIX CLEANING", SCRIPT_CONTRACT)
+
+    def test_output_sanitizer_engine(self):
+        """Verify output_sanitizer.py cleans values, consolidates disjoint rows, and coalesces aliases."""
+        from output_sanitizer import (
+            clean_text_value,
+            consolidate_records,
+            coalesce_alias_columns,
+            sanitize_extracted_dataframe,
+        )
+
+        # 1. clean_text_value tests
+        self.assertEqual(clean_text_value("13702.0"), "13702")
+        self.assertEqual(clean_text_value("Nome: CASA DO PADRE"), "CASA DO PADRE")
+        self.assertEqual(clean_text_value("Nome CASA DO PADRE"), "CASA DO PADRE")
+        self.assertEqual(clean_text_value("Data 2026-10-20"), "2026-10-20")
+        self.assertEqual(clean_text_value("nan"), "")
+        self.assertEqual(clean_text_value("None"), "")
+        self.assertEqual(clean_text_value(None), "")
+        self.assertEqual(clean_text_value("Melga\u00e7o"), "Melgaço")
+
+        # 2. consolidate_records tests (merging disjoint rows)
+        row_listing = {
+            "product_url": "https://example.com/item/101",
+            "product_id": "101",
+            "name": "Listing Title",
+            "detail_attr": "",
+        }
+        row_detail = {
+            "product_url": "https://example.com/item/101",
+            "product_id": "101",
+            "name": "",
+            "detail_attr": "Rich Detail Value",
+        }
+        consolidated = consolidate_records([row_listing, row_detail])
+        self.assertEqual(len(consolidated), 1)
+        self.assertEqual(consolidated[0]["name"], "Listing Title")
+        self.assertEqual(consolidated[0]["detail_attr"], "Rich Detail Value")
+
+        # 3. coalesce_alias_columns tests
+        records_with_alias = [{
+            "product_id": "101",
+            "product_url": "https://example.com/item/101",
+            "name": "",
+            "name_detail": "True Name",
+            "listing_cells": "internal debug dump",
+        }]
+        coalesced, columns = coalesce_alias_columns(records_with_alias)
+        self.assertEqual(coalesced[0]["name"], "True Name")
+        self.assertNotIn("listing_cells", columns)
+        self.assertNotIn("name_detail", columns)
 
 
 if __name__ == "__main__":
     unittest.main()
+
 
