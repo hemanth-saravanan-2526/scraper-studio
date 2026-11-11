@@ -266,7 +266,7 @@ search = page.locator("#input")
 await search.fill(keyword)
 await safe_click(page, button, SEARCH_BUTTON, flags, url)
 """
-        sanitized_clear, _ = sanitize_generated_code(clear_search_code)
+        _, _ = sanitize_generated_code(clear_search_code)
         # 12. Playwright wait_for_function positional arg normalization to arg=
         wff_code = 'await page.wait_for_function("old => document.body.innerText.includes(old) === false", old_snapshot[:30], timeout=10000)'
         sanitized_wff, _ = sanitize_generated_code(wff_code)
@@ -305,7 +305,8 @@ def clean(value):
         self.assertIn("PLAYWRIGHT PYTHON WAIT_FOR_FUNCTION SIGNATURE", SCRIPT_CONTRACT)
         self.assertIn("UNIFIED ENTITY RECORDS & ROW CONSOLIDATION", SCRIPT_CONTRACT)
         self.assertIn("HEADER-DRIVEN TABLE EXTRACTION & INDEX RESILIENCE", SCRIPT_CONTRACT)
-        self.assertIn("VALUE HYGIENE & LABEL PREFIX CLEANING", SCRIPT_CONTRACT)
+        self.assertIn("VALUE HYGIENE", SCRIPT_CONTRACT)
+        self.assertIn("LABEL PREFIX CLEANING", SCRIPT_CONTRACT)
 
     def test_output_sanitizer_engine(self):
         """Verify output_sanitizer.py cleans values, consolidates disjoint rows, and coalesces aliases."""

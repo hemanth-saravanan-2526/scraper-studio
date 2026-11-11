@@ -53,7 +53,7 @@ def _mask(secret: str) -> str:
     return f"{secret[:7]}...{secret[-4:]}"
 
 
-def get_secret_from_manager(secret_name: str) -> str | None:
+def get_secret_from_manager(_secret_name: str) -> str | None:
     """
     Extension point: wire this to your actual secrets manager (AWS Secrets
     Manager, GCP Secret Manager, HashiCorp Vault, Azure Key Vault, etc.)
@@ -63,6 +63,7 @@ def get_secret_from_manager(secret_name: str) -> str | None:
     Returns None if not implemented / not found, so callers fall through to
     the "missing" error path rather than crashing here.
     """
+    _ = _secret_name
     return None
 
 

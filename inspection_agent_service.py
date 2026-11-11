@@ -33,6 +33,8 @@ from typing import Any, Callable, Coroutine
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageToolCall
 
+from site_analyzer_client import analyze_target_site, extract_site_summary
+
 try:
     from dotenv import load_dotenv
     load_dotenv(override=False)
@@ -61,12 +63,21 @@ from cost_metering import (
     SDK_BUDGET_SAFETY_MARGIN,
 )
 
+try:
+    from playwright.async_api import Error as PlaywrightError
+except ImportError:
+    class PlaywrightError(Exception):
+        pass
+
 # --------------------------------------------------------------------------
 # Model & Temperature Configuration (OpenAI)
 # --------------------------------------------------------------------------
 
+MODEL_GPT_5_6_LUNA = "gpt-5.6-luna"
+
+
 def get_default_model() -> str:
-    return os.getenv("OPENAI_MODEL", "gpt-5.6-luna")
+    return os.getenv("OPENAI_MODEL", MODEL_GPT_5_6_LUNA)
 
 def get_default_recon_model() -> str:
     return os.getenv("OPENAI_RECON_MODEL", get_default_model())
@@ -100,12 +111,17 @@ class InspectionJob:
     filter_rules: str = ""
     navigation_rules: str = ""
     extraction_rules: str = ""
+    generalized_prompt: str = ""         # optional unified natural language prompt
+    preferred_module: str = "auto"       # "auto" | "playwright" | "requests" | "nodriver" | "selenium" | "beautifulsoup"
+    target_language: str = "python"      # "python"
+    force_preferred_module: bool = False # if True, bypasses smart auto-fallback
     max_steps: int = 40          # hard cap on RECON phase tool calls
     max_seconds: int = 600       # hard cap on wall-clock time for the RECON phase
     max_budget_usd: float | None = None  # hard cap on TOTAL spend across both phases
     recon_model: str | None = None    # optional model override for Phase 1 (Recon)
     codegen_model: str | None = None  # optional model override for Phase 2 (Codegen)
     temperature: float | None = None  # optional temperature override (default: 1.0)
+    site_analysis: dict | None = None # pre-flight report from external site analyzer API
 
 
 @dataclass
@@ -121,6 +137,8 @@ class InspectionResult:
     cost_record: dict | None = None
     anti_bot_marker: str | None = None
     prompts: dict = field(default_factory=dict)
+    tech_stack_decision: dict | None = None
+    site_analysis: dict | None = None
 
 
 # --------------------------------------------------------------------------
@@ -148,6 +166,8 @@ RECON_ALLOWED_TOOLS = [
     "run_js",
     "save_items",
     "extract_sample_rows",
+    "get_network_endpoints",
+    "network_requests",
     # Legacy Playwright MCP / Native Tools (Fallback)
     "browser_navigate",
     "browser_snapshot",
@@ -346,9 +366,18 @@ out how to call it:
       * HEADER-DRIVEN TABLE EXTRACTION & INDEX RESILIENCE (CRITICAL):
         - When extracting tabular rows, dynamically map cells using table column headers (`<th>` or the first `<tr>`).
         - NEVER rely on rigid, hardcoded numeric column indices (e.g. `cells[2]`, `cells[3]`) without verifying the column header! Hidden status icons, action buttons, or checkbox columns will shift indices and misplace values into wrong columns.
-      * VALUE HYGIENE & LABEL PREFIX CLEANING (CRITICAL):
+      * VALUE HYGIENE, URL PRESERVATION & LABEL PREFIX CLEANING (CRITICAL):
+        - URL SCHEME & PROTOCOL PRESERVATION (CRITICAL):
+          * In `clean(val)`: If `val` starts with or contains a URL (e.g. starts with `http://`, `https://`, or `//`),
+            NEVER run prefix-stripping regexes on it! Running regexes like `re.sub(r'^\\s*[^:]{1,40}:\\s*', '', text)`
+            destroys the URL scheme (`https://...` becomes `//...`) and causes fatal `MissingSchema` crashes.
+          * In `value_from_row(row, key)`: For URL columns (`detail_url`, `listing_url`, `product_url`, `url`),
+            only strip whitespace and sanitize NaN/None; NEVER apply label-prefix stripping.
+          * When writing label prefix-stripping regexes, ALWAYS protect URL protocols using negative lookahead:
+            `re.sub(r'^\\s*(?!https?://)[A-Za-z0-9_-]{1,30}:\\s*', '', text)` or explicit guard:
+            `if str(text).strip().startswith(('http://', 'https://', '//')): return str(text).strip()`
         - Use `unicodedata.normalize('NFKC', text)` in `clean(val)` to standardize Unicode representations (preserving `ç`, `ã`, `é`, `í`, `ü`, `ñ`, etc.).
-        - Strip redundant label prefixes from scraped text (e.g. clean `"Nome: CASA DO PADRE"` or `"Nome CASA DO PADRE"` -> `"CASA DO PADRE"`, `"Data: 2026-10-20"` -> `"2026-10-20"`).
+        - Strip redundant label prefixes from scraped non-URL text (e.g. clean `"Nome: CASA DO PADRE"` -> `"CASA DO PADRE"`).
         - Normalize integer-valued floats (`13702.0` -> `"13702"`).
 
   - CASCADE EXTRACTION STRATEGY:
@@ -410,6 +439,11 @@ out how to call it:
          * Click accordion tabs to reveal hidden specs (skipping review accordions).
       4. Tier 4 (Static Fast-Path): For traditional server-rendered static HTML sites, use `requests`
          with a desktop User-Agent and `BeautifulSoup`.
+         * In `request_page(session, url, flags)`: If a `requests.RequestException` occurs, ALWAYS log the full exception:
+           `log(f"Request failed for {url}: {exc}")` and `logging.error(f"Request failed for {url}: {exc}")`.
+           NEVER swallow network, DNS, or MissingSchema exceptions silently with only `flags.append()`.
+         * In `take_diagnostic_screenshot(url)` or navigation: If `url` starts with `//`, normalize it to `https:` + `url`.
+           If `not url.startswith(('http://', 'https://'))`, prepend `https://` before navigating.
 
   - Cookie & Consent Banner Dismissal:
       Include a `dismiss_cookie_banner(page)` helper and call it once immediately after every `page.goto(...)`.
@@ -430,12 +464,12 @@ out how to call it:
         ALWAYS pass it as keyword: `page.wait_for_function(expr, arg=arg_val, timeout=...)`.
 
   - INPUT EXCEL & NAN HANDLING RULES (CRITICAL):
-      * When reading a single sheet from Excel with pandas:
-        `input_df = pd.read_excel(args.input).fillna("")`
+      * When reading a single sheet from Excel with pandas, prevent Pandas4Warning by using `.astype(object)`:
+        `input_df = pd.read_excel(args.input).astype(object).fillna("")`
       * If reading multiple sheets with `sheet_name=None`, pandas returns a dict of DataFrames.
-        Apply `.fillna("")` to each DataFrame inside the dict:
+        Apply `.astype(object).fillna("")` to each DataFrame inside the dict:
         `sheets = pd.read_excel(args.input, sheet_name=None)`
-        `sheets = {k: v.fillna("") for k, v in sheets.items()}`
+        `sheets = {k: v.astype(object).fillna("") for k, v in sheets.items()}`
         `input_df = sheets.get("Extracted Data") or next(iter(sheets.values()), pd.DataFrame())`
         NEVER call `.fillna("")` directly on the dict returned by `pd.read_excel(..., sheet_name=None)`!
       * Any helper function (e.g. `clean()`, `value_from_row()`) MUST treat `pd.isna(val)`, `None`,
@@ -443,12 +477,37 @@ out how to call it:
       * NEVER allow `"nan"` to be treated as a valid `detail_url`, `listing_url`, or `keyword`."""
 
 
-def build_recon_prompt(job: InspectionJob) -> str:
+def build_recon_prompt(job: InspectionJob, site_analysis: dict | None = None) -> str:
     keyword_line = (
         f"Sample keyword to test with: {job.sample_keyword}"
         if job.sample_keyword
         else "No sample keyword given - use a representative sample item during inspection."
     )
+    generalized_prompt_clause = (
+        f'\nGENERALIZED USER PROMPT / HIGH-LEVEL GOAL:\n"""{job.generalized_prompt.strip()}"""\n'
+        if job.generalized_prompt and job.generalized_prompt.strip()
+        else ""
+    )
+    pref_module = (job.preferred_module or "auto").strip()
+    preferred_module_clause = (
+        f"\nUSER PREFERRED ENGINE: '{pref_module}' (Target language: {job.target_language or 'python'}). "
+        "Pay special attention to network requests (`get_network_endpoints`) to verify if internal JSON/REST APIs exist that would support this preference.\n"
+        if pref_module != "auto"
+        else ""
+    )
+
+    sa_summary = extract_site_summary(site_analysis or getattr(job, "site_analysis", None))
+    site_analyzer_clause = ""
+    if sa_summary.get("available"):
+        site_analyzer_clause = (
+            f"\nPRE-FLIGHT SITE ANALYZER INTELLIGENCE (FROM AUTOMATED PROBE):\n"
+            f"- Accessibility: {'Accessible' if sa_summary.get('accessible') else 'Blocked / Error'}\n"
+            f"- Working Method Observed: {sa_summary.get('working_method')}\n"
+            f"- Cloudflare / Anti-Bot: {sa_summary.get('anti_bot_provider')} (Cloudflare={sa_summary.get('cloudflare')})\n"
+            f"- JavaScript Required: {sa_summary.get('javascript_required')} | Browser Required: {sa_summary.get('browser_required')}\n"
+            f"- Recommended Strategy: {sa_summary.get('recommended_approach')}\n"
+        )
+
     return f"""You are inspecting a live website to gather the facts needed to build a
 Python web scraper. YOU DO NOT WRITE ANY CODE IN THIS PHASE - a separate
 step handles code generation from the findings you report here. Your only
@@ -456,7 +515,7 @@ output is a compact JSON findings object.
 
 TARGET: {job.target_url}
 {keyword_line}
-
+{site_analyzer_clause}{generalized_prompt_clause}{preferred_module_clause}
 The target above may be a listing/search page OR a single item's detail page -
 figure out which by looking at what actually renders, don't assume either way.
 
@@ -475,7 +534,8 @@ YOUR TASK (USING CUSTOM PLAYWRIGHT MCP TOOLBOX WITH IN-TOOL HEALING):
 5. If you're on a listing page, identify the navigation path to detail pages and inspect a sample detail page.
 6. Stage observed sample rows using `save_items(sample_records=..., schema=..., item_selector=...)`.
    (Note: `save_items` automatically checks for empty fields and re-evaluates selectors on the live DOM if any fields are blank).
-7. If the page is backed by an internal clean JSON/GraphQL API, record that endpoint.
+7. Inspect internal network activity via `get_network_endpoints(filter_type="api_only")`.
+   If the page is backed by an internal clean JSON/GraphQL API, record that exact endpoint URL and query structure in `network_api`. This allows generating ultra-fast `requests`-based scrapers!
 8. Do not attempt to solve CAPTCHAs or defeat anti-bot WAFs - if encountered, record the marker and halt immediately.
 
 Return your final answer as a single JSON object with exactly these keys
@@ -499,7 +559,272 @@ json.loads().
 """
 
 
-def build_codegen_prompt(job: InspectionJob, recon_findings: dict) -> str:
+def evaluate_tech_stack_feasibility(
+    job: InspectionJob,
+    recon_findings: dict,
+    network_logs: list[dict] | None = None,
+    site_analysis: dict | None = None,
+) -> dict:
+    """
+    Evaluates the feasibility of the user's preferred module against reconnaissance evidence
+    and pre-flight Site Analyzer findings.
+    Gives upper hand to the user's preference, switching ONLY if very confident that the
+    requested method is unsuitable.
+    """
+    preferred = (job.preferred_module or "auto").lower().strip()
+    force_pref = getattr(job, "force_preferred_module", False)
+
+    # Site Analyzer signals
+    sa_summary = extract_site_summary(site_analysis or getattr(job, "site_analysis", None))
+    sa_available = sa_summary.get("available", False)
+    sa_browser_req = sa_summary.get("browser_required", False)
+    sa_js_req = sa_summary.get("javascript_required", False)
+    sa_cloudflare = sa_summary.get("cloudflare", False)
+    sa_blocking = sa_summary.get("blocking_detected", False) or sa_summary.get("captcha", False)
+    sa_method = sa_summary.get("working_method", "Direct HTTPS")
+    sa_rec = sa_summary.get("recommended_approach", "")
+
+    network_api = str(recon_findings.get("network_api", "")).strip()
+    has_clean_api = bool(network_api and network_api.lower() not in ("none observed", "none", "n/a", "no", ""))
+
+    api_endpoints = []
+    if network_logs:
+        for entry in network_logs:
+            url = entry.get("url", "")
+            ct = (entry.get("content_type") or "").lower()
+            if any(x in ct for x in ("json", "graphql")) or any(x in url for x in ("/api/", "/v1/", "/v2/", "/graphql", ".json")):
+                if url not in api_endpoints:
+                    api_endpoints.append(url)
+
+    if has_clean_api and network_api not in api_endpoints:
+        api_endpoints.insert(0, network_api)
+
+    sample_fields = recon_findings.get("sample_extracted_fields", {})
+    interactive_path = str(recon_findings.get("navigation_path", "")).lower()
+    bot_detected = bool(recon_findings.get("anti_bot_marker")) or sa_cloudflare or sa_blocking
+
+    if force_pref and preferred not in ("auto", "auto-detect", "default"):
+        return {
+            "requested_module": preferred,
+            "selected_module": preferred,
+            "was_fallback": False,
+            "reason": f"User explicitly forced engine '{preferred}'. Executing without auto-fallback.",
+            "discovered_apis": api_endpoints[:10],
+            "language": job.target_language or "python",
+            "site_analyzer_summary": sa_summary,
+        }
+
+    # 1. Auto-Detect Mode
+    if preferred in ("auto", "auto-detect", "default", ""):
+        if api_endpoints and not bot_detected:
+            return {
+                "requested_module": "auto",
+                "selected_module": "requests",
+                "was_fallback": False,
+                "reason": f"Agent selected 'requests' for maximum speed: discovered {len(api_endpoints)} internal JSON/GraphQL API endpoint(s).",
+                "discovered_apis": api_endpoints[:10],
+                "language": job.target_language or "python",
+                "site_analyzer_summary": sa_summary,
+            }
+        elif bot_detected:
+            return {
+                "requested_module": "auto",
+                "selected_module": "nodriver",
+                "was_fallback": False,
+                "reason": f"Agent selected 'nodriver': anti-bot protection verified (Cloudflare={sa_cloudflare}, marker={recon_findings.get('anti_bot_marker', 'WAF')}). Using undetected Chrome CDP automation.",
+                "discovered_apis": api_endpoints[:10],
+                "language": job.target_language or "python",
+                "site_analyzer_summary": sa_summary,
+            }
+        elif sa_available and not sa_browser_req and not sa_js_req and not bot_detected:
+            return {
+                "requested_module": "auto",
+                "selected_module": "requests",
+                "was_fallback": False,
+                "reason": f"Agent selected 'requests': Site Analyzer verified direct HTTP access without browser requirement ({sa_method}).",
+                "discovered_apis": api_endpoints[:10],
+                "language": job.target_language or "python",
+                "site_analyzer_summary": sa_summary,
+            }
+        else:
+            return {
+                "requested_module": "auto",
+                "selected_module": "playwright",
+                "was_fallback": False,
+                "reason": "Agent selected 'playwright': reliable browser engine with stealth DOM interaction and auto-waiting.",
+                "discovered_apis": api_endpoints[:10],
+                "language": job.target_language or "python",
+                "site_analyzer_summary": sa_summary,
+            }
+
+    # 2. User requested Requests / BeautifulSoup / httpx
+    if preferred in ("requests", "beautifulsoup", "bs4", "httpx"):
+        if api_endpoints:
+            return {
+                "requested_module": preferred,
+                "selected_module": "requests",
+                "was_fallback": False,
+                "reason": f"User preferred '{preferred}'. Verified feasible: discovered {len(api_endpoints)} internal backend API endpoint(s) for high-performance direct HTTP extraction.",
+                "discovered_apis": api_endpoints[:10],
+                "language": job.target_language or "python",
+                "site_analyzer_summary": sa_summary,
+            }
+        elif not bot_detected and (sa_available and not sa_browser_req and not sa_js_req or (sample_fields and "click" not in interactive_path and "scroll" not in interactive_path)):
+            return {
+                "requested_module": preferred,
+                "selected_module": preferred if preferred != "httpx" else "requests",
+                "was_fallback": False,
+                "reason": f"User preferred '{preferred}'. Verified feasible: Site Analyzer ({sa_method}) and live DOM confirm content is accessible via standard HTTP requests.",
+                "discovered_apis": [],
+                "language": job.target_language or "python",
+                "site_analyzer_summary": sa_summary,
+            }
+        else:
+            fallback_engine = "nodriver" if bot_detected else "playwright"
+            return {
+                "requested_module": preferred,
+                "selected_module": fallback_engine,
+                "was_fallback": True,
+                "reason": (
+                    f"User preferred '{preferred}'. However, Site Analyzer ({sa_method}) and live reconnaissance verified that this target "
+                    f"requires browser JavaScript execution with no public REST/GraphQL APIs discovered"
+                    + (" and active anti-bot defenses present." if bot_detected else ".")
+                    + f" Switched to '{fallback_engine}' to ensure reliable extraction."
+                ),
+                "discovered_apis": [],
+                "language": job.target_language or "python",
+                "site_analyzer_summary": sa_summary,
+            }
+
+    # 3. User requested nodriver
+    if preferred == "nodriver":
+        return {
+            "requested_module": "nodriver",
+            "selected_module": "nodriver",
+            "was_fallback": False,
+            "reason": "User preferred 'nodriver'. Verified feasible: using asynchronous undetected Chrome with CDP protocol.",
+            "discovered_apis": api_endpoints[:10],
+            "language": job.target_language or "python",
+            "site_analyzer_summary": sa_summary,
+        }
+
+    # 4. User requested Selenium
+    if preferred == "selenium":
+        return {
+            "requested_module": "selenium",
+            "selected_module": "selenium",
+            "was_fallback": False,
+            "reason": "User preferred 'selenium'. Verified feasible: using Selenium Chrome WebDriver automation.",
+            "discovered_apis": api_endpoints[:10],
+            "language": job.target_language or "python",
+            "site_analyzer_summary": sa_summary,
+        }
+
+    # 5. User requested Playwright
+    return {
+        "requested_module": preferred,
+        "selected_module": "playwright",
+        "was_fallback": False,
+        "reason": f"User preferred '{preferred}'. Verified feasible: using stealth Playwright async browser automation.",
+        "discovered_apis": api_endpoints[:10],
+        "language": job.target_language or "python",
+        "site_analyzer_summary": sa_summary,
+    }
+
+
+def build_codegen_prompt(
+    job: InspectionJob,
+    recon_findings: dict,
+    tech_decision: dict | None = None,
+    site_analysis: dict | None = None,
+) -> str:
+    tech_decision = tech_decision or {}
+    selected_module = tech_decision.get("selected_module", "playwright").lower()
+    decision_reason = tech_decision.get("reason", "Default reliable scraping engine.")
+    discovered_apis = tech_decision.get("discovered_apis", [])
+
+    sa_summary = extract_site_summary(site_analysis or getattr(job, "site_analysis", None))
+    sa_clause = ""
+    if sa_summary.get("available") and sa_summary.get("recommended_approach"):
+        sa_clause = (
+            f"\nSITE ANALYZER PRE-FLIGHT GUIDANCE:\n"
+            f"- Working Method: {sa_summary.get('working_method')}\n"
+            f"- Recommended Approach: {sa_summary.get('recommended_approach')}\n"
+            f"- Cloudflare / Anti-Bot: {sa_summary.get('anti_bot_provider')}\n"
+        )
+
+    generalized_prompt_clause = (
+        f'\nGENERALIZED USER PROMPT / HIGH-LEVEL GOAL:\n"""{job.generalized_prompt.strip()}"""\n'
+        if job.generalized_prompt and job.generalized_prompt.strip()
+        else ""
+    )
+
+    # Module-specific instructions
+    if selected_module in ("requests", "beautifulsoup", "bs4", "httpx"):
+        module_instructions = f"""MANDATORY TECH STACK: `requests` / Fast HTTP API Scraping
+- Engine Decision: {decision_reason}
+- Discovered Backend APIs: {json.dumps(discovered_apis[:6], indent=2) if discovered_apis else 'None'}
+{sa_clause}
+ARCHITECTURE GUIDELINES FOR REQUESTS:
+1. Use `import requests` with a persistent `session = requests.Session()`.
+2. Configure realistic browser headers (`User-Agent`, `Accept`, `Accept-Language`, `sec-ch-ua`, `Referer`).
+3. If clean JSON/GraphQL APIs were discovered, query them directly using `session.get()` or `session.post()`, passing search keyword/pagination params, and parse the JSON payload directly into Python dictionaries.
+4. If parsing HTML, use `from bs4 import BeautifulSoup` to parse `response.text`.
+5. Implement pagination loops adhering to `--max-products`.
+6. Export to Excel following the MANDATORY SCRIPT CONTRACT (dual sheets "Extracted Data" and "Flags", canonical identifiers `product_id`, `product_url`, `source_listing_url`).
+7. In `requirements_txt`, output exactly:
+requests
+beautifulsoup4
+pandas
+openpyxl"""
+
+    elif selected_module == "nodriver":
+        module_instructions = f"""MANDATORY TECH STACK: `nodriver` (Undetected Chrome Automation)
+- Engine Decision: {decision_reason}
+{sa_clause}
+ARCHITECTURE GUIDELINES FOR NODRIVER:
+1. Use `import nodriver as uc`.
+2. Asynchronous startup: `browser = await uc.start(headless=args.headless)`.
+3. Load target: `page = await browser.get(url)`.
+4. Locate elements using `await page.select(selector)` or `await page.find(...)`. Extract text and attributes cleanly.
+5. Auto-dismiss cookie overlays or banners using button text searches.
+6. Export to Excel following the MANDATORY SCRIPT CONTRACT.
+7. In `requirements_txt`, output exactly:
+nodriver
+pandas
+openpyxl"""
+
+    elif selected_module == "selenium":
+        module_instructions = f"""MANDATORY TECH STACK: `selenium` (Chrome WebDriver)
+- Engine Decision: {decision_reason}
+{sa_clause}
+ARCHITECTURE GUIDELINES FOR SELENIUM:
+1. Use `from selenium import webdriver` with `from selenium.webdriver.chrome.options import Options`.
+2. Add options: `--no-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`, `--disable-blink-features=AutomationControlled`.
+3. Use `WebDriverWait` and `EC.presence_of_element_located` for auto-waiting.
+4. Export to Excel following the MANDATORY SCRIPT CONTRACT.
+5. In `requirements_txt`, output exactly:
+selenium
+webdriver-manager
+pandas
+openpyxl
+beautifulsoup4"""
+
+    else:
+        module_instructions = f"""MANDATORY TECH STACK: `playwright` (Async Python)
+- Engine Decision: {decision_reason}
+{sa_clause}
+ARCHITECTURE GUIDELINES FOR PLAYWRIGHT:
+1. Use `from playwright.async_api import async_playwright`.
+2. Create stealth browser context with standard viewport, realistic User-Agent, and anti-automation scripts.
+3. Use `page.locator(...)`, `locator.wait_for()`, auto-dismiss cookie banners, and dynamic scrolling.
+4. Export to Excel following the MANDATORY SCRIPT CONTRACT.
+5. In `requirements_txt`, output exactly:
+playwright
+pandas
+openpyxl
+beautifulsoup4"""
+
     return f"""You are writing a complete Python web scraper based on a prior live-site
 inspection. You do NOT have browser access in this step - work only from the
 inspection findings below and the requester's rules. Where the findings are
@@ -507,7 +832,7 @@ thin or uncertain, say so explicitly in confidence_notes instead of
 inventing selectors or behavior you weren't shown.
 
 TARGET: {job.target_url}
-
+{generalized_prompt_clause}
 INSPECTION FINDINGS (gathered during a live browser session, prior step):
 {json.dumps(recon_findings, indent=2)}
 
@@ -517,10 +842,7 @@ RULES (as described by the requester, in plain language):
 - Navigation rules: {job.navigation_rules or 'none specified'}
 - Extraction rules (data points to capture): {job.extraction_rules or 'capture all visible product/article attributes'}
 
-Use requests+BeautifulSoup for static/API-backed content per the findings'
-"network_api" field when present, and a browser-based approach (noted
-clearly in the delivered script) where the findings indicate the page
-requires JS rendering.
+{module_instructions}
 
 - REGEX & STRING ESCAPING (CRITICAL):
   When writing regex patterns, use standard Python raw string literals with single backslashes,
@@ -952,7 +1274,7 @@ def sanitize_regex_in_raw_string(content: str) -> str:
     
     This function replaces double-backslashes before regex tokens in raw strings with single backslashes.
     """
-    pattern = r"\\\\([bBdDsSwW\(\)\[\]\{\}\+\*\?\.\-\/\^\|\$\\\'\"]|[nrt]|xa0|[ux][0-9a-fA-F]+|[0-9])"
+    pattern = r"\\\\([bBdDsSwW\(\)\[\]\{\}\+\*\?\.\-\/\^\|\$\\\'\"]|[nrt]|[ux][\da-fA-F]+|\d)"
     
     def replacer(m):
         return "\\" + m.group(1)
@@ -1058,7 +1380,7 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
 
     # Handle triple-quoted raw strings
     sanitized = re.sub(
-        r'(r[fF]?|R[fF]?)(["\']{3})(.*?)\2',
+        r'([rR][fF]?)(["\']{3})(.*?)\2',
         fix_raw_string_match,
         sanitized,
         flags=re.DOTALL
@@ -1066,7 +1388,7 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
 
     # Handle single-quoted raw strings (non-triple)
     sanitized = re.sub(
-        r'(r[fF]?|R[fF]?)(["\'])(.*?)\2',
+        r'([rR][fF]?)(["\'])(.*?)\2',
         fix_raw_string_match,
         sanitized
     )
@@ -1078,22 +1400,30 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
         sanitized
     )
     # 4a. Strip invalid .fillna() chained directly to dict-returning pd.read_excel calls (e.g. sheet_name=None or list)
+    _sheet_dict_pat = r'(?:sheet_name\s*=\s*(?:None|\[[^\]]*\])|,\s*None\s*[,)])'
     sanitized = re.sub(
-        r'(pd\.read_excel\([^)\n]*(?:sheet_name\s*=\s*(?:None|\[[^\]]*\])|,\s*None\s*[,)])[^)\n]*\))\s*\.\s*fillna\([^)]*\)',
+        r'(pd\.read_excel\([^)\n]*' + _sheet_dict_pat + r'[^)\n]*\))\s*\.\s*fillna\([^)]*\)',
         r'\1',
         sanitized
     )
 
-    # 4b. Ensure single-DataFrame pd.read_excel calls sanitize NaNs via .fillna(""), while skipping dict-returning calls
+    # 4b. Ensure single-DataFrame pd.read_excel calls sanitize NaNs via .astype(object).fillna(""), while skipping dict-returning calls
+    # Also rewrite existing pd.read_excel(...).fillna("") to .astype(object).fillna("") to avoid Pandas4Warning
+    sanitized = re.sub(
+        r'(\bpd\.read_excel\([^)\n]+?\))\s*\.\s*fillna\(["\']["\']\)',
+        r'\1.astype(object).fillna("")',
+        sanitized
+    )
+
     def _sanitize_read_excel(m):
         call_content = m.group(1)
         full_call = f"{call_content})"
         if re.search(r'(?:sheet_name\s*=\s*(?:None|\[)|,\s*None\s*[,)])', call_content):
             return full_call
-        return f'{full_call}.fillna("")'
+        return f'{full_call}.astype(object).fillna("")'
 
     sanitized = re.sub(
-        r'(pd\.read_excel\([^)\n]+)\)(?!\s*\.\s*(?:fillna|copy|get|items|values|keys))',
+        r'(pd\.read_excel\([^)\n]+)\)(?!\s*\.\s*(?:astype|fillna|copy|get|items|values|keys))',
         _sanitize_read_excel,
         sanitized
     )
@@ -1132,8 +1462,9 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
     # 4g. Class-agnostic table row selector normalization:
     # Replace brittle alternating zebra class selectors (e.g. TableRecords_OddLine, odd, even)
     # with robust semantic row selectors: tr:has(td)
+    _row_cls_pat = r'tr\.(?:TableRecords_[OE][a-z]+Line|odd|even)'
     sanitized = re.sub(
-        r'["\'](?:tr\.(?:TableRecords_(?:Odd|Even)Line|odd|even)\s*,\s*tr\.(?:TableRecords_(?:Odd|Even)Line|odd|even)|tr\.(?:TableRecords_(?:Odd|Even)Line|odd|even))["\']',
+        r'["\']' + _row_cls_pat + r'(?:\s*,\s*' + _row_cls_pat + r')?["\']',
         '"tr:has(td)"',
         sanitized
     )
@@ -1172,7 +1503,7 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
         return full
 
     sanitized = re.sub(
-        r'await\s+page\.wait_for_selector\(\s*([A-Za-z0-9_]+(?:TABLE|GRID|CONTAINER))\s*(,\s*timeout=[^)]+)?\)',
+        r'await\s+page\.wait_for_selector\(\s*(\w+(?:TABLE|GRID|CONTAINER))\s*(,\s*timeout=[^)]+)?\)',
         _normalize_table_wait,
         sanitized
     )
@@ -1203,7 +1534,7 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
                 return m.group(0)
             return f"{prefix}{expr}{sep}arg={second_arg}{rest}"
 
-        pattern = r'(\.wait_for_function\s*\(\s*)((?:"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"[^"\n]*"|\'[^\'\n]*\'))(\s*,\s*)([^,)]+)(.*?\))'
+        pattern = r'(\.wait_for_function\s*\(\s*)((?:"""[\s\S]*?"""|\'\'\'[\s\S]*?\'\'\'|"[^"\n]*"|\'[^\'\n]*\'))(\s*,\s*)([^,)]+)([^)]*\))'
         return re.sub(pattern, repl, text)
 
     sanitized = _fix_wait_for_function(sanitized)
@@ -1252,6 +1583,58 @@ def sanitize_generated_code(code: str) -> tuple[str, list[str]]:
             count=1
         )
 
+    # 4o. Protect URL schemes in prefix-stripping regexes:
+    # Transforms unsafe regexes like `re.sub(r"^\s*[^:]{1,40}:\s*", "", text)` into
+    # `re.sub(r"^\s*(?!https?:|//)[^:]{1,40}:\s*", "", text)`
+    def _fix_prefix_stripping_regex(m):
+        g1, g2, g3, g4 = m.group(1), m.group(2), m.group(3), m.group(4)
+        if "(?!https?:" in g4:
+            return m.group(0)
+        return f"{g1}{g2}{g3}(?!https?:|//){g4}{g2}"
+
+    sanitized = re.sub(
+        r'(re\.sub\(\s*r?)(["\'])(\^\\\\s\*|\^\\s\*|\^)([^"\']{1,60}:(?:\\\\s\*|\\s\*))\2',
+        _fix_prefix_stripping_regex,
+        sanitized
+    )
+
+    # 4p. Inject URL early-return guard inside def clean(value):
+    if "def clean(" in sanitized:
+        if not re.search(r'startswith\s*\(\s*(?:\([^)]*https?|["\']https?|\(["\']http)', sanitized):
+            guard_line = '    if str(text).strip().startswith(("http://", "https://", "//")):\n        return str(text).strip()\n'
+            if "text = unicodedata.normalize" in sanitized:
+                sanitized = re.sub(
+                    r'(text\s*=\s*unicodedata\.normalize\([^\n]+\)\n)',
+                    r'\1' + guard_line,
+                    sanitized,
+                    count=1
+                )
+            elif "text = str(value)" in sanitized:
+                sanitized = re.sub(
+                    r'(text\s*=\s*str\(value\)[^\n]*\n)',
+                    r'\1' + guard_line,
+                    sanitized,
+                    count=1
+                )
+
+    # 4q. Guard protocol-relative or schemeless URLs in take_diagnostic_screenshot & navigation
+    if "take_diagnostic_screenshot" in sanitized and 'url = "https:" + str(url)' not in sanitized:
+        sanitized = re.sub(
+            r'(def\s+take_diagnostic_screenshot\s*\(\s*url\s*\)\s*:\n)',
+            r'\1    if url and str(url).startswith("//"):\n        url = "https:" + str(url)\n    elif url and not str(url).startswith(("http://", "https://")):\n        url = "https://" + str(url)\n',
+            sanitized,
+            count=1
+        )
+
+    # 4r. Ensure request_page logs network / schema errors to logging.error and stderr
+    if "def request_page(" in sanitized and "logging.error" not in sanitized:
+        sanitized = re.sub(
+            r'(\bexcept\s+requests\.RequestException\s+as\s+(\w+)\s*:\n([ \t]+))',
+            r'\1logging.error(f"Request failed for {url}: {\2}")\n\3log(f"Request failed for {url}: {\2}")\n\3',
+            sanitized,
+            count=1
+        )
+
     # 5. Fix row value access: str(row.get(...) or "") where nan string could be created
     sanitized = re.sub(
         r'str\(\s*row\.get\(\s*(["\'](?:detail_url|listing_url|keyword)["\'])\s*(?:,\s*["\'][^"\']*["\'])?\s*\)\s*(?:or\s*["\'][^"\']*["\'])?\s*\)',
@@ -1296,7 +1679,7 @@ def parse_agent_output(final_text: str) -> tuple[str, str, list[str]]:
         pass
 
     if not raw_code:
-        fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+        fence_match = re.search(r"```(?:json)?\s*(\{[^`]*\})\s*```", text, re.DOTALL)
         if fence_match:
             try:
                 parsed = json.loads(fence_match.group(1))
@@ -1342,7 +1725,7 @@ def parse_recon_output(final_text: str) -> tuple[dict, list[str]]:
     except (json.JSONDecodeError, TypeError):
         pass
 
-    fence_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    fence_match = re.search(r"```(?:json)?\s*(\{[^`]*\})\s*```", text, re.DOTALL)
     if fence_match:
         try:
             parsed = json.loads(fence_match.group(1))
@@ -1597,7 +1980,7 @@ class NativePlaywrightBrowserSession:
                         try:
                             text = await response.text()
                             body_snippet = text[:300] if text else ""
-                        except Exception:
+                        except (PlaywrightError, UnicodeDecodeError, RuntimeError):
                             pass
                         self.network_logs.append({
                             "url": url,
@@ -1606,7 +1989,7 @@ class NativePlaywrightBrowserSession:
                             "content_type": ct,
                             "sample_payload": body_snippet,
                         })
-                except Exception:
+                except (PlaywrightError, AttributeError, KeyError, TypeError):
                     pass
 
             self.page.on("response", _on_response)
@@ -1625,7 +2008,7 @@ class NativePlaywrightBrowserSession:
                 await self.browser.close()
             if self.playwright:
                 await self.playwright.stop()
-        except Exception:
+        except (PlaywrightError, RuntimeError, OSError):
             pass
         self._is_initialized = False
 
@@ -1651,8 +2034,146 @@ class NativePlaywrightBrowserSession:
                     await locator.click(timeout=800)
                     await asyncio.sleep(0.3)
                     break
-            except Exception:
+            except (PlaywrightError, TimeoutError, RuntimeError):
                 pass
+
+    async def _tool_navigate(self, url: str) -> str:
+        if not url:
+            return "Error: No URL provided."
+        self.current_url = url
+        try:
+            response = await self.page.goto(url, wait_until="domcontentloaded", timeout=35000)
+            await asyncio.sleep(1.5)
+            await self._dismiss_consent()
+            status_code = response.status if response else 200
+            title = await self.page.title()
+            return f"Navigated to {url}. HTTP Status {status_code}. Page Title: '{title}'. DOM loaded with Playwright."
+        except (PlaywrightError, TimeoutError, RuntimeError) as exc:
+            return f"Navigation failed for {url}: {exc}"
+
+    async def _tool_snapshot(self) -> str:
+        if not self.page:
+            return "No page loaded. Call browser_navigate first."
+        try:
+            title = await self.page.title()
+            state_info = await self.page.evaluate("""() => {
+                const result = {};
+                if (window.__NEXT_DATA__) {
+                    result.has_next_data = true;
+                    result.page = window.__NEXT_DATA__.page;
+                    result.query = window.__NEXT_DATA__.query;
+                }
+                if (window.__INITIAL_STATE__) {
+                    result.has_initial_state = true;
+                }
+                const jsonld = [];
+                document.querySelectorAll('script[type="application/ld+json"]').forEach(s => {
+                    try { jsonld.push(JSON.parse(s.textContent)); } catch(e) {}
+                });
+                if (jsonld.length > 0) {
+                    result.json_ld_count = jsonld.length;
+                    result.json_ld_sample = jsonld.slice(0, 2);
+                }
+                result.headings = Array.from(document.querySelectorAll('h1, h2, h3'))
+                    .map(h => h.textContent.trim())
+                    .filter(t => t.length > 0 && t.length < 120)
+                    .slice(0, 8);
+                result.interactive_buttons = Array.from(document.querySelectorAll('button, [role="button"], [role="tab"], summary, .accordion-header, [data-tab]'))
+                    .map(b => ({
+                        tag: b.tagName.toLowerCase(),
+                        text: b.textContent.trim().slice(0, 50),
+                        id: b.id || undefined,
+                        role: b.getAttribute('role') || undefined,
+                        classes: b.className.slice(0, 60) || undefined
+                    }))
+                    .filter(b => b.text.length > 0)
+                    .slice(0, 15);
+                result.product_cards = Array.from(document.querySelectorAll('[class*="product"], [class*="item"], [class*="card"], article'))
+                    .map(c => ({
+                        tag: c.tagName.toLowerCase(),
+                        classes: c.className.slice(0, 60),
+                        text: c.textContent.trim().replace(/\\s+/g, ' ').slice(0, 120)
+                    }))
+                    .filter(c => c.text.length > 15)
+                    .slice(0, 6);
+                result.sample_links = Array.from(document.querySelectorAll('a[href]'))
+                    .map(a => a.getAttribute('href'))
+                    .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'))
+                    .slice(0, 10);
+                return result;
+            }""")
+            snapshot = {
+                "url": self.current_url,
+                "title": title,
+                "hydrated_state": {
+                    "has_next_data": state_info.get("has_next_data", False),
+                    "has_initial_state": state_info.get("has_initial_state", False),
+                    "json_ld_sample": state_info.get("json_ld_sample", []),
+                },
+                "headings": state_info.get("headings", []),
+                "interactive_buttons_and_tabs": state_info.get("interactive_buttons", []),
+                "sample_product_cards": state_info.get("product_cards", []),
+                "sample_links": state_info.get("sample_links", []),
+                "discovered_api_endpoints": [req["url"] for req in self.network_logs[-8:]],
+            }
+            return json.dumps(snapshot, indent=2)
+        except (PlaywrightError, TimeoutError, RuntimeError) as exc:
+            return f"Snapshot parsing error: {exc}"
+
+    async def _tool_click(self, selector: str) -> str:
+        if not selector:
+            return "Error: No selector provided to click."
+        try:
+            try:
+                await self.page.click(selector, timeout=6000)
+            except (PlaywrightError, TimeoutError, RuntimeError):
+                await self.page.locator(f"text={selector}").first.click(timeout=6000)
+            await asyncio.sleep(1.0)
+            new_url = self.page.url
+            return f"Successfully clicked '{selector}'. Current URL: {new_url}. Page updated."
+        except (PlaywrightError, TimeoutError, RuntimeError) as exc:
+            return f"Click failed on '{selector}': {exc}"
+
+    async def _tool_type(self, selector: str, text: str) -> str:
+        try:
+            await self.page.fill(selector, text, timeout=6000)
+            await self.page.dispatch_event(selector, "input")
+            await self.page.dispatch_event(selector, "change")
+            return f"Typed '{text}' into '{selector}'."
+        except (PlaywrightError, TimeoutError, RuntimeError) as exc:
+            return f"Type action failed on '{selector}': {exc}"
+
+    async def _tool_press_key(self, key: str) -> str:
+        try:
+            await self.page.keyboard.press(key)
+            await asyncio.sleep(1.0)
+            return f"Pressed keyboard key '{key}'."
+        except (PlaywrightError, TimeoutError, RuntimeError) as exc:
+            return f"Key press failed: {exc}"
+
+    async def _tool_scroll(self, amount: int) -> str:
+        try:
+            await self.page.evaluate(f"window.scrollBy(0, {amount})")
+            await asyncio.sleep(1.0)
+            return f"Scrolled page down by {amount}px. Dynamic content loaded."
+        except (PlaywrightError, TimeoutError, RuntimeError) as exc:
+            return f"Scroll failed: {exc}"
+
+    async def _tool_wait_for(self, selector: str) -> str:
+        try:
+            await self.page.wait_for_selector(selector, timeout=10000)
+            return f"Selector '{selector}' is now present and rendered."
+        except (PlaywrightError, TimeoutError, RuntimeError) as exc:
+            return f"Wait for selector '{selector}' timed out: {exc}"
+
+    async def _tool_evaluate(self, expr: str) -> str:
+        if not expr:
+            return "Error: No JavaScript expression provided."
+        try:
+            res = await self.page.evaluate(expr)
+            return json.dumps(res, indent=2, default=str)
+        except (PlaywrightError, TimeoutError, RuntimeError) as exc:
+            return f"JavaScript evaluation error: {exc}"
 
     async def call_tool(self, tool_name: str, arguments: dict) -> str:
         clean_name = tool_name.replace("mcp__browser__", "")
@@ -1660,170 +2181,28 @@ class NativePlaywrightBrowserSession:
             await self.initialize()
 
         if clean_name == "browser_navigate":
-            url = arguments.get("url", "")
-            if not url:
-                return "Error: No URL provided."
-            self.current_url = url
-            try:
-                response = await self.page.goto(url, wait_until="domcontentloaded", timeout=35000)
-                await asyncio.sleep(1.5)
-                await self._dismiss_consent()
-                status_code = response.status if response else 200
-                title = await self.page.title()
-                return f"Navigated to {url}. HTTP Status {status_code}. Page Title: '{title}'. DOM loaded with Playwright."
-            except Exception as exc:
-                return f"Navigation failed for {url}: {exc}"
-
-        elif clean_name == "browser_snapshot":
-            if not self.page:
-                return "No page loaded. Call browser_navigate first."
-            try:
-                title = await self.page.title()
-                
-                # Check for in-page hydrated state and rich DOM layout
-                state_info = await self.page.evaluate("""() => {
-                    const result = {};
-                    if (window.__NEXT_DATA__) {
-                        result.has_next_data = true;
-                        result.page = window.__NEXT_DATA__.page;
-                        result.query = window.__NEXT_DATA__.query;
-                    }
-                    if (window.__INITIAL_STATE__) {
-                        result.has_initial_state = true;
-                    }
-                    // JSON-LD scripts
-                    const jsonld = [];
-                    document.querySelectorAll('script[type="application/ld+json"]').forEach(s => {
-                        try { jsonld.push(JSON.parse(s.textContent)); } catch(e) {}
-                    });
-                    if (jsonld.length > 0) {
-                        result.json_ld_count = jsonld.length;
-                        result.json_ld_sample = jsonld.slice(0, 2);
-                    }
-                    
-                    // Headings
-                    result.headings = Array.from(document.querySelectorAll('h1, h2, h3'))
-                        .map(h => h.textContent.trim())
-                        .filter(t => t.length > 0 && t.length < 120)
-                        .slice(0, 8);
-                        
-                    // Interactive elements (accordions, buttons, tabs)
-                    result.interactive_buttons = Array.from(document.querySelectorAll('button, [role="button"], [role="tab"], summary, .accordion-header, [data-tab]'))
-                        .map(b => ({
-                            tag: b.tagName.toLowerCase(),
-                            text: b.textContent.trim().slice(0, 50),
-                            id: b.id || undefined,
-                            role: b.getAttribute('role') || undefined,
-                            classes: b.className.slice(0, 60) || undefined
-                        }))
-                        .filter(b => b.text.length > 0)
-                        .slice(0, 15);
-                        
-                    // Product items / catalog listing elements
-                    result.product_cards = Array.from(document.querySelectorAll('[class*="product"], [class*="item"], [class*="card"], article'))
-                        .map(c => ({
-                            tag: c.tagName.toLowerCase(),
-                            classes: c.className.slice(0, 60),
-                            text: c.textContent.trim().replace(/\\s+/g, ' ').slice(0, 120)
-                        }))
-                        .filter(c => c.text.length > 15)
-                        .slice(0, 6);
-                        
-                    // Sample links
-                    result.sample_links = Array.from(document.querySelectorAll('a[href]'))
-                        .map(a => a.getAttribute('href'))
-                        .filter(href => href && !href.startsWith('#') && !href.startsWith('javascript:'))
-                        .slice(0, 10);
-                        
-                    return result;
-                }""")
-                
-                snapshot = {
-                    "url": self.current_url,
-                    "title": title,
-                    "hydrated_state": {
-                        "has_next_data": state_info.get("has_next_data", False),
-                        "has_initial_state": state_info.get("has_initial_state", False),
-                        "json_ld_sample": state_info.get("json_ld_sample", []),
-                    },
-                    "headings": state_info.get("headings", []),
-                    "interactive_buttons_and_tabs": state_info.get("interactive_buttons", []),
-                    "sample_product_cards": state_info.get("product_cards", []),
-                    "sample_links": state_info.get("sample_links", []),
-                    "discovered_api_endpoints": [req["url"] for req in self.network_logs[-8:]],
-                }
-                return json.dumps(snapshot, indent=2)
-            except Exception as exc:
-                return f"Snapshot parsing error: {exc}"
-
-        elif clean_name == "browser_click":
-            selector = arguments.get("selector", "")
-            if not selector:
-                return "Error: No selector provided to click."
-            try:
-                # Try clicking by exact selector, or text fallback
-                try:
-                    await self.page.click(selector, timeout=6000)
-                except Exception:
-                    await self.page.locator(f"text={selector}").first.click(timeout=6000)
-                await asyncio.sleep(1.0)
-                new_url = self.page.url
-                return f"Successfully clicked '{selector}'. Current URL: {new_url}. Page updated."
-            except Exception as exc:
-                return f"Click failed on '{selector}': {exc}"
-
-        elif clean_name == "browser_type":
-            selector = arguments.get("selector", "")
-            text = arguments.get("text", "")
-            try:
-                await self.page.fill(selector, text, timeout=6000)
-                await self.page.dispatch_event(selector, "input")
-                await self.page.dispatch_event(selector, "change")
-                return f"Typed '{text}' into '{selector}'."
-            except Exception as exc:
-                return f"Type action failed on '{selector}': {exc}"
-
-        elif clean_name == "browser_press_key":
-            key = arguments.get("key", "Enter")
-            try:
-                await self.page.keyboard.press(key)
-                await asyncio.sleep(1.0)
-                return f"Pressed keyboard key '{key}'."
-            except Exception as exc:
-                return f"Key press failed: {exc}"
-
-        elif clean_name == "browser_scroll":
-            amount = arguments.get("amount", 800)
-            try:
-                await self.page.evaluate(f"window.scrollBy(0, {amount})")
-                await asyncio.sleep(1.0)
-                return f"Scrolled page down by {amount}px. Dynamic content loaded."
-            except Exception as exc:
-                return f"Scroll failed: {exc}"
-
-        elif clean_name == "browser_wait_for":
-            selector = arguments.get("selector", "")
-            try:
-                await self.page.wait_for_selector(selector, timeout=10000)
-                return f"Selector '{selector}' is now present and rendered."
-            except Exception as exc:
-                return f"Wait for selector '{selector}' timed out: {exc}"
-
-        elif clean_name == "browser_evaluate":
+            return await self._tool_navigate(arguments.get("url", ""))
+        if clean_name == "browser_snapshot":
+            return await self._tool_snapshot()
+        if clean_name == "browser_click":
+            return await self._tool_click(arguments.get("selector", ""))
+        if clean_name == "browser_type":
+            return await self._tool_type(arguments.get("selector", ""), arguments.get("text", ""))
+        if clean_name == "browser_press_key":
+            return await self._tool_press_key(arguments.get("key", "Enter"))
+        if clean_name == "browser_scroll":
+            return await self._tool_scroll(arguments.get("amount", 800))
+        if clean_name == "browser_wait_for":
+            return await self._tool_wait_for(arguments.get("selector", ""))
+        if clean_name == "browser_evaluate":
             expr = arguments.get("expression") or arguments.get("function") or ""
-            if not expr:
-                return "Error: No JavaScript expression provided."
-            try:
-                res = await self.page.evaluate(expr)
-                return json.dumps(res, indent=2, default=str)
-            except Exception as exc:
-                return f"JavaScript evaluation error: {exc}"
-
-        elif clean_name == "browser_network_requests":
+            return await self._tool_evaluate(expr)
+        if clean_name == "browser_network_requests":
             return json.dumps(self.network_logs, indent=2) if self.network_logs else "No network API requests captured yet."
-
-        elif clean_name == "browser_take_screenshot":
+        if clean_name == "browser_take_screenshot":
             return f"Screenshot verified for {self.current_url}. Viewport rendering OK."
+
+        return f"Unknown tool: {tool_name}"
 
         return f"Unknown tool: {tool_name}"
 
@@ -2019,6 +2398,8 @@ class _PhaseRun:
     tool_calls: int
     usage_info: Any
     anti_bot_marker: str | None = None
+    network_logs: list[dict] = field(default_factory=list)
+    error_message: str | None = None
 
 
 async def _run_openai_recon_session(
@@ -2036,7 +2417,9 @@ async def _run_openai_recon_session(
     start_time = time.monotonic()
     status = "completed"
     final_text = ""
+    error_message = None
     anti_bot_marker = None
+    error_message = None
     total_prompt_tokens = 0
     total_completion_tokens = 0
     total_cached_tokens = 0
@@ -2206,13 +2589,21 @@ async def _run_openai_recon_session(
                 break
 
     except BaseException as exc:
+        error_message = str(exc)
         interceptor.action_log.append({
             "ts": datetime.now().isoformat(timespec="seconds"),
             "error": str(exc),
         })
         status = "failed"
     finally:
+        captured_network_logs = []
         if toolbox_mgr is not None:
+            try:
+                active_tb = getattr(toolbox_mgr, "active_toolbox", None) or getattr(toolbox_mgr, "primary", None)
+                if active_tb and hasattr(active_tb, "network_logs"):
+                    captured_network_logs = list(active_tb.network_logs)
+            except Exception:
+                pass
             try:
                 telemetry = toolbox_mgr.get_telemetry()
                 for h_evt in telemetry.get("in_tool_healing_events", []):
@@ -2226,6 +2617,11 @@ async def _run_openai_recon_session(
                 pass
         await mcp_manager.close()
         if native_session is not None:
+            try:
+                if hasattr(native_session, "network_logs") and not captured_network_logs:
+                    captured_network_logs = list(native_session.network_logs)
+            except Exception:
+                pass
             await native_session.close()
 
     usage_summary = {
@@ -2245,6 +2641,8 @@ async def _run_openai_recon_session(
         tool_calls=interceptor.call_counter["count"],
         usage_info=usage_summary,
         anti_bot_marker=anti_bot_marker,
+        network_logs=captured_network_logs,
+        error_message=error_message,
     )
 
 
@@ -2260,6 +2658,7 @@ async def _run_openai_codegen_session(
     start_time = time.monotonic()
     status = "completed"
     final_text = ""
+    error_message = None
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -2302,8 +2701,10 @@ async def _run_openai_codegen_session(
 
     except asyncio.TimeoutError:
         status = "time_limit_hit"
+        error_message = f"Codegen timed out after {max_seconds}s"
     except Exception as exc:
         status = "failed"
+        error_message = str(exc)
         final_text = f"Codegen error: {exc}"
 
     usage_summary = {
@@ -2323,6 +2724,7 @@ async def _run_openai_codegen_session(
         tool_calls=0,
         usage_info=usage_summary,
         anti_bot_marker=None,
+        error_message=error_message,
     )
 
 
@@ -2340,6 +2742,7 @@ async def run_inspection_job(
     cost_sink = cost_sink or StdoutCostSink()
     action_log: list[dict] = []
     cost_records: list[CostRecord] = []
+    confidence_notes: list[str] = []
 
     # Resolve OpenAI credentials & Client
     creds = resolve_credentials()
@@ -2356,7 +2759,44 @@ async def run_inspection_job(
     temperature = job.temperature if job.temperature is not None else get_default_temperature()
 
     total_budget = resolve_budget_ceiling(job.max_budget_usd)
-    recon_budget, codegen_budget = split_budget_ceiling(total_budget)
+    _, _ = split_budget_ceiling(total_budget)
+
+    # ---- Phase 0: Pre-Flight Site Intelligence Pass (Site Analyzer) ----
+    site_analysis = getattr(job, "site_analysis", None)
+    if not site_analysis:
+        if on_log_entry:
+            await on_log_entry({
+                "ts": datetime.now().isoformat(timespec="seconds"),
+                "phase": "analyzer",
+                "tool": "site_analyzer",
+                "input": {"url": job.target_url},
+                "call_number": 0,
+            })
+        try:
+            site_analysis = await analyze_target_site(job.target_url, max_urls=3, max_depth=1)
+        except Exception as sa_exc:
+            site_analysis = {"status": "unavailable", "error": str(sa_exc)}
+
+    sa_summary = extract_site_summary(site_analysis)
+    if sa_summary.get("available"):
+        confidence_notes.append(
+            f"🌐 Site Analyzer: Method='{sa_summary.get('working_method')}', "
+            f"Cloudflare={sa_summary.get('cloudflare')}, "
+            f"BrowserRequired={sa_summary.get('browser_required')}"
+        )
+        if on_log_entry:
+            await on_log_entry({
+                "ts": datetime.now().isoformat(timespec="seconds"),
+                "phase": "analyzer",
+                "tool": "site_analyzer",
+                "input": {
+                    "working_method": sa_summary.get("working_method"),
+                    "cloudflare": sa_summary.get("cloudflare"),
+                    "browser_required": sa_summary.get("browser_required"),
+                    "recommended_approach": sa_summary.get("recommended_approach", "")[:120],
+                },
+                "call_number": 0,
+            })
 
     # ---- Phase 1: Recon (Browser Tools) ----
     recon_call_counter = {"count": 0}
@@ -2369,7 +2809,7 @@ async def run_inspection_job(
         on_log_entry=on_log_entry,
     )
 
-    recon_task_prompt = build_recon_prompt(job)
+    recon_task_prompt = build_recon_prompt(job, site_analysis=site_analysis)
     recon_run = await _run_openai_recon_session(
         client=client,
         model=recon_model,
@@ -2391,8 +2831,17 @@ async def run_inspection_job(
     cost_sink.record(recon_record)
     cost_records.append(recon_record)
 
-    recon_findings, confidence_notes = parse_recon_output(recon_run.final_text)
-    confidence_notes = list(confidence_notes)
+    recon_findings, parsed_notes = parse_recon_output(recon_run.final_text)
+    confidence_notes.extend(parsed_notes)
+
+    # Elevate explicit API/transport errors so users immediately see the true failure cause (e.g. 429 quota exhaustion)
+    if recon_run.error_message:
+        confidence_notes.insert(0, f"Recon API Error: {recon_run.error_message}")
+    elif recon_run.status == "failed":
+        for entry in action_log:
+            if "error" in entry:
+                confidence_notes.insert(0, f"Recon Error: {entry['error']}")
+                break
 
     if recon_run.anti_bot_marker:
         confidence_notes.append(
@@ -2423,10 +2872,23 @@ async def run_inspection_job(
                 "recon_system_prompt": RECON_SYSTEM_PROMPT,
                 "recon_task_prompt": recon_task_prompt,
             },
+            site_analysis=site_analysis,
         )
 
+    # Evaluate Tech Stack Feasibility & Fallback Engine
+    tech_decision = evaluate_tech_stack_feasibility(
+        job=job,
+        recon_findings=recon_findings,
+        network_logs=getattr(recon_run, "network_logs", None),
+        site_analysis=site_analysis,
+    )
+    if tech_decision.get("was_fallback"):
+        confidence_notes.insert(0, f"⚠️ Engine Fallback: {tech_decision.get('reason')}")
+    else:
+        confidence_notes.insert(0, f"🛠️ Engine: {tech_decision.get('reason')}")
+
     # ---- Phase 2: Codegen (Fresh Context) ----
-    codegen_task_prompt = build_codegen_prompt(job, recon_findings)
+    codegen_task_prompt = build_codegen_prompt(job, recon_findings, tech_decision, site_analysis=site_analysis)
     codegen_run = await _run_openai_codegen_session(
         client=client,
         model=codegen_model,
@@ -2447,6 +2909,9 @@ async def run_inspection_job(
 
     generated_code, requirements_txt, codegen_notes = parse_agent_output(codegen_run.final_text)
     confidence_notes.extend(codegen_notes)
+
+    if codegen_run.error_message:
+        confidence_notes.insert(0, f"Codegen API Error: {codegen_run.error_message}")
 
     status = recon_run.status if recon_run.status != "completed" else codegen_run.status
     combined_cost = combine_cost_records(cost_records)
@@ -2470,6 +2935,8 @@ async def run_inspection_job(
         cost_record=combined_cost,
         anti_bot_marker=recon_run.anti_bot_marker,
         prompts=prompts,
+        tech_stack_decision=tech_decision,
+        site_analysis=site_analysis,
     )
 
 
@@ -2719,6 +3186,7 @@ async def run_refinement_job(
     cost_sink = cost_sink or StdoutCostSink()
     action_log: list[dict] = []
     cost_records: list[CostRecord] = []
+    confidence_notes: list[str] = []
 
     # Resolve OpenAI credentials & Client
     creds = resolve_credentials()
@@ -2735,7 +3203,7 @@ async def run_refinement_job(
     temperature = job.temperature if job.temperature is not None else get_default_temperature()
 
     total_budget = resolve_budget_ceiling(job.max_budget_usd)
-    recon_budget, codegen_budget = split_budget_ceiling(total_budget)
+    _, _ = split_budget_ceiling(total_budget)
 
     # ---- Phase 1: Targeted Recon (Browser Tools) ----
     recon_call_counter = {"count": 0}
@@ -2781,6 +3249,12 @@ async def run_refinement_job(
 
     # Merge prior findings with newly discovered findings
     merged_findings = {**(prior_findings or {}), **new_recon_findings}
+    tech_decision = evaluate_tech_stack_feasibility(
+        job=job,
+        recon_findings=merged_findings,
+        network_logs=getattr(recon_run, "network_logs", None),
+        site_analysis=job.site_analysis,
+    )
 
     # ---- Phase 2: Targeted Codegen (Fresh Context) ----
     refine_codegen_prompt = build_refinement_codegen_prompt(
@@ -2807,6 +3281,9 @@ async def run_refinement_job(
     generated_code, requirements_txt, codegen_notes = parse_agent_output(codegen_run.final_text)
     confidence_notes.extend(codegen_notes)
 
+    if codegen_run.error_message:
+        confidence_notes.insert(0, f"Codegen API Error: {codegen_run.error_message}")
+
     status = recon_run.status if recon_run.status not in ("completed", "") else codegen_run.status
     combined_cost = combine_cost_records(cost_records)
 
@@ -2829,6 +3306,8 @@ async def run_refinement_job(
         cost_record=combined_cost,
         anti_bot_marker=recon_run.anti_bot_marker,
         prompts=prompts,
+        tech_stack_decision=tech_decision,
+        site_analysis=job.site_analysis,
     )
     return result, merged_findings
 
@@ -2849,8 +3328,8 @@ async def _demo():
         navigation_rules="Listing page -> detail page links -> visit each.",
         extraction_rules="All spec attribute/value pairs, name, model code, price.",
         max_budget_usd=0.50,
-        recon_model="gpt-5.6-luna",
-        codegen_model="gpt-5.6-luna",
+        recon_model=MODEL_GPT_5_6_LUNA,
+        codegen_model=MODEL_GPT_5_6_LUNA,
         temperature=1.0,
     )
     result = await run_inspection_job(job)

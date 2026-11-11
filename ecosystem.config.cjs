@@ -4,6 +4,25 @@ const venvBin = isWin
   ? (exe) => path.join(__dirname, ".venv", "Scripts", `${exe}.exe`)
   : (exe) => path.join(__dirname, ".venv", "bin", exe);
 
+function getMcpPort() {
+  if (process.env.MCP_PORT) {
+    return process.env.MCP_PORT;
+  }
+  if (process.env.MCP_SERVER_URL) {
+    try {
+      const parsedUrl = new URL(process.env.MCP_SERVER_URL);
+      if (parsedUrl.port) {
+        return parsedUrl.port;
+      }
+    } catch (_err) {
+      // ignore invalid URL and fall back to default
+    }
+  }
+  return "8931";
+}
+
+const mcpPort = getMcpPort();
+
 module.exports = {
   apps: [
     {
@@ -38,8 +57,8 @@ module.exports = {
       name: "scraper-studio-mcp",
       script: isWin ? "C:\\Windows\\System32\\cmd.exe" : "/bin/bash",
       args: isWin
-        ? `/c npx -y @playwright/mcp@latest --port ${process.env.MCP_PORT || (process.env.MCP_SERVER_URL ? (new URL(process.env.MCP_SERVER_URL).port || "8931") : "8931")} --host 0.0.0.0 --isolated`
-        : `-c "npx -y @playwright/mcp@latest --port ${process.env.MCP_PORT || (process.env.MCP_SERVER_URL ? (new URL(process.env.MCP_SERVER_URL).port || "8931") : "8931")} --host 0.0.0.0 --isolated"`,
+        ? `/c npx -y @playwright/mcp@latest --port ${mcpPort} --host 0.0.0.0 --isolated`
+        : `-c "npx -y @playwright/mcp@latest --port ${mcpPort} --host 0.0.0.0 --isolated"`,
       cwd: __dirname,
       interpreter: "none",
       watch: false,

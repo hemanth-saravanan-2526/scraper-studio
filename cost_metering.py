@@ -20,9 +20,11 @@ from typing import Any
 # OpenAI Pricing Matrix (per 1,000,000 tokens)
 # Sourced from COST_AND_MODEL_COMPARISON_REPORT.md and OpenAI pricing tiers
 # --------------------------------------------------------------------------
+MODEL_GPT_5_6_LUNA = "gpt-5.6-luna"
+
 OPENAI_MODEL_PRICING = {
     # Frontier GPT-5.6 Family
-    "gpt-5.6-luna": {
+    MODEL_GPT_5_6_LUNA: {
         "input_per_m": 0.20,
         "cached_read_per_m": 0.02,
         "output_per_m": 1.20,
@@ -60,7 +62,7 @@ OPENAI_MODEL_PRICING = {
     },
 }
 
-DEFAULT_PRICING = OPENAI_MODEL_PRICING["gpt-5.6-luna"]
+DEFAULT_PRICING = OPENAI_MODEL_PRICING[MODEL_GPT_5_6_LUNA]
 
 
 def get_pricing_for_model(model_name: str | None) -> dict[str, float]:
@@ -119,7 +121,7 @@ def build_cost_record(
     is_error: bool = False,
     num_turns: int = 1,
     duration_ms: int = 0,
-    model: str = "gpt-5.6-luna",
+    model: str = MODEL_GPT_5_6_LUNA,
 ) -> CostRecord:
     """
     Builds a structured CostRecord from OpenAI usage or dict metadata.

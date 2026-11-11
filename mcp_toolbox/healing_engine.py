@@ -145,7 +145,7 @@ class MicroHealingEngine:
                 "healed": False,
                 "current_url": page.url,
             }
-        except Exception as direct_err:
+        except Exception:
             pass
 
         # Micro-Healing Loop: Auto-Dismiss Overlay & Fallback
@@ -189,7 +189,7 @@ class MicroHealingEngine:
                     "details": js_res,
                     "current_url": page.url,
                 }
-        except Exception as js_err:
+        except Exception:
             pass
 
         # Attempt 4: Dispatch click event fallback
@@ -266,7 +266,7 @@ class MicroHealingEngine:
 
             elif current_strategy == "nested_scroll":
                 # Detect inner scrollable container
-                scrolled_inner = await page.evaluate("""() => {
+                await page.evaluate("""() => {
                     const containers = Array.from(document.querySelectorAll('div, main, section'))
                         .filter(el => {
                             const style = window.getComputedStyle(el);

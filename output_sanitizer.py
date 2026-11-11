@@ -22,6 +22,7 @@ from openpyxl import Workbook, load_workbook
 
 
 EXCEL_CELL_LIMIT = 32000
+EXTRACTED_DATA_SHEET = "Extracted Data"
 INTERNAL_DEBUG_PATTERNS = (
     r"^listing_cells$",
     r"^raw_html$",
@@ -326,8 +327,8 @@ def sanitize_excel_workbook(
         "clean_columns": 0,
     }
 
-    if "Extracted Data" in wb.sheetnames:
-        df_raw = pd.read_excel(src, sheet_name="Extracted Data")
+    if EXTRACTED_DATA_SHEET in wb.sheetnames:
+        df_raw = pd.read_excel(src, sheet_name=EXTRACTED_DATA_SHEET)
         stats["original_rows"] = len(df_raw)
         stats["original_columns"] = len(df_raw.columns)
 
@@ -336,9 +337,9 @@ def sanitize_excel_workbook(
         stats["clean_columns"] = len(df_clean.columns)
 
         # Replace 'Extracted Data' sheet
-        idx = wb.sheetnames.index("Extracted Data")
-        del wb["Extracted Data"]
-        ws = wb.create_sheet("Extracted Data", idx)
+        idx = wb.sheetnames.index(EXTRACTED_DATA_SHEET)
+        del wb[EXTRACTED_DATA_SHEET]
+        ws = wb.create_sheet(EXTRACTED_DATA_SHEET, idx)
 
         # Write header
         ws.append(list(df_clean.columns))
@@ -361,7 +362,7 @@ def main():
 
     print(f"[output_sanitizer] Processing workbook: {input_file}")
     stats = sanitize_excel_workbook(input_file, output_file)
-    print(f"[output_sanitizer] Completed successfully:")
+    print("[output_sanitizer] Completed successfully:")
     print(f"  Rows: {stats['original_rows']} -> {stats['clean_rows']} (consolidated duplicate/disjoint entries)")
     print(f"  Columns: {stats['original_columns']} -> {stats['clean_columns']} (coalesced aliases & pruned debug columns)")
     print(f"  Saved to: {output_file}")

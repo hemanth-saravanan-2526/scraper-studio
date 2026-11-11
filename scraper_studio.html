@@ -226,12 +226,12 @@
       <div class="form-section">
         <h3>Target</h3>
         <p class="form-hint">One URL — OpenAI figures out whether it's a listing page or a detail page by looking at it.</p>
-        <label>Listing / search page URL — or a single item's detail page</label>
+        <label for="input-target-url">Listing / search page URL — or a single item's detail page</label>
         <input type="text" id="input-target-url" placeholder="https://www.example.com/products">
-        <label>Sample keyword to test with (optional)</label>
+        <label for="input-keyword">Sample keyword to test with (optional)</label>
         <input type="text" id="input-keyword" placeholder="e.g. Galaxy F70">
         <p class="form-hint" style="margin:-10px 0 16px;">Used once during live inspection to confirm search works — not a runtime setting. The delivered script reads real keywords/URLs from input.xlsx.</p>
-        <div class="file-drop" id="file-drop" onclick="document.getElementById('file-upload-input').click()">
+        <div class="file-drop" id="file-drop" role="button" tabindex="0" onclick="document.getElementById('file-upload-input').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('file-upload-input').click();}">
           <span id="file-drop-label">Drop an .xlsx with a "keyword" or "url" column — or use the fields above for a quick test</span>
           <input type="file" id="file-upload-input" accept=".xlsx,.xls" style="display:none;">
         </div>
@@ -242,19 +242,19 @@
         <p class="form-hint">Describe each in plain language — this is what gets translated into code.</p>
         <div class="rule-grid">
           <div>
-            <label>Search rules</label>
+            <label for="input-search-rules">Search rules</label>
             <textarea id="input-search-rules" placeholder="Match products whose title or model slug contains the given keyword, case-insensitive."></textarea>
           </div>
           <div>
-            <label>Filter rules</label>
+            <label for="input-filter-rules">Filter rules</label>
             <textarea id="input-filter-rules" placeholder="No additional filters — include every keyword match."></textarea>
           </div>
           <div>
-            <label>Navigation rules</label>
+            <label for="input-navigation-rules">Navigation rules</label>
             <textarea id="input-navigation-rules" placeholder="From the listing page, collect every product detail-page link, then visit each one."></textarea>
           </div>
           <div>
-            <label>Extraction rules (data points)</label>
+            <label for="input-extraction-rules">Extraction rules (data points)</label>
             <textarea id="input-extraction-rules" placeholder="All product information as attribute/value pairs from the Specifications block, plus name, model code, price, rating, launch date."></textarea>
           </div>
         </div>
@@ -296,10 +296,10 @@
       </div>
 
       <div class="code-panel">
-        <div class="code-tabbar" id="code-tabbar">
-          <div class="code-tab active" onclick="showCode('py',this)">samsung_smartphone_scraper.py</div>
-          <div class="code-tab" onclick="showCode('cfg',this)">config.json</div>
-          <div class="code-tab" onclick="showCode('req',this)">requirements.txt</div>
+        <div class="code-tabbar" id="code-tabbar" role="tablist">
+          <div class="code-tab active" role="tab" tabindex="0" onclick="showCode('py',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showCode('py',this);}">samsung_smartphone_scraper.py</div>
+          <div class="code-tab" role="tab" tabindex="0" onclick="showCode('cfg',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showCode('cfg',this);}">config.json</div>
+          <div class="code-tab" role="tab" tabindex="0" onclick="showCode('req',this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showCode('req',this);}">requirements.txt</div>
         </div>
         <pre id="code-body">Loading…</pre>
       </div>
@@ -344,7 +344,7 @@
       <table>
         <thead><tr><th>Name</th><th>Target site</th><th>Created</th><th>Status</th><th>Flags</th><th>Anti-bot</th></tr></thead>
         <tbody id="dashboard-body">
-          <tr class="clickable" onclick="showSamsungDemo()">
+          <tr class="clickable" role="button" tabindex="0" onclick="showSamsungDemo()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showSamsungDemo();}">
             <td>Samsung Smartphone Data Collector <span style="color:var(--text-dim);font-size:11px;">(demo, built in chat)</span></td>
             <td>samsung.com/in</td>
             <td>Today</td>
@@ -729,76 +729,79 @@ function connectStream(jobId){
   }
 }
 
+function getStatusTagClass(status){
+  if(status === 'anti_bot_detected') return 'danger';
+  if(status === 'completed') return 'live';
+  return 'draft';
+}
+
+function renderJobHeader(job){
+  document.getElementById('detail-title').textContent = job.name || document.getElementById('detail-title').textContent;
+  document.getElementById('detail-status-tag').textContent = (job.status||'').toUpperCase();
+  document.getElementById('detail-status-tag').className = 'tag ' + getStatusTagClass(job.status);
+
+  const antibotTag = document.getElementById('detail-antibot-tag');
+  if(job.anti_bot_marker){
+    antibotTag.textContent = '⚠ ANTI-BOT DETECTED: ' + job.anti_bot_marker;
+    antibotTag.style.display = '';
+  } else {
+    antibotTag.style.display = 'none';
+  }
+}
+
+function renderJobCost(cost){
+  let costText = '$' + (cost.total_cost_usd||0).toFixed(4) + ' · ' + (cost.num_turns||0) + ' turns';
+  if(Array.isArray(cost.phases) && cost.phases.length){
+    costText += ' (' + cost.phases.map(p =>
+      (p.phase || 'unknown') + ' $' + (p.total_cost_usd||0).toFixed(4)
+    ).join(' + ') + ')';
+  }
+  document.getElementById('detail-cost').textContent = costText;
+}
+
+function renderTerminalJobResult(job){
+  if(job.result){
+    FILES.real = job.result.generated_code || '(no code returned)';
+    FILES.real_req = job.result.requirements_txt || '(agent did not return a requirements.txt for this job — check the script\'s imports manually)';
+    document.getElementById('code-body').textContent = FILES.real;
+    document.getElementById('code-tabbar').innerHTML =
+      '<div class="code-tab active" role="tab" tabindex="0" onclick="showCode(\'real\',this)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();showCode(\'real\',this);}">generated_scraper.py</div>' +
+      '<div class="code-tab" role="tab" tabindex="0" onclick="showCode(\'real_req\',this)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();showCode(\'real_req\',this);}">requirements.txt</div>';
+    document.getElementById('cmd-install').textContent = 'pip install -r requirements.txt' +
+      (FILES.real_req.toLowerCase().includes('playwright') ? ' && playwright install chromium' : '');
+    if(job.result.confidence_notes && job.result.confidence_notes.length){
+      document.getElementById('flag-box').style.display = '';
+      document.getElementById('flag-list').innerHTML = job.result.confidence_notes.map(n => '<li>'+n+'</li>').join('');
+    }
+  }
+  document.getElementById('saved-to-note').textContent = job.saved_to
+    ? '📁 Also saved on the server at: ' + job.saved_to
+    : '';
+
+  const testRunBtn = document.getElementById('test-run-btn');
+  if(job.saved_to){
+    testRunBtn.disabled = false;
+    testRunBtn.title = '';
+  } else {
+    testRunBtn.title = 'No generated script to test — this job did not produce usable code.';
+  }
+  if(job.test_run && job.test_run.status && job.test_run.status !== 'not_run'){
+    renderTestRunStatus(job.test_run);
+    if(job.test_run.status === 'running'){ pollTestRun(); }
+  }
+}
+
 async function pollJob(jobId){
   try{
     const res = await fetch(apiBase() + '/jobs/' + jobId);
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const job = await res.json();
-    // 'anti_bot_detected' added alongside the recon/codegen split in the
-    // backend - the agent stopped inspecting on purpose after spotting a
-    // block signal, rather than burning its step budget against a wall.
+    renderJobHeader(job);
+    if(job.cost) renderJobCost(job.cost);
+
     const terminal = ['completed','failed','step_limit_hit','time_limit_hit','budget_limit_hit','anti_bot_detected'];
-    document.getElementById('detail-title').textContent = job.name || document.getElementById('detail-title').textContent;
-    document.getElementById('detail-status-tag').textContent = job.status.toUpperCase();
-    document.getElementById('detail-status-tag').className = 'tag ' +
-      (job.status === 'anti_bot_detected' ? 'danger' : (job.status === 'completed' ? 'live' : 'draft'));
-
-    const antibotTag = document.getElementById('detail-antibot-tag');
-    if(job.anti_bot_marker){
-      antibotTag.textContent = '⚠ ANTI-BOT DETECTED: ' + job.anti_bot_marker;
-      antibotTag.style.display = '';
-    } else {
-      antibotTag.style.display = 'none';
-    }
-
-    if(job.cost){
-      let costText = '$' + (job.cost.total_cost_usd||0).toFixed(4) + ' · ' + job.cost.num_turns + ' turns';
-      // Backend now runs recon (browser) and codegen as two separate
-      // sessions - show the split when it's there so it's obvious where
-      // spend actually went, instead of one opaque lump sum.
-      if(Array.isArray(job.cost.phases) && job.cost.phases.length){
-        costText += ' (' + job.cost.phases.map(p =>
-          (p.phase || 'unknown') + ' $' + (p.total_cost_usd||0).toFixed(4)
-        ).join(' + ') + ')';
-      }
-      document.getElementById('detail-cost').textContent = costText;
-    }
-
     if(terminal.includes(job.status)){
-      if(job.result){
-        FILES.real = job.result.generated_code || '(no code returned)';
-        FILES.real_req = job.result.requirements_txt || '(agent did not return a requirements.txt for this job — check the script\'s imports manually)';
-        document.getElementById('code-body').textContent = FILES.real;
-        document.getElementById('code-tabbar').innerHTML =
-          '<div class="code-tab active" onclick="showCode(\'real\',this)">generated_scraper.py</div>' +
-          '<div class="code-tab" onclick="showCode(\'real_req\',this)">requirements.txt</div>';
-        document.getElementById('cmd-install').textContent = 'pip install -r requirements.txt' +
-          (FILES.real_req.toLowerCase().includes('playwright') ? ' && playwright install chromium' : '');
-        if(job.result.confidence_notes && job.result.confidence_notes.length){
-          document.getElementById('flag-box').style.display = '';
-          document.getElementById('flag-list').innerHTML = job.result.confidence_notes.map(n => '<li>'+n+'</li>').join('');
-        }
-      }
-      document.getElementById('saved-to-note').textContent = job.saved_to
-        ? '📁 Also saved on the server at: ' + job.saved_to
-        : '';
-
-      // Test run only makes sense once there's a real generated script on
-      // disk to run - enable the button, and if this job already has a
-      // test_run on record (e.g. revisiting it later), show that state
-      // instead of a blank slate.
-      const testRunBtn = document.getElementById('test-run-btn');
-      if(job.saved_to){
-        testRunBtn.disabled = false;
-        testRunBtn.title = '';
-      } else {
-        testRunBtn.title = 'No generated script to test — this job did not produce usable code.';
-      }
-      if(job.test_run && job.test_run.status && job.test_run.status !== 'not_run'){
-        renderTestRunStatus(job.test_run);
-        if(job.test_run.status === 'running'){ pollTestRun(); }
-      }
-
+      renderTerminalJobResult(job);
       return; // stop polling
     }
     pollTimer = setTimeout(() => pollJob(jobId), 2000);
@@ -824,14 +827,18 @@ async function refreshDashboard(){
     jobs.forEach(job => {
       const tr = document.createElement('tr');
       tr.className = 'clickable';
+      tr.setAttribute('role', 'button');
+      tr.setAttribute('tabindex', '0');
       tr.onclick = () => showJobDetail(job.job_id, job.target_url, job.name);
+      tr.onkeydown = (e) => {
+        if(e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          showJobDetail(job.job_id, job.target_url, job.name);
+        }
+      };
       const flagCount = (job.result && job.result.confidence_notes) ? job.result.confidence_notes.length : 0;
       const displayName = job.name || ('(untitled — ' + job.job_id.slice(0,8) + '…)');
-      const statusTagClass = job.status === 'anti_bot_detected' ? 'danger' : (job.status === 'completed' ? 'live' : 'draft');
-      // Anti-bot marker is a first-class field on the job record now (see
-      // InspectionResult.anti_bot_marker / recon's early-exit) - shown here
-      // as its own column so a blocked/CAPTCHA'd site is scannable across
-      // the whole dashboard at a glance, not just buried in one job's notes.
+      const statusTagClass = getStatusTagClass(job.status);
       const antiBotCell = job.anti_bot_marker
         ? `<span class="antibot-flag">⚠ ${job.anti_bot_marker}</span>`
         : '—';

@@ -27,6 +27,8 @@ except ImportError:
 
 from .healing_engine import MicroHealingEngine
 
+NO_PAGE_LOADED_MSG = "No page loaded."
+
 
 class CustomPlaywrightToolbox:
     """
@@ -176,7 +178,7 @@ class CustomPlaywrightToolbox:
         except Exception as exc:
             return json.dumps({"status": "failed", "url": url, "error": str(exc)}, indent=2)
 
-    async def snapshot(self, max_depth: int = 4, include_interactive: bool = True) -> str:
+    async def snapshot(self) -> str:
         """Returns a dense, LLM-optimized representation of the DOM hierarchy and state."""
         if not self.page:
             return json.dumps({"error": "No page active. Call navigate first."})
@@ -260,7 +262,7 @@ class CustomPlaywrightToolbox:
         except Exception as exc:
             return json.dumps({"error": f"Snapshot failed: {exc}"}, indent=2)
 
-    async def click(self, selector: str, timeout_ms: int = 5000, auto_dismiss_overlay: bool = True) -> str:
+    async def click(self, selector: str, timeout_ms: int = 5000) -> str:
         """Executes click with Micro-Healing Loop 1 (auto-dismiss overlay + fallback click)."""
         if not self.page:
             return json.dumps({"error": "No page loaded. Call navigate first."})
@@ -299,7 +301,7 @@ class CustomPlaywrightToolbox:
     async def scroll(self, direction: str = "down", amount: int = 800, target_selector: str | None = None) -> str:
         """Scrolls viewport or target scrollable container."""
         if not self.page:
-            return json.dumps({"error": "No page loaded."})
+            return json.dumps({"error": NO_PAGE_LOADED_MSG})
 
         multiplier = 1 if direction.lower() == "down" else -1
         delta = amount * multiplier
@@ -320,7 +322,7 @@ class CustomPlaywrightToolbox:
     async def load_all(self, item_selector: str, strategy: str = "auto", max_rounds: int = 5) -> str:
         """Drives dynamic pagination with Micro-Healing Loop 2 (switching strategy if count stalls)."""
         if not self.page:
-            return json.dumps({"error": "No page loaded."})
+            return json.dumps({"error": NO_PAGE_LOADED_MSG})
 
         res = await MicroHealingEngine.execute_healing_load(
             self.page, item_selector=item_selector, initial_strategy=strategy, max_rounds=max_rounds
@@ -332,7 +334,7 @@ class CustomPlaywrightToolbox:
     async def run_js(self, script: str, args: Any = None) -> str:
         """Evaluates arbitrary JavaScript expression in the browser context."""
         if not self.page:
-            return json.dumps({"error": "No page loaded."})
+            return json.dumps({"error": NO_PAGE_LOADED_MSG})
 
         try:
             result = await self.page.evaluate(script, args)
@@ -345,7 +347,7 @@ class CustomPlaywrightToolbox:
     ) -> str:
         """Stages sample items and triggers Micro-Healing Loop 3 if fields are empty/null."""
         if not self.page:
-            return json.dumps({"error": "No page loaded."})
+            return json.dumps({"error": NO_PAGE_LOADED_MSG})
 
         self.saved_items.extend(sample_records)
         expected_schema = schema or ["product_id", "title", "price", "product_url"]
@@ -377,6 +379,22 @@ class CustomPlaywrightToolbox:
             "sample_preview": sample_records[:3],
         }, indent=2)
 
+    async def get_network_endpoints(self, filter_type: str = "api_only", limit: int = 20) -> str:
+        """Returns captured internal REST/GraphQL/JSON backend endpoints for direct API scraping."""
+        logs = self.network_logs or []
+        if filter_type in ("api_only", "json_only"):
+            logs = [
+                l for l in logs
+                if any(x in (l.get("content_type") or "") for x in ("json", "graphql"))
+                or any(x in (l.get("url") or "") for x in ("/api/", "/v1/", "/v2/", "/graphql", ".json"))
+            ]
+        recent = logs[-limit:] if limit > 0 else logs
+        return json.dumps({
+            "status": "success",
+            "total_captured": len(logs),
+            "endpoints": recent,
+        }, indent=2)
+
     # --------------------------------------------------------------------------
     # Tool Dispatch & Backward-Compatible Aliases
     # --------------------------------------------------------------------------
@@ -389,6 +407,12 @@ class CustomPlaywrightToolbox:
             .replace("browser_", "")
         )
 
+        if clean in ("network_requests", "get_network_endpoints", "browser_network_requests"):
+            return await self.get_network_endpoints(
+                filter_type=arguments.get("filter_type", "api_only"),
+                limit=arguments.get("limit", 20),
+            )
+
         if not self._is_initialized:
             await self.initialize()
 
@@ -399,15 +423,11 @@ class CustomPlaywrightToolbox:
                 timeout_ms=arguments.get("timeout_ms", 35000),
             )
         elif clean == "snapshot":
-            return await self.snapshot(
-                max_depth=arguments.get("max_depth", 4),
-                include_interactive=arguments.get("include_interactive", True),
-            )
+            return await self.snapshot()
         elif clean == "click":
             return await self.click(
                 selector=arguments.get("selector", ""),
                 timeout_ms=arguments.get("timeout_ms", 5000),
-                auto_dismiss_overlay=arguments.get("auto_dismiss_overlay", True),
             )
         elif clean in ("type_text", "type"):
             return await self.type_text(
@@ -447,8 +467,11 @@ class CustomPlaywrightToolbox:
             selector = arguments.get("selector", "")
             await self.page.wait_for_selector(selector, timeout=10000)
             return json.dumps({"status": "success", "rendered": selector}, indent=2)
-        elif clean == "network_requests":
-            return json.dumps(self.network_logs, indent=2) if self.network_logs else "No network logs recorded."
+        elif clean in ("network_requests", "get_network_endpoints", "browser_network_requests"):
+            return await self.get_network_endpoints(
+                filter_type=arguments.get("filter_type", "api_only"),
+                limit=arguments.get("limit", 20),
+            )
         elif clean == "take_screenshot":
             return json.dumps({"status": "success", "message": "Screenshot verified."}, indent=2)
 
@@ -580,6 +603,20 @@ class CustomPlaywrightToolbox:
                             },
                         },
                         "required": ["sample_records"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_network_endpoints",
+                    "description": "Inspect captured backend network requests (XHR, Fetch, REST, GraphQL, JSON endpoints). Use this to discover internal APIs that can be directly called with requests or httpx without a browser.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "filter_type": {"type": "string", "enum": ["all", "api_only", "json_only"], "default": "api_only"},
+                            "limit": {"type": "integer", "description": "Maximum number of recent endpoints to return", "default": 20},
+                        },
                     },
                 },
             },

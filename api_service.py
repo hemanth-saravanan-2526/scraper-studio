@@ -24,6 +24,7 @@ import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 try:
     from dotenv import load_dotenv
@@ -46,6 +47,9 @@ from inspection_agent_service import (
 )
 from auth_config import require_credentials_at_startup, CredentialError
 from cost_metering import JSONLCostSink
+
+GENERATED_SCRAPER_FILENAME = "generated_scraper.py"
+REQUIREMENTS_FILENAME = "requirements.txt"
 
 app = FastAPI(title="Scraper Studio Inspection API")
 cost_sink = JSONLCostSink(path="cost_ledger.jsonl")
@@ -109,6 +113,10 @@ class CreateJobRequest(BaseModel):
     filter_rules: str = ""
     navigation_rules: str = ""
     extraction_rules: str = ""
+    generalized_prompt: str = ""
+    preferred_module: str = "auto"       # "auto" | "playwright" | "requests" | "nodriver" | "selenium" | "beautifulsoup"
+    target_language: str = "python"      # "python"
+    force_preferred_module: bool = False # bypass smart fallback
     max_steps: int = 40
     max_seconds: int = 600
     max_budget_usd: float | None = None
@@ -128,6 +136,12 @@ class JobRecord(BaseModel):
     filter_rules: str = ""
     navigation_rules: str = ""
     extraction_rules: str = ""
+    generalized_prompt: str = ""
+    preferred_module: str = "auto"
+    target_language: str = "python"
+    force_preferred_module: bool = False
+    tech_stack_decision: dict | None = None
+    site_analysis: dict | None = None
     recon_model: str | None = None
     codegen_model: str | None = None
     result: dict | None = None
@@ -198,16 +212,16 @@ class AuditVaultManager:
         prompts = prompts or {}
         for p_name, p_val in prompts.items():
             if p_val:
-                safe_name = re.sub(r"[^A-Za-z0-9_]+", "_", p_name)
+                safe_name = re.sub(r"\W+", "_", p_name)
                 (prompts_dir / f"{safe_name}.txt").write_text(str(p_val), encoding="utf-8")
 
         # 2. Permanently log scripts
         scripts_dir = attempt_dir / "scripts"
         scripts_dir.mkdir(parents=True, exist_ok=True)
         if code:
-            (scripts_dir / "generated_scraper.py").write_text(code, encoding="utf-8")
+            (scripts_dir / GENERATED_SCRAPER_FILENAME).write_text(code, encoding="utf-8")
         if reqs:
-            (scripts_dir / "requirements.txt").write_text(reqs, encoding="utf-8")
+            (scripts_dir / REQUIREMENTS_FILENAME).write_text(reqs, encoding="utf-8")
 
         # 3. Permanently log unified diff
         diff_text = AuditVaultManager.compute_diff(
@@ -313,8 +327,8 @@ def write_generated_files_to_disk(job_id: str, name: str, generated_code: str, r
     folder.mkdir(parents=True, exist_ok=True)
 
     clean_code, _ = sanitize_generated_code(generated_code)
-    (folder / "generated_scraper.py").write_text(clean_code, encoding="utf-8")
-    (folder / "requirements.txt").write_text(
+    (folder / GENERATED_SCRAPER_FILENAME).write_text(clean_code, encoding="utf-8")
+    (folder / REQUIREMENTS_FILENAME).write_text(
         requirements_txt or "# agent did not return requirements.txt\n",
         encoding="utf-8",
     )
@@ -350,11 +364,18 @@ def _count_meaningful_rows(df) -> int:
     return meaningful
 
 
-def _build_sample_input_xlsx(folder: Path, record: "JobRecord") -> Path:
+def _build_sample_input_xlsx(folder_or_path: Path, record_or_url: Any = None, keyword: str | None = None) -> Path:
     from openpyxl import Workbook
     import shutil
 
-    path = folder / "sample_input.xlsx"
+    folder_or_path = Path(folder_or_path)
+    if folder_or_path.suffix.lower() == ".xlsx":
+        path = folder_or_path
+        folder = path.parent
+    else:
+        folder = folder_or_path
+        path = folder / "sample_input.xlsx"
+
     input_xlsx = folder / "input.xlsx"
 
     # If sample_input.xlsx already exists and has content, keep it
@@ -362,22 +383,313 @@ def _build_sample_input_xlsx(folder: Path, record: "JobRecord") -> Path:
         return path
 
     # If input.xlsx exists (e.g. uploaded by user), copy to sample_input.xlsx
-    if input_xlsx.exists() and input_xlsx.stat().st_size > 500:
+    if input_xlsx.exists() and input_xlsx != path and input_xlsx.stat().st_size > 500:
         try:
             shutil.copyfile(input_xlsx, path)
             return path
         except Exception:
             pass
 
-    kw = (record.sample_keyword or "").strip() or None
+    if hasattr(record_or_url, "target_url"):
+        kw = (getattr(record_or_url, "sample_keyword", "") or "").strip() or None
+        target = (getattr(record_or_url, "target_url", "") or "").strip()
+    else:
+        kw = (keyword or "").strip() or None
+        target = (str(record_or_url or "")).strip()
+
+    if target:
+        if target.startswith("//"):
+            target = f"https:{target}"
+        elif not target.startswith(("http://", "https://")):
+            target = f"https://{target}"
 
     wb = Workbook()
     ws = wb.active
     ws.title = "Sample Input"
     ws.append(["keyword", "listing_url", "detail_url"])
-    ws.append([kw, record.target_url, None])
+    ws.append([kw, target or None, None])
     wb.save(path)
     return path
+
+
+async def _setup_test_environment(
+    folder: Path,
+    venv_dir: Path,
+    venv_python: Path,
+    req_file: Path,
+    _run_streaming,
+    emit_log,
+):
+    """Initializes isolated virtual environment and installs requirements."""
+    if not venv_python.exists():
+        await emit_log("ENV", f"Creating isolated Python virtual environment at {venv_dir}...", "info")
+        rc, _, stderr = await _run_streaming(sys.executable, "-m", "venv", str(venv_dir), phase="ENV")
+        if rc != 0:
+            err_str = stderr.decode(errors="replace")[-2000:]
+            await emit_log("ENV", f"❌ Failed to create virtual environment: {err_str}", "error")
+            raise RuntimeError(f"venv creation failed: {err_str}")
+        await emit_log("ENV", "✅ Virtual environment created successfully.", "success")
+    else:
+        await emit_log("ENV", f"✅ Active isolated virtual environment detected at {venv_dir}.", "info")
+
+    await emit_log("ENV", f"Active Python interpreter: {venv_python}", "info")
+
+    if req_file.exists() and req_file.read_text(encoding="utf-8").strip():
+        req_content = req_file.read_text(encoding="utf-8").strip()
+        summary_reqs = ", ".join([l.strip() for l in req_content.splitlines() if l.strip() and not l.startswith("#")])
+        await emit_log("DEPS", f"Installing dependencies: {summary_reqs}", "info")
+        rc, _, stderr = await _run_streaming(
+            str(venv_python), "-m", "pip", "install", "--no-warn-script-location", "-r", str(req_file),
+            phase="PIP"
+        )
+        if rc != 0:
+            err_str = stderr.decode(errors="replace")[-2000:]
+            await emit_log("DEPS", f"❌ pip install failed: {err_str}", "error")
+            raise RuntimeError(f"pip install -r requirements.txt failed: {err_str}")
+        await emit_log("DEPS", "✅ Python dependencies installed successfully.", "success")
+
+        if "playwright" in req_content.lower():
+            await emit_log("PLAYWRIGHT", "Playwright detected in requirements. Ensuring Chromium browser binary is installed...", "info")
+            rc_pw, _, _ = await _run_streaming(
+                str(venv_python), "-m", "playwright", "install", "chromium",
+                phase="PLAYWRIGHT"
+            )
+            if rc_pw == 0:
+                await emit_log("PLAYWRIGHT", "✅ Playwright Chromium browser binaries ready.", "success")
+            else:
+                await emit_log("PLAYWRIGHT", "⚠️ Playwright install chromium returned non-zero, continuing...", "warning")
+    else:
+        await emit_log("DEPS", "No custom requirements specified. Using standard virtual environment.", "info")
+
+
+async def _execute_scraper_and_count(
+    venv_python: Path,
+    sample_input: Path,
+    sample_output: Path,
+    max_products: int,
+    folder: Path,
+    _run_streaming,
+    emit_log,
+    phase: str = "SCRAPER",
+) -> tuple[int, bytes, bytes, int]:
+    """Runs generated_scraper.py and returns (rc, stdout, stderr, num_extracted_rows)."""
+    await emit_log("EXEC", f"🚀 Launching {GENERATED_SCRAPER_FILENAME} in isolated sandbox (max {max_products} products, no timeout limit)...", "info")
+    rc, stdout, stderr = await _run_streaming(
+        str(venv_python), GENERATED_SCRAPER_FILENAME,
+        "--input", str(sample_input),
+        "--output", str(sample_output),
+        "--max-products", str(max_products),
+        cwd=str(folder),
+        phase=phase,
+    )
+    await emit_log("EXEC", f"Scraper execution process completed with exit code {rc}.", "success" if rc == 0 else "warning")
+
+    num_extracted_rows = 0
+    if sample_output.exists():
+        try:
+            import pandas as pd
+            df_out = pd.read_excel(sample_output, sheet_name="Extracted Data")
+            num_extracted_rows = _count_meaningful_rows(df_out)
+        except Exception as ex:
+            await emit_log("VALIDATE", f"Note: could not read output Excel: {ex}", "warning")
+
+    await emit_log("VALIDATE", f"Output inspection: found {num_extracted_rows} meaningful product rows in 'Extracted Data'.", "success" if num_extracted_rows > 0 else "warning")
+    return rc, stdout, stderr, num_extracted_rows
+
+
+async def _execute_self_healing_attempt(
+    record: "JobRecord",
+    folder: Path,
+    venv_python: Path,
+    req_file: Path,
+    sample_input: Path,
+    sample_output: Path,
+    max_products: int,
+    rc: int,
+    stdout: bytes,
+    stderr: bytes,
+    num_extracted_rows: int,
+    _run_streaming,
+    emit_log,
+    cost_sink,
+) -> tuple[int, bytes, bytes, int, bool, dict]:
+    """Executes live diagnostic inspection and codegen repair loop."""
+    err_msg = stderr.decode(errors="replace")[-3000:] or stdout.decode(errors="replace")[-3000:]
+    if num_extracted_rows == 0 and rc == 0:
+        err_msg = (
+            "Scraper execution finished with exit code 0, but the 'Extracted Data' sheet has 0 meaningful rows. "
+            "Either all products were filtered out, selectors failed to extract attributes, or only empty/URL rows were written."
+        )
+
+    await emit_log("SELF-HEAL", "⚠️ Test run encountered issues (exit code != 0 or 0 meaningful rows extracted).", "warning")
+    await emit_log("SELF-HEAL", "Triggering autonomous self-healing repair pass with live MCP diagnostic inspection...", "info")
+    await emit_log("SELF-HEAL", f"Diagnostic context: {err_msg[:260]}...", "info")
+
+    healed = False
+    diagnostic_recon_findings = {}
+
+    try:
+        code_file = folder / GENERATED_SCRAPER_FILENAME
+        broken_code = code_file.read_text(encoding="utf-8") if code_file.exists() else ""
+        job_spec = InspectionJob(
+            job_id=record.job_id,
+            target_url=record.target_url,
+            sample_keyword=record.sample_keyword,
+            search_rules=record.search_rules or "",
+            filter_rules=record.filter_rules or "",
+            navigation_rules=record.navigation_rules or "",
+            extraction_rules=record.extraction_rules or "",
+            recon_model=record.recon_model,
+            codegen_model=record.codegen_model,
+        )
+
+        run_details = {
+            "exit_code": rc,
+            "num_extracted_rows": num_extracted_rows,
+            "sample_output_exists": sample_output.exists(),
+            "sample_input_path": str(sample_input),
+            "sample_output_path": str(sample_output),
+            "max_products": max_products,
+            "stderr": stderr.decode(errors="replace")[-4000:],
+            "stdout_tail": stdout.decode(errors="replace")[-4000:],
+            "error_summary": err_msg,
+        }
+
+        attempt_history = []
+        for entry in getattr(record, "audit_history", []):
+            err_entry = entry.get("errors", {})
+            diag_entry = entry.get("agent_decisions", {})
+            attempt_history.append({
+                "attempt": entry.get("attempt"),
+                "error_summary": err_entry.get("error_summary", "") or err_entry.get("stderr_tail", ""),
+                "diagnostic_summary": diag_entry.get("root_cause", "") or diag_entry.get("diagnostic_summary", ""),
+                "fixes_attempted": entry.get("fixes", {}).get("strategy", ""),
+                "outcome": entry.get("outcome", {}),
+            })
+
+        async def on_repair_log(entry: dict):
+            tool = entry.get("tool", "")
+            tool_input = entry.get("input", {})
+            msg = f"🔧 Live MCP Recon [{tool}]: {json.dumps(tool_input, default=str)[:140]}"
+            await emit_log("SELF-HEAL", msg, "info")
+
+        await emit_log("SELF-HEAL", "🌐 Launching live MCP browser session to inspect DOM, test selectors, and diagnose root cause...", "info")
+        mcp_url = os.getenv("MCP_SERVER_URL") or os.getenv("PLAYWRIGHT_MCP_URL") or "http://localhost:8931"
+        repair_res = await run_codegen_repair(
+            job=job_spec,
+            broken_code=broken_code,
+            error_context=err_msg,
+            recon_findings=record.result,
+            run_details=run_details,
+            attempt_history=attempt_history,
+            mcp_base_url=mcp_url,
+            cost_sink=cost_sink,
+            on_log_entry=on_repair_log,
+        )
+        repaired_code = getattr(repair_res, "repaired_code", repair_res[0] if len(repair_res) > 0 else "")
+        new_reqs = getattr(repair_res, "requirements_txt", repair_res[1] if len(repair_res) > 1 else "")
+        notes = getattr(repair_res, "confidence_notes", repair_res[2] if len(repair_res) > 2 else [])
+        diagnostic_recon_findings = getattr(repair_res, "diagnostic_findings", {})
+        prompts_used = getattr(repair_res, "prompts", {})
+
+        if diagnostic_recon_findings:
+            root_cause = diagnostic_recon_findings.get("root_cause", "")
+            if root_cause:
+                await emit_log("SELF-HEAL", f"🔍 Live Diagnosis Root Cause: {root_cause[:200]}", "info")
+
+        if repaired_code:
+            await emit_log("SELF-HEAL", f"✅ Codegen Repair Agent synthesized code patch using live verified selectors. Writing to {GENERATED_SCRAPER_FILENAME}...", "success")
+            new_attempt_num = (len(record.audit_history) + 1) if getattr(record, "audit_history", None) else 2
+
+            audit_entry = AuditVaultManager.record_attempt(
+                folder=folder,
+                attempt_number=new_attempt_num,
+                phase="self_healing_retry",
+                prompts=prompts_used,
+                code=repaired_code,
+                reqs=new_reqs or (req_file.read_text(encoding="utf-8") if req_file.exists() else ""),
+                previous_code=broken_code,
+                agent_decisions={
+                    "root_cause": diagnostic_recon_findings.get("root_cause", ""),
+                    "diagnostic_findings": diagnostic_recon_findings,
+                    "confidence_notes": notes,
+                },
+                errors={
+                    "exit_code": rc,
+                    "error_summary": err_msg,
+                    "stderr_tail": stderr.decode(errors="replace")[-1000:],
+                    "stdout_tail": stdout.decode(errors="replace")[-1000:],
+                },
+                fixes={
+                    "strategy": "live_mcp_codegen_repair",
+                    "working_listing_selectors": diagnostic_recon_findings.get("working_listing_selectors", []),
+                    "working_detail_selectors": diagnostic_recon_findings.get("working_detail_selectors", {}),
+                    "working_price_selector": diagnostic_recon_findings.get("working_price_selector", ""),
+                },
+            )
+            if not hasattr(record, "audit_history") or record.audit_history is None:
+                record.audit_history = []
+            record.audit_history.append(audit_entry)
+
+            if not hasattr(record, "revisions") or record.revisions is None:
+                record.revisions = []
+            record.revisions.append({
+                "version": new_attempt_num,
+                "label": f"v{new_attempt_num} (Self-Healed Retry)",
+                "created_at": datetime.now().isoformat(timespec="seconds"),
+                "prompt": f"Self-Healing: {err_msg[:60]}",
+                "generated_code": repaired_code,
+                "requirements_txt": new_reqs,
+                "cost": record.cost,
+                "status": "self_healed",
+                "sample_keyword": record.sample_keyword,
+            })
+
+            write_generated_files_to_disk(
+                job_id=record.job_id,
+                name=record.name,
+                generated_code=repaired_code,
+                requirements_txt=new_reqs or (req_file.read_text(encoding="utf-8") if req_file.exists() else ""),
+            )
+
+            if new_reqs and req_file.exists():
+                await emit_log("SELF-HEAL", "Re-installing updated dependencies...", "info")
+                await _run_streaming(str(venv_python), "-m", "pip", "install", "--no-warn-script-location", "-r", str(req_file), phase="PIP-REPAIR")
+                if "playwright" in new_reqs.lower():
+                    await _run_streaming(str(venv_python), "-m", "playwright", "install", "chromium", phase="PW-REPAIR")
+
+            if sample_output.exists():
+                sample_output.unlink()
+
+            await emit_log("SELF-HEAL", "🔄 Re-running smoke test with repaired scraper...", "info")
+            rc, stdout, stderr, num_extracted_rows = await _execute_scraper_and_count(
+                venv_python, sample_input, sample_output, max_products, folder, _run_streaming, emit_log, phase="SCRAPER-REPAIR"
+            )
+            healed = (rc == 0 and sample_output.exists() and num_extracted_rows > 0)
+
+            AuditVaultManager.update_attempt_outcome(
+                folder=folder,
+                attempt_number=new_attempt_num,
+                outcome={
+                    "status": "passed" if healed else "failed",
+                    "returncode": rc,
+                    "extracted_rows": num_extracted_rows,
+                    "healed": healed,
+                },
+            )
+            if record.audit_history:
+                record.audit_history[-1]["outcome"] = {
+                    "status": "passed" if healed else "failed",
+                    "returncode": rc,
+                    "extracted_rows": num_extracted_rows,
+                    "healed": healed,
+                }
+
+            await emit_log("SELF-HEAL", f"Self-healing repair pass completed. Re-run exit code: {rc}, meaningful rows: {num_extracted_rows}", "success" if healed else "warning")
+    except Exception as repair_exc:
+        await emit_log("SELF-HEAL", f"❌ Self-healing repair pass error: {repair_exc}", "error")
+
+    return rc, stdout, stderr, num_extracted_rows, healed, diagnostic_recon_findings
 
 
 async def _run_test_run(job_id: str, on_log=None, max_products: int = DEFAULT_TEST_RUN_MAX_PRODUCTS):
@@ -455,51 +767,11 @@ async def _run_test_run(job_id: str, on_log=None, max_products: int = DEFAULT_TE
         await emit_log("INIT", f"Initializing isolated test environment for '{record.name}'...", "info")
         await emit_log("INIT", f"Target: {record.target_url} | Keyword: {record.sample_keyword or 'None'}", "info")
 
-        # 1. Environment Setup
-        if not venv_python.exists():
-            await emit_log("ENV", f"Creating isolated Python virtual environment at {venv_dir}...", "info")
-            rc, _, stderr = await _run_streaming(sys.executable, "-m", "venv", str(venv_dir), phase="ENV")
-            if rc != 0:
-                err_str = stderr.decode(errors='replace')[-2000:]
-                await emit_log("ENV", f"❌ Failed to create virtual environment: {err_str}", "error")
-                raise RuntimeError(f"venv creation failed: {err_str}")
-            await emit_log("ENV", "✅ Virtual environment created successfully.", "success")
-        else:
-            await emit_log("ENV", f"✅ Active isolated virtual environment detected at {venv_dir}.", "info")
+        # 1. Environment Setup & Dependency Installation
+        req_file = folder / REQUIREMENTS_FILENAME
+        await _setup_test_environment(folder, venv_dir, venv_python, req_file, _run_streaming, emit_log)
 
-        await emit_log("ENV", f"Active Python interpreter: {venv_python}", "info")
-
-        # 2. Dependency Installation
-        req_file = folder / "requirements.txt"
-        if req_file.exists() and req_file.read_text(encoding="utf-8").strip():
-            req_content = req_file.read_text(encoding="utf-8").strip()
-            summary_reqs = ", ".join([l.strip() for l in req_content.splitlines() if l.strip() and not l.startswith("#")])
-            await emit_log("DEPS", f"Installing dependencies: {summary_reqs}", "info")
-            rc, _, stderr = await _run_streaming(
-                str(venv_python), "-m", "pip", "install", "--no-warn-script-location", "-r", str(req_file),
-                phase="PIP"
-            )
-            if rc != 0:
-                err_str = stderr.decode(errors='replace')[-2000:]
-                await emit_log("DEPS", f"❌ pip install failed: {err_str}", "error")
-                raise RuntimeError(f"pip install -r requirements.txt failed: {err_str}")
-            await emit_log("DEPS", "✅ Python dependencies installed successfully.", "success")
-            
-            # If script requires Playwright, ensure Chromium binary is available
-            if "playwright" in req_content.lower():
-                await emit_log("PLAYWRIGHT", "Playwright detected in requirements. Ensuring Chromium browser binary is installed...", "info")
-                rc_pw, _, _ = await _run_streaming(
-                    str(venv_python), "-m", "playwright", "install", "chromium",
-                    phase="PLAYWRIGHT"
-                )
-                if rc_pw == 0:
-                    await emit_log("PLAYWRIGHT", "✅ Playwright Chromium browser binaries ready.", "success")
-                else:
-                    await emit_log("PLAYWRIGHT", "⚠️ Playwright install chromium returned non-zero, continuing...", "warning")
-        else:
-            await emit_log("DEPS", "No custom requirements specified. Using standard virtual environment.", "info")
-
-        # 3. Test Input Workbook Preparation
+        # 2. Test Input Workbook Preparation
         await emit_log("SETUP", "Building sample_input.xlsx with target URL and keyword...", "info")
         sample_input = _build_sample_input_xlsx(folder, record)
         sample_output = folder / "sample_output.xlsx"
@@ -507,30 +779,12 @@ async def _run_test_run(job_id: str, on_log=None, max_products: int = DEFAULT_TE
             sample_output.unlink()
         await emit_log("SETUP", f"✅ Prepared sample_input.xlsx (Max products: {max_products}). Cleaned output path.", "success")
 
-        # 4. Executing Scraper (No Timeout)
-        await emit_log("EXEC", f"🚀 Launching generated_scraper.py in isolated sandbox (max {max_products} products, no timeout limit)...", "info")
-        rc, stdout, stderr = await _run_streaming(
-            str(venv_python), "generated_scraper.py",
-            "--input", str(sample_input),
-            "--output", str(sample_output),
-            "--max-products", str(max_products),
-            cwd=str(folder),
-            phase="SCRAPER",
+        # 3. Executing Scraper (No Timeout)
+        rc, stdout, stderr, num_extracted_rows = await _execute_scraper_and_count(
+            venv_python, sample_input, sample_output, max_products, folder, _run_streaming, emit_log, phase="SCRAPER"
         )
-        await emit_log("EXEC", f"Scraper execution process completed with exit code {rc}.", "success" if rc == 0 else "warning")
 
-        num_extracted_rows = 0
-        if sample_output.exists():
-            try:
-                import pandas as pd
-                df_out = pd.read_excel(sample_output, sheet_name="Extracted Data")
-                num_extracted_rows = _count_meaningful_rows(df_out)
-            except Exception as ex:
-                await emit_log("VALIDATE", f"Note: could not read output Excel: {ex}", "warning")
-
-        await emit_log("VALIDATE", f"Output inspection: found {num_extracted_rows} meaningful product rows in 'Extracted Data'.", "success" if num_extracted_rows > 0 else "warning")
-
-        # Update outcome for attempt 1 (or current latest attempt) in AuditVault
+        # 4. Update outcome for attempt 1 (or current latest attempt) in AuditVault
         initial_passed = (rc == 0 and sample_output.exists() and num_extracted_rows > 0)
         current_attempt_idx = len(record.audit_history) if getattr(record, "audit_history", None) else 1
         AuditVaultManager.update_attempt_outcome(
@@ -550,201 +804,17 @@ async def _run_test_run(job_id: str, on_log=None, max_products: int = DEFAULT_TE
                 "extracted_rows": num_extracted_rows,
             }
 
-        # ----------------------------------------------------------------------
-        # Self-Healing Loop: Auto-repair if execution failed or extracted 0 rows
-        # ----------------------------------------------------------------------
+        # 5. Self-Healing Loop: Auto-repair if execution failed or extracted 0 rows
         healed = False
         heal_attempted = False
         diagnostic_recon_findings = {}
         if rc != 0 or not sample_output.exists() or num_extracted_rows == 0:
             heal_attempted = True
-            err_msg = stderr.decode(errors="replace")[-3000:] or stdout.decode(errors="replace")[-3000:]
-            if num_extracted_rows == 0 and rc == 0:
-                err_msg = (
-                    "Scraper execution finished with exit code 0, but the 'Extracted Data' sheet has 0 meaningful rows. "
-                    "Either all products were filtered out, selectors failed to extract attributes, or only empty/URL rows were written."
-                )
-
-            await emit_log("SELF-HEAL", "⚠️ Test run encountered issues (exit code != 0 or 0 meaningful rows extracted).", "warning")
-            await emit_log("SELF-HEAL", "Triggering autonomous self-healing repair pass with live MCP diagnostic inspection...", "info")
-            await emit_log("SELF-HEAL", f"Diagnostic context: {err_msg[:260]}...", "info")
-
-            try:
-                code_file = folder / "generated_scraper.py"
-                broken_code = code_file.read_text(encoding="utf-8") if code_file.exists() else ""
-                job_spec = InspectionJob(
-                    job_id=record.job_id,
-                    target_url=record.target_url,
-                    sample_keyword=record.sample_keyword,
-                    search_rules=record.search_rules or "",
-                    filter_rules=record.filter_rules or "",
-                    navigation_rules=record.navigation_rules or "",
-                    extraction_rules=record.extraction_rules or "",
-                    recon_model=record.recon_model,
-                    codegen_model=record.codegen_model,
-                )
-
-                run_details = {
-                    "exit_code": rc,
-                    "num_extracted_rows": num_extracted_rows,
-                    "sample_output_exists": sample_output.exists(),
-                    "sample_input_path": str(sample_input),
-                    "sample_output_path": str(sample_output),
-                    "max_products": max_products,
-                    "stderr": stderr.decode(errors="replace")[-4000:],
-                    "stdout_tail": stdout.decode(errors="replace")[-4000:],
-                    "error_summary": err_msg,
-                }
-
-                # Context Retention Across Retries: build attempt_history from audit_history
-                attempt_history = []
-                for entry in getattr(record, "audit_history", []):
-                    err_entry = entry.get("errors", {})
-                    diag_entry = entry.get("agent_decisions", {})
-                    attempt_history.append({
-                        "attempt": entry.get("attempt"),
-                        "error_summary": err_entry.get("error_summary", "") or err_entry.get("stderr_tail", ""),
-                        "diagnostic_summary": diag_entry.get("root_cause", "") or diag_entry.get("diagnostic_summary", ""),
-                        "fixes_attempted": entry.get("fixes", {}).get("strategy", ""),
-                        "outcome": entry.get("outcome", {}),
-                    })
-
-                async def on_repair_log(entry: dict):
-                    tool = entry.get("tool", "")
-                    tool_input = entry.get("input", {})
-                    msg = f"🔧 Live MCP Recon [{tool}]: {json.dumps(tool_input, default=str)[:140]}"
-                    await emit_log("SELF-HEAL", msg, "info")
-
-                await emit_log("SELF-HEAL", "🌐 Launching live MCP browser session to inspect DOM, test selectors, and diagnose root cause...", "info")
-                mcp_url = os.getenv("MCP_SERVER_URL") or os.getenv("PLAYWRIGHT_MCP_URL") or "http://localhost:8931"
-                repair_res = await run_codegen_repair(
-                    job=job_spec,
-                    broken_code=broken_code,
-                    error_context=err_msg,
-                    recon_findings=record.result,
-                    run_details=run_details,
-                    attempt_history=attempt_history,
-                    mcp_base_url=mcp_url,
-                    cost_sink=cost_sink,
-                    on_log_entry=on_repair_log,
-                )
-                repaired_code = getattr(repair_res, "repaired_code", repair_res[0] if len(repair_res) > 0 else "")
-                new_reqs = getattr(repair_res, "requirements_txt", repair_res[1] if len(repair_res) > 1 else "")
-                notes = getattr(repair_res, "confidence_notes", repair_res[2] if len(repair_res) > 2 else [])
-                diagnostic_recon_findings = getattr(repair_res, "diagnostic_findings", {})
-                prompts_used = getattr(repair_res, "prompts", {})
-
-                if diagnostic_recon_findings:
-                    root_cause = diagnostic_recon_findings.get("root_cause", "")
-                    if root_cause:
-                        await emit_log("SELF-HEAL", f"🔍 Live Diagnosis Root Cause: {root_cause[:200]}", "info")
-
-                if repaired_code:
-                    await emit_log("SELF-HEAL", "✅ Codegen Repair Agent synthesized code patch using live verified selectors. Writing to generated_scraper.py...", "success")
-                    new_attempt_num = (len(record.audit_history) + 1) if getattr(record, "audit_history", None) else 2
-
-                    # Permanently log retry attempt to AuditVault
-                    audit_entry = AuditVaultManager.record_attempt(
-                        folder=folder,
-                        attempt_number=new_attempt_num,
-                        phase="self_healing_retry",
-                        prompts=prompts_used,
-                        code=repaired_code,
-                        reqs=new_reqs or (req_file.read_text(encoding="utf-8") if req_file.exists() else ""),
-                        previous_code=broken_code,
-                        agent_decisions={
-                            "root_cause": diagnostic_recon_findings.get("root_cause", ""),
-                            "diagnostic_findings": diagnostic_recon_findings,
-                            "confidence_notes": notes,
-                        },
-                        errors={
-                            "exit_code": rc,
-                            "error_summary": err_msg,
-                            "stderr_tail": stderr.decode(errors="replace")[-1000:],
-                            "stdout_tail": stdout.decode(errors="replace")[-1000:],
-                        },
-                        fixes={
-                            "strategy": "live_mcp_codegen_repair",
-                            "working_listing_selectors": diagnostic_recon_findings.get("working_listing_selectors", []),
-                            "working_detail_selectors": diagnostic_recon_findings.get("working_detail_selectors", {}),
-                            "working_price_selector": diagnostic_recon_findings.get("working_price_selector", ""),
-                        },
-                    )
-                    if not hasattr(record, "audit_history") or record.audit_history is None:
-                        record.audit_history = []
-                    record.audit_history.append(audit_entry)
-
-                    # Persist official revision in record.revisions
-                    if not hasattr(record, "revisions") or record.revisions is None:
-                        record.revisions = []
-                    record.revisions.append({
-                        "version": new_attempt_num,
-                        "label": f"v{new_attempt_num} (Self-Healed Retry)",
-                        "created_at": datetime.now().isoformat(timespec="seconds"),
-                        "prompt": f"Self-Healing: {err_msg[:60]}",
-                        "generated_code": repaired_code,
-                        "requirements_txt": new_reqs,
-                        "cost": record.cost,
-                        "status": "self_healed",
-                        "sample_keyword": record.sample_keyword,
-                    })
-
-                    write_generated_files_to_disk(
-                        job_id=job_id,
-                        name=record.name,
-                        generated_code=repaired_code,
-                        requirements_txt=new_reqs or (req_file.read_text(encoding="utf-8") if req_file.exists() else ""),
-                    )
-                    # Re-install dependencies if updated
-                    if new_reqs and req_file.exists():
-                        await emit_log("SELF-HEAL", "Re-installing updated dependencies...", "info")
-                        await _run_streaming(str(venv_python), "-m", "pip", "install", "--no-warn-script-location", "-r", str(req_file), phase="PIP-REPAIR")
-                        if "playwright" in new_reqs.lower():
-                            await _run_streaming(str(venv_python), "-m", "playwright", "install", "chromium", phase="PW-REPAIR")
-
-                    # Re-run smoke test
-                    if sample_output.exists():
-                        sample_output.unlink()
-
-                    await emit_log("SELF-HEAL", "🔄 Re-running smoke test with repaired scraper...", "info")
-                    rc, stdout, stderr = await _run_streaming(
-                        str(venv_python), "generated_scraper.py",
-                        "--input", str(sample_input),
-                        "--output", str(sample_output),
-                        "--max-products", str(max_products),
-                        cwd=str(folder),
-                        phase="SCRAPER-REPAIR",
-                    )
-                    if sample_output.exists():
-                        try:
-                            df_out = pd.read_excel(sample_output, sheet_name="Extracted Data")
-                            num_extracted_rows = _count_meaningful_rows(df_out)
-                        except Exception:
-                            pass
-                    healed = (rc == 0 and sample_output.exists() and num_extracted_rows > 0)
-
-                    # Update retry outcome in AuditVault
-                    AuditVaultManager.update_attempt_outcome(
-                        folder=folder,
-                        attempt_number=new_attempt_num,
-                        outcome={
-                            "status": "passed" if healed else "failed",
-                            "returncode": rc,
-                            "extracted_rows": num_extracted_rows,
-                            "healed": healed,
-                        },
-                    )
-                    if record.audit_history:
-                        record.audit_history[-1]["outcome"] = {
-                            "status": "passed" if healed else "failed",
-                            "returncode": rc,
-                            "extracted_rows": num_extracted_rows,
-                            "healed": healed,
-                        }
-
-                    await emit_log("SELF-HEAL", f"Self-healing repair pass completed. Re-run exit code: {rc}, meaningful rows: {num_extracted_rows}", "success" if healed else "warning")
-            except Exception as repair_exc:
-                await emit_log("SELF-HEAL", f"❌ Self-healing repair pass error: {repair_exc}", "error")
+            rc, stdout, stderr, num_extracted_rows, healed, diagnostic_recon_findings = await _execute_self_healing_attempt(
+                record, folder, venv_python, req_file, sample_input, sample_output,
+                max_products, rc, stdout, stderr, num_extracted_rows,
+                _run_streaming, emit_log, cost_sink
+            )
 
         passed = (rc == 0 and sample_output.exists() and num_extracted_rows > 0)
 
@@ -852,6 +922,10 @@ class JobStore:
             filter_rules=req.filter_rules or "",
             navigation_rules=req.navigation_rules or "",
             extraction_rules=req.extraction_rules or "",
+            generalized_prompt=req.generalized_prompt or "",
+            preferred_module=req.preferred_module or "auto",
+            target_language=req.target_language or "python",
+            force_preferred_module=req.force_preferred_module,
             recon_model=req.recon_model,
             codegen_model=req.codegen_model,
         )
@@ -869,15 +943,21 @@ class JobStore:
         record = self.jobs[job_id]
         record.status = status
         if result:
+            tech_dec = getattr(result, "tech_stack_decision", None)
+            site_an = getattr(result, "site_analysis", None)
             record.result = {
                 "generated_code": result.generated_code,
                 "requirements_txt": result.requirements_txt,
                 "confidence_notes": result.confidence_notes,
                 "total_tool_calls": result.total_tool_calls,
                 "action_log": result.action_log,
+                "tech_stack_decision": tech_dec,
+                "site_analysis": site_an,
             }
             record.cost = result.cost_record
             record.anti_bot_marker = result.anti_bot_marker
+            record.tech_stack_decision = tech_dec
+            record.site_analysis = site_an
 
             if result.generated_code:
                 record.saved_to = write_generated_files_to_disk(
@@ -904,6 +984,8 @@ class JobStore:
                             "confidence_notes": result.confidence_notes,
                             "anti_bot_marker": result.anti_bot_marker,
                             "total_tool_calls": result.total_tool_calls,
+                            "tech_stack_decision": tech_dec,
+                            "site_analysis": site_an,
                         },
                         errors={},
                         fixes={"note": "Initial scraper generation from live inspection and codegen"},
@@ -1066,7 +1148,7 @@ async def refine_job_backend(
     prior_code = ""
     if record.saved_to:
         folder = Path(record.saved_to)
-        script_path = folder / "generated_scraper.py"
+        script_path = folder / GENERATED_SCRAPER_FILENAME
         if script_path.exists():
             try:
                 prior_code = script_path.read_text(encoding="utf-8")
@@ -1081,7 +1163,7 @@ async def refine_job_backend(
     prior_reqs = ""
     if record.saved_to:
         folder = Path(record.saved_to)
-        reqs_path = folder / "requirements.txt"
+        reqs_path = folder / REQUIREMENTS_FILENAME
         if reqs_path.exists():
             try:
                 prior_reqs = reqs_path.read_text(encoding="utf-8")
@@ -1133,6 +1215,15 @@ async def refine_job_backend(
         job_id=job_id,
         target_url=record.target_url,
         sample_keyword=active_keyword,
+        search_rules=record.search_rules,
+        filter_rules=record.filter_rules,
+        navigation_rules=record.navigation_rules,
+        extraction_rules=record.extraction_rules,
+        generalized_prompt=record.generalized_prompt,
+        preferred_module=record.preferred_module,
+        target_language=record.target_language,
+        force_preferred_module=record.force_preferred_module,
+        site_analysis=record.site_analysis,
         recon_model=recon_model or record.recon_model,
         codegen_model=codegen_model or record.codegen_model,
         temperature=temperature,
@@ -1141,7 +1232,7 @@ async def refine_job_backend(
     prior_findings = record.result if record.result else {}
 
     # 4. Execute Refinement Pipeline (Targeted Recon + Codegen)
-    result, merged_findings = await run_refinement_job(
+    result, _ = await run_refinement_job(
         job=job,
         prior_code=prior_code,
         refinement_instructions=refinement_instructions,
@@ -1154,6 +1245,10 @@ async def refine_job_backend(
     new_version_num = len(record.revisions) + 1
     record.status = result.status
     record.sample_keyword = active_keyword
+    tech_dec = getattr(result, "tech_stack_decision", None) or record.tech_stack_decision
+    site_an = getattr(result, "site_analysis", None) or record.site_analysis
+    record.tech_stack_decision = tech_dec
+    record.site_analysis = site_an
     record.result = {
         "generated_code": result.generated_code,
         "requirements_txt": result.requirements_txt,
@@ -1161,6 +1256,8 @@ async def refine_job_backend(
         "total_tool_calls": result.total_tool_calls,
         "action_log": result.action_log,
         "refinement_instructions": refinement_instructions,
+        "tech_stack_decision": tech_dec,
+        "site_analysis": site_an,
         "version": new_version_num,
     }
 
@@ -1185,8 +1282,13 @@ async def refine_job_backend(
         )
         if record.saved_to:
             try:
-                _build_sample_input_xlsx(Path(record.saved_to) / "sample_input.xlsx", record.target_url, active_keyword)
-                _build_sample_input_xlsx(Path(record.saved_to) / "input.xlsx", record.target_url, active_keyword)
+                save_dir = Path(record.saved_to)
+                _build_sample_input_xlsx(save_dir, record)
+                input_file = save_dir / "input.xlsx"
+                sample_file = save_dir / "sample_input.xlsx"
+                if sample_file.exists() and not input_file.exists():
+                    import shutil
+                    shutil.copyfile(sample_file, input_file)
             except Exception:
                 pass
 

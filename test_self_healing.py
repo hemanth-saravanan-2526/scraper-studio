@@ -373,8 +373,8 @@ if __name__ == "__main__":
         self.assertEqual(notes, ["Notes"])
 
         # Attribute access
-        self.assertEqual(res.prompts["recon_task_prompt"], "RECON PROMPT CONTENT")
-        self.assertEqual(res.prompts["codegen_task_prompt"], "CODEGEN PROMPT CONTENT")
+        self.assertEqual((res.prompts or {}).get("recon_task_prompt"), "RECON PROMPT CONTENT")
+        self.assertEqual((res.prompts or {}).get("codegen_task_prompt"), "CODEGEN PROMPT CONTENT")
 
     def test_audit_vault_manager_recording_and_persistence(self):
         """Verify AuditVaultManager permanently writes prompts, scripts, diff, decisions, errors, fixes, and outcomes."""
@@ -394,7 +394,7 @@ if __name__ == "__main__":
             new_code = "print('new repaired code version 2')\n"
 
             # 1. Record Attempt 2
-            audit_entry = AuditVaultManager.record_attempt(
+            _ = AuditVaultManager.record_attempt(
                 folder=folder,
                 attempt_number=2,
                 phase="self_healing_retry",

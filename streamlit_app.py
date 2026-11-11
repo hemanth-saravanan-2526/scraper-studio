@@ -48,6 +48,19 @@ import api_service
 importlib.reload(api_service)
 from api_service import store, write_generated_files_to_disk, _build_sample_input_xlsx, TEST_RUN_MAX_PRODUCTS, CreateJobRequest, _run_test_run, refine_job_backend
 
+GENERATED_SCRAPER_FILENAME = "generated_scraper.py"
+REQUIREMENTS_FILENAME = "requirements.txt"
+SAMPLE_INPUT_FILENAME = "sample_input.xlsx"
+INPUT_XLSX_FILENAME = "input.xlsx"
+APPLICATION_ZIP_MIME = "application/zip"
+OUTCOME_JSON_FILENAME = "outcome.json"
+AGENT_DECISIONS_FILENAME = "agent_decisions.json"
+ERRORS_JSON_FILENAME = "errors.json"
+FIXES_JSON_FILENAME = "fixes.json"
+MODEL_GPT_5_6_LUNA = "gpt-5.6-luna"
+MODEL_GPT_5_6_SOL = "gpt-5.6-sol"
+MODEL_GPT_5_6_TERRA = "gpt-5.6-terra"
+
 
 def _build_scraper_zip(job_record) -> bytes:
     """
@@ -61,9 +74,9 @@ def _build_scraper_zip(job_record) -> bytes:
 
     # 1. Script content
     code_content = ""
-    if folder and (folder / "generated_scraper.py").exists():
+    if folder and (folder / GENERATED_SCRAPER_FILENAME).exists():
         try:
-            code_content = (folder / "generated_scraper.py").read_text(encoding="utf-8")
+            code_content = (folder / GENERATED_SCRAPER_FILENAME).read_text(encoding="utf-8")
         except Exception:
             pass
     if not code_content and job_record.result:
@@ -77,9 +90,9 @@ def _build_scraper_zip(job_record) -> bytes:
 
     # 2. Requirements content
     reqs_content = ""
-    if folder and (folder / "requirements.txt").exists():
+    if folder and (folder / REQUIREMENTS_FILENAME).exists():
         try:
-            reqs_content = (folder / "requirements.txt").read_text(encoding="utf-8")
+            reqs_content = (folder / REQUIREMENTS_FILENAME).read_text(encoding="utf-8")
         except Exception:
             pass
     if not reqs_content and job_record.result:
@@ -89,14 +102,14 @@ def _build_scraper_zip(job_record) -> bytes:
 
     # 3. input.xlsx content (named input.xlsx, matching sample_input.xlsx)
     input_xlsx_bytes = None
-    if folder and (folder / "sample_input.xlsx").exists():
+    if folder and (folder / SAMPLE_INPUT_FILENAME).exists():
         try:
-            input_xlsx_bytes = (folder / "sample_input.xlsx").read_bytes()
+            input_xlsx_bytes = (folder / SAMPLE_INPUT_FILENAME).read_bytes()
         except Exception:
             pass
-    elif folder and (folder / "input.xlsx").exists():
+    elif folder and (folder / INPUT_XLSX_FILENAME).exists():
         try:
-            input_xlsx_bytes = (folder / "input.xlsx").read_bytes()
+            input_xlsx_bytes = (folder / INPUT_XLSX_FILENAME).read_bytes()
         except Exception:
             pass
 
@@ -112,11 +125,11 @@ def _build_scraper_zip(job_record) -> bytes:
 
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         if code_content:
-            zf.writestr("generated_scraper.py", code_content)
+            zf.writestr(GENERATED_SCRAPER_FILENAME, code_content)
         if reqs_content:
-            zf.writestr("requirements.txt", reqs_content)
+            zf.writestr(REQUIREMENTS_FILENAME, reqs_content)
         if input_xlsx_bytes:
-            zf.writestr("input.xlsx", input_xlsx_bytes)
+            zf.writestr(INPUT_XLSX_FILENAME, input_xlsx_bytes)
         sanitizer_file = Path(__file__).parent / "output_sanitizer.py"
         if sanitizer_file.exists():
             try:
@@ -269,6 +282,25 @@ st.markdown("""
     .pill-purple { background: #f3e8ff; color: #9333ea; border: 1px solid #e9d5ff; }
     .pill-green { background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; }
     .pill-orange { background: #ffedd5; color: #ea580c; border: 1px solid #fed7aa; }
+    .badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #f8fafc;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+        letter-spacing: 0.02em;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .badge-pill:hover {
+        border-color: #ff8a65;
+        color: #ea580c;
+        background: #fffaf5;
+    }
     
     /* Banner Panels */
     .banner-panel {
@@ -537,6 +569,97 @@ def render_sandbox_terminal(logs: list, is_running: bool = False, status_overrid
 store.load_from_disk()
 
 # -----------------------------------------------------------------------------
+# Tech Stack Session State & Configuration Dialog
+# -----------------------------------------------------------------------------
+if "tech_language" not in st.session_state:
+    st.session_state["tech_language"] = "Python"
+if "tech_module" not in st.session_state:
+    st.session_state["tech_module"] = "Auto-Detect (Smart Recommended)"
+if "tech_force" not in st.session_state:
+    st.session_state["tech_force"] = False
+
+def _resolve_module_code(label: str) -> str:
+    lbl = (label or "").lower()
+    if "request" in lbl or "http" in lbl:
+        return "requests"
+    if "nodriver" in lbl:
+        return "nodriver"
+    if "selenium" in lbl:
+        return "selenium"
+    if "beautifulsoup" in lbl or "bs4" in lbl:
+        return "beautifulsoup"
+    if "playwright" in lbl:
+        return "playwright"
+    return "auto"
+
+if hasattr(st, "dialog"):
+    @st.dialog("⚙️ Configure Tech Stack & Scraping Engine")
+    def configure_tech_stack_dialog():
+        st.markdown(
+            "Customize the programming language and core automation/HTTP library used for code synthesis. "
+            "The agent prioritizes your preference and verifies site feasibility during live reconnaissance."
+        )
+
+        col_lang, col_force = st.columns([1, 1])
+        with col_lang:
+            lang_choice = st.selectbox(
+                "Target Programming Language",
+                ["Python (Native Sandbox Supported)", "Node.js / TypeScript (Preview)"],
+                index=0 if "Python" in st.session_state.get("tech_language", "Python") else 1,
+                help="Primary programming language for generated scripts."
+            )
+        with col_force:
+            force_choice = st.checkbox(
+                "Force Selected Engine (Disable Auto-Fallback)",
+                value=st.session_state.get("tech_force", False),
+                help="If checked, the agent will attempt your selected library even if recon suggests risks."
+            )
+
+        st.markdown("### Preferred Scraping Engine / Module")
+        engine_options = [
+            "Auto-Detect (Smart Recommended)",
+            "Playwright (Async) - High-fidelity browser automation for dynamic SPAs",
+            "Requests / httpx - Ultra-fast direct HTTP & backend JSON/GraphQL APIs",
+            "nodriver - Undetected Chrome via CDP (Anti-Bot Bypass)",
+            "Selenium - Classic Chrome WebDriver",
+            "BeautifulSoup + Requests - Lightweight HTML parsing",
+        ]
+
+        curr_idx = 0
+        current_mod = st.session_state.get("tech_module", "")
+        for i, opt in enumerate(engine_options):
+            if current_mod and current_mod.split(" ")[0].lower() in opt.lower():
+                curr_idx = i
+                break
+
+        module_choice = st.radio(
+            "Choose Preferred Module",
+            engine_options,
+            index=curr_idx,
+            help="The code generator will structure the scraper using this engine unless reconnaissance proves it unsuitable."
+        )
+
+        st.markdown("""
+        <div style="background:#fff7ed; border-left:3px solid #ea580c; padding:10px 14px; border-radius:8px; font-size:12px; color:#9a3412; margin:12px 0;">
+            💡 <b>Smart Fallback Guarantee:</b> If you choose <i>Requests</i>, the agent will inspect network traffic for internal APIs. If the site is a client-side SPA with zero public APIs, it will safely adapt to Playwright and explain the exact reason on your Dashboard findings.
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_save, col_close = st.columns([1, 1])
+        with col_save:
+            if st.button("💾 Save Preferences", use_container_width=True, type="primary"):
+                st.session_state["tech_language"] = "Python" if "Python" in lang_choice else "Node.js"
+                st.session_state["tech_module"] = module_choice
+                st.session_state["tech_force"] = force_choice
+                st.rerun()
+        with col_close:
+            if st.button("Cancel", use_container_width=True):
+                st.rerun()
+else:
+    def configure_tech_stack_dialog():
+        pass
+
+# -----------------------------------------------------------------------------
 # Sidebar Navigation
 # -----------------------------------------------------------------------------
 with st.sidebar:
@@ -575,17 +698,59 @@ with st.sidebar:
 # -----------------------------------------------------------------------------
 if nav_selection == "⚡ Builder":
     st.markdown("""
-    <div class="app-header">
-        <span style="font-size:36px; line-height:1;">⚡</span>
-        <div>
-            <h1 class="app-title">Scraper Studio</h1>
-            <div class="app-subtitle">Describe what to collect in plain English. OpenAI (GPT-5.6 Luna) inspects the live site with Playwright and generates production-ready Python scrapers.</div>
-            <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+    <div class="app-header" style="position:relative; overflow:hidden; border-left: 4px solid #ff5722;">
+        <div style="display:flex; align-items:flex-start; gap:18px;">
+            <div style="background: linear-gradient(135deg, #ff5722 0%, #ea580c 100%); width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; color: #fff; box-shadow: 0 6px 16px rgba(255, 87, 34, 0.28); flex-shrink: 0;">⚡</div>
+            <div style="flex-grow:1;">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <h1 class="app-title" style="margin:0;">Scraper Studio</h1>
+                    <span style="background: rgba(255,87,34,0.1); color:#ea580c; border:1px solid rgba(255,87,34,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; text-transform:uppercase; letter-spacing:0.04em;">Multi-Engine AI Builder</span>
+                </div>
+                <div class="app-subtitle" style="margin-top:6px; font-size:13px; line-height:1.5;">
+                    Describe what to collect in plain English or structured rules. The autonomous agent inspects live DOM & backend APIs with Playwright stealth, verifies engine feasibility, and generates production-ready scrapers.
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                    <span class="badge-pill">⚡ Autonomous Recon</span>
+                    <span class="badge-pill">🧠 GPT-5.6 Multi-Engine</span>
+                    <span class="badge-pill">🛡️ Anti-Bot Stealth</span>
+                    <span class="badge-pill">🚀 Backend API Discovery</span>
+                    <span class="badge-pill">📊 Universal Dual-Sheet Excel</span>
+                </div>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+    cur_lang = st.session_state.get("tech_language", "Python")
+    cur_mod = st.session_state.get("tech_module", "Auto-Detect (Smart Recommended)")
+    cur_force = st.session_state.get("tech_force", False)
+    mod_short = cur_mod.split(" - ")[0]
+
+    st.markdown(f"""
+    <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:12px 18px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; box-shadow:0 1px 4px rgba(0,0,0,0.02);">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:20px;">⚙️</span>
+            <div>
+                <div style="font-size:11px; font-weight:700; color:#ea580c; text-transform:uppercase; letter-spacing:0.06em;">Configured Scraping Stack</div>
+                <div style="font-size:13.5px; font-weight:600; color:#0f172a;">
+                    Language: <span style="color:#ff5722;">{cur_lang}</span> • Preferred Engine: <span style="color:#ff5722;">{mod_short}</span> 
+                    {"<span style='color:#dc2626; font-size:11.5px; margin-left:6px;'>(Forced)</span>" if cur_force else "<span style='color:#16a34a; font-size:11.5px; margin-left:6px;'>✔ Smart Fallback Active</span>"}
+                </div>
+            </div>
+        </div>
+        <div style="font-size:11.5px; color:#64748b;">
+            Prioritizes user preference; verifies site compatibility before code synthesis.
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
+    col_t1, _ = st.columns([1.5, 3.5])
+    with col_t1:
+        if st.button("⚙️ Configure Tech Stack / Engine", use_container_width=True):
+            configure_tech_stack_dialog()
+
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+
     with st.form("builder_form"):
         col1, col2 = st.columns([2, 1])
         with col1:
@@ -594,33 +759,40 @@ if nav_selection == "⚡ Builder":
         with col2:
             sample_keyword = st.text_input("Sample Keyword (Optional)", placeholder="e.g. Galaxy S24")
             uploaded_excel = st.file_uploader("Sample Input Excel (.xlsx)", type=["xlsx", "xls"], help="Upload an Excel file with keyword/listing_url columns to test with.")
-        
-        st.markdown("### Natural Language Rules")
-        tab_search, tab_filter, tab_nav, tab_extract = st.tabs(["🔎 Search Rules", "🎯 Filter Rules", "🧭 Navigation Rules", "📦 Extraction Rules"])
-        
-        with tab_search:
-            search_rules = st.text_area("Search Rules", placeholder="Describe search rules (e.g. Match products whose title or slug contains the search keyword)...", height=90)
-        with tab_filter:
-            filter_rules = st.text_area("Filter Rules", placeholder="Describe filter rules (e.g. Ignore accessories, cases, and refurbished products)...", height=90)
-        with tab_nav:
-            navigation_rules = st.text_area("Navigation Rules", placeholder="Describe navigation rules (e.g. Listing page -> click through to each product detail page to inspect specs)...", height=90)
-        with tab_extract:
-            extraction_rules = st.text_area("Extraction Rules (Fields to capture)", placeholder="Describe extraction rules (e.g. Product Title, Model Code, Price, Color, Specs, Availability)...", height=90)
-        
+
+        st.markdown("### 💬 Natural Language Prompt & Rules")
+        generalized_prompt = st.text_area(
+            "✨ Unified Scraper Prompt (Optional - Freeform English)",
+            placeholder="e.g. Search for Samsung smartphones under $800, navigate through the first 3 pages of results, click into each phone detail page, and extract Product Title, SKU, Price, Color, RAM/Storage Specs, and Availability into Excel...",
+            height=95,
+            help="Describe your entire scraping goal in plain English. The agent automatically handles search, filtering, navigation, and extraction based on your instructions. You can use this single box or the structured tabs below."
+        )
+
+        with st.expander("🧭 Structured Rules (Search, Filter, Navigation & Extraction Tabs)", expanded=False):
+            tab_search, tab_filter, tab_nav, tab_extract = st.tabs(["🔎 Search Rules", "🎯 Filter Rules", "🧭 Navigation Rules", "📦 Extraction Rules"])
+            with tab_search:
+                search_rules = st.text_area("Search Rules", placeholder="Describe search rules (e.g. Match products whose title or slug contains the search keyword)...", height=80)
+            with tab_filter:
+                filter_rules = st.text_area("Filter Rules", placeholder="Describe filter rules (e.g. Ignore accessories, cases, and refurbished products)...", height=80)
+            with tab_nav:
+                navigation_rules = st.text_area("Navigation Rules", placeholder="Describe navigation rules (e.g. Listing page -> click through to each product detail page to inspect specs)...", height=80)
+            with tab_extract:
+                extraction_rules = st.text_area("Extraction Rules (Fields to capture)", placeholder="Describe extraction rules (e.g. Product Title, Model Code, Price, Color, Specs, Availability)...", height=80)
+
         with st.expander("⚙️ Advanced Settings (Models, Limits, & Budget)"):
             c1, c2, c3 = st.columns(3)
             with c1:
-                recon_model = st.selectbox("Phase 1 (Recon) Model", ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol", "gpt-4o", "gpt-4o-mini"], index=0)
+                recon_model = st.selectbox("Phase 1 (Recon) Model", [MODEL_GPT_5_6_LUNA, MODEL_GPT_5_6_TERRA, MODEL_GPT_5_6_SOL, "gpt-4o", "gpt-4o-mini"], index=0)
                 max_steps = st.number_input("Max Inspection Steps", min_value=5, max_value=100, value=40)
             with c2:
-                codegen_model = st.selectbox("Phase 2 (Codegen) Model", ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol", "gpt-4o", "gpt-4o-mini"], index=0)
+                codegen_model = st.selectbox("Phase 2 (Codegen) Model", [MODEL_GPT_5_6_LUNA, MODEL_GPT_5_6_TERRA, MODEL_GPT_5_6_SOL, "gpt-4o", "gpt-4o-mini"], index=0)
                 max_seconds = st.number_input("Max Wall-Clock Time (Seconds)", min_value=30, max_value=1200, value=600)
             with c3:
                 temperature = st.slider("Temperature", min_value=0.0, max_value=2.0, value=float(get_default_temperature()), step=0.1)
                 max_budget = st.number_input("Max Budget ($USD)", min_value=0.10, max_value=10.0, value=1.50, step=0.25)
-            
+
             mask_reviews = st.checkbox("Mask Reviewer PII & Skip Review Accordions", value=True, help="Excludes customer review accordions from spec extraction and masks reviewer personal names/emails.")
-        
+
         submit_btn = st.form_submit_button("🚀 Generate Scraper")
 
     if submit_btn:
@@ -648,10 +820,13 @@ if nav_selection == "⚡ Builder":
                             break
                     if not extracted_keyword and not df_up.empty:
                         extracted_keyword = str(df_up.iloc[0, 0]).strip()
-                except Exception as up_err:
+                except (ValueError, OSError, KeyError, IndexError, TypeError, zipfile.BadZipFile) as up_err:
                     print(f"Warning: could not parse uploaded excel: {up_err}")
 
             active_sample_keyword = sample_keyword.strip() if sample_keyword else (extracted_keyword or None)
+            selected_mod_code = _resolve_module_code(st.session_state.get("tech_module", "auto"))
+            target_lang_code = "python" if "python" in st.session_state.get("tech_language", "python").lower() else "nodejs"
+            force_mod = st.session_state.get("tech_force", False)
 
             job_req = InspectionJob(
                 job_id=str(time.time()).replace(".", "-"),
@@ -661,6 +836,10 @@ if nav_selection == "⚡ Builder":
                 filter_rules=filter_rules.strip() if filter_rules else "",
                 navigation_rules=navigation_rules.strip() if navigation_rules else "",
                 extraction_rules=effective_extraction,
+                generalized_prompt=generalized_prompt.strip() if generalized_prompt else "",
+                preferred_module=selected_mod_code,
+                target_language=target_lang_code,
+                force_preferred_module=force_mod,
                 max_steps=max_steps,
                 max_seconds=max_seconds,
                 max_budget_usd=max_budget,
@@ -668,7 +847,10 @@ if nav_selection == "⚡ Builder":
                 codegen_model=codegen_model,
                 temperature=temperature,
             )
-            
+
+            status_placeholder = st.empty()
+            log_placeholder = st.empty()
+
             # Create Job Record
             async def _run_job_flow():
                 record = await store.create(api_service.CreateJobRequest(
@@ -679,6 +861,10 @@ if nav_selection == "⚡ Builder":
                     filter_rules=filter_rules.strip() if filter_rules else "",
                     navigation_rules=navigation_rules.strip() if navigation_rules else "",
                     extraction_rules=effective_extraction,
+                    generalized_prompt=generalized_prompt.strip() if generalized_prompt else "",
+                    preferred_module=selected_mod_code,
+                    target_language=target_lang_code,
+                    force_preferred_module=force_mod,
                     max_steps=max_steps,
                     max_seconds=max_seconds,
                     max_budget_usd=max_budget,
@@ -687,17 +873,31 @@ if nav_selection == "⚡ Builder":
                     temperature=temperature,
                 ))
                 
-                status_placeholder = st.empty()
-                log_placeholder = st.empty()
-                
                 live_logs = []
                 async def _on_log(entry):
                     live_logs.append(entry)
-                    log_html = "".join(
-                        f"<div class='log-entry'><span class='log-ts'>[{e.get('ts','')}]</span> <span class='log-phase'>[{e.get('phase','').upper()}]</span> <span class='log-tool'>{e.get('tool','')}</span> #{e.get('call_number','')}</div>"
-                        for e in live_logs[-12:]
-                    )
-                    log_placeholder.markdown(f"<div class='log-container'>{log_html}</div>", unsafe_allow_html=True)
+                    items_html = []
+                    for e in live_logs[-14:]:
+                        phase = (e.get('phase') or '').lower()
+                        ts = e.get('ts', '')
+                        call_no = e.get('call_number', '')
+                        tool = e.get('tool', '')
+                        inp = e.get('input', {})
+                        if phase == 'analyzer':
+                            if isinstance(inp, dict) and 'url' in inp:
+                                desc = f"🌐 Pre-flight probe: Site Analyzer scanning <span style='color:#a7f3d0'>{html.escape(str(inp['url']))}</span>"
+                            elif isinstance(inp, dict) and 'working_method' in inp:
+                                desc = f"🌐 Site Analyzer findings: <b style='color:#6ee7b7'>{html.escape(str(inp.get('working_method')))}</b> | Cloudflare: {inp.get('cloudflare')} | Browser: {inp.get('browser_required')}"
+                            else:
+                                desc = "🌐 Site Analyzer intelligence pass"
+                            items_html.append(
+                                f"<div class='log-entry'><span class='log-ts'>[{ts}]</span> <span style='color:#34d399;font-weight:700;'>[ANALYZER]</span> {desc}</div>"
+                            )
+                        else:
+                            items_html.append(
+                                f"<div class='log-entry'><span class='log-ts'>[{ts}]</span> <span class='log-phase'>[{phase.upper()}]</span> <span class='log-tool'>{tool}</span> #{call_no}</div>"
+                            )
+                    log_placeholder.markdown(f"<div class='log-container'>{''.join(items_html)}</div>", unsafe_allow_html=True)
                 
                 status_placeholder.info(f"⏳ Running autonomous agent inspection for **{effective_job_name}**...")
                 
@@ -711,8 +911,8 @@ if nav_selection == "⚡ Builder":
                     try:
                         dest_f = Path(rec_fresh.saved_to)
                         dest_f.mkdir(parents=True, exist_ok=True)
-                        (dest_f / "sample_input.xlsx").write_bytes(uploaded_excel_bytes)
-                        (dest_f / "input.xlsx").write_bytes(uploaded_excel_bytes)
+                        (dest_f / SAMPLE_INPUT_FILENAME).write_bytes(uploaded_excel_bytes)
+                        (dest_f / INPUT_XLSX_FILENAME).write_bytes(uploaded_excel_bytes)
                     except Exception as ex_save:
                         print(f"Warning: could not write uploaded excel to disk: {ex_save}")
                 
@@ -723,10 +923,13 @@ if nav_selection == "⚡ Builder":
                         st.code(res.generated_code[:1200] + ("\n\n# ... [Open Dashboard tab to view full script] ..." if len(res.generated_code) > 1200 else ""), language="python")
                         st.info("💡 Switch to the **📊 Dashboard** tab in the sidebar to download files, run isolated test runs, or view the complete audit log.")
                 else:
-                    status_placeholder.warning(f"⚠️ Inspection ended with status: **{res.status}**")
+                    status_placeholder.error(f"❌ Inspection ended with status: **{res.status}**")
                     if res.confidence_notes:
                         for note in res.confidence_notes:
-                            st.warning(note)
+                            if any(k in note.lower() for k in ("error", "429", "quota", "credit", "failed", "unauthorized")):
+                                st.error(f"🚨 **{note}**")
+                            else:
+                                st.warning(note)
                 
                 st.session_state["selected_job_id"] = record.job_id
             
@@ -739,7 +942,10 @@ if nav_selection == "⚡ Builder":
                     asyncio.run(__patched())
                 except BaseException as ex:
                     import traceback
-                    status_placeholder.error(f"❌ Inspection process halted: {ex}")
+                    if "status_placeholder" in locals() and status_placeholder:
+                        status_placeholder.error(f"❌ Inspection process halted: {ex}")
+                    else:
+                        st.error(f"❌ Inspection process halted: {ex}")
                     st.error(f"**Error Details:** `{ex}`")
                     with st.expander("Full Traceback"):
                         st.code(traceback.format_exc(), language="python")
@@ -791,7 +997,104 @@ elif nav_selection == "📊 Dashboard":
         with c4:
             tool_calls = (job.result or {}).get("total_tool_calls", 0)
             st.metric("Tool Calls", tool_calls)
-        
+
+        # Tech Stack Decision & Engine Analysis Card
+        tech_dec = getattr(job, "tech_stack_decision", None) or (job.result or {}).get("tech_stack_decision")
+        if tech_dec:
+            req_mod = str(tech_dec.get("requested_module", "auto")).upper()
+            sel_mod = str(tech_dec.get("selected_module", "playwright")).upper()
+            was_fall = tech_dec.get("was_fallback", False)
+            reason = tech_dec.get("reason", "")
+            apis = tech_dec.get("discovered_apis", [])
+            lang = tech_dec.get("language", "python").capitalize()
+
+            card_border = "#ea580c" if was_fall else "#22c55e"
+            card_bg = "#fffaf5" if was_fall else "#f0fdf4"
+            status_text = "⚠️ SMART AUTO-FALLBACK" if was_fall else "✔ PREFERENCE VERIFIED & APPLIED"
+            status_color = "#c2410c" if was_fall else "#15803d"
+
+            st.markdown(f"""
+            <div style="background:{card_bg}; border:1px solid {card_border}; border-left:4px solid {card_border}; padding:14px 18px; border-radius:10px; margin:14px 0;">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:18px;">⚙️</span>
+                        <span style="font-size:13px; font-weight:700; color:#0f172a; text-transform:uppercase; letter-spacing:0.04em;">Scraping Engine Decision</span>
+                        <span style="background:#ffffff; border:1px solid {card_border}; color:{status_color}; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;">{status_text}</span>
+                    </div>
+                    <div style="font-size:12px; color:#64748b; font-family:'JetBrains Mono', monospace;">
+                        Language: <b>{lang}</b> • Requested: <b>{req_mod}</b> → Selected: <b style="color:{status_color};">{sel_mod}</b>
+                    </div>
+                </div>
+                <div style="font-size:12.5px; color:#334155; margin-top:8px; line-height:1.5;">
+                    {html.escape(reason)}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if apis:
+                with st.expander(f"🌐 Discovered Backend Network APIs ({len(apis)} Endpoints)", expanded=False):
+                    for api_url in apis:
+                        st.markdown(f"- `{api_url}`")
+
+        # Site Analyzer Pre-Flight Report Card
+        raw_sa = getattr(job, "site_analysis", None) or (job.result or {}).get("site_analysis")
+        from site_analyzer_client import extract_site_summary
+        sa_summary = extract_site_summary(raw_sa)
+        if sa_summary.get("available"):
+            acc = sa_summary.get("accessible", True)
+            method = sa_summary.get("working_method", "Direct HTTPS")
+            cf = sa_summary.get("cloudflare", False)
+            anti_bot = sa_summary.get("anti_bot_provider", "None detected")
+            js_req = sa_summary.get("javascript_required", False)
+            br_req = sa_summary.get("browser_required", False)
+            px_req = sa_summary.get("proxy_required", False)
+            rec_approach = sa_summary.get("recommended_approach", "")
+            feasibility = sa_summary.get("automation_feasibility", "")
+            evidence = sa_summary.get("evidence", [])
+
+            acc_badge = '<span style="background:#dcfce7; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:999px; font-weight:700; font-size:11px;">✔ ACCESSIBLE</span>' if acc else '<span style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; padding:2px 8px; border-radius:999px; font-weight:700; font-size:11px;">✖ BLOCKED</span>'
+            cf_badge = f'<span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:2px 8px; border-radius:999px; font-weight:700; font-size:11px;">🛡️ {html.escape(anti_bot)}</span>' if (cf or anti_bot != "None detected") else '<span style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; padding:2px 8px; border-radius:999px; font-weight:600; font-size:11px;">🛡️ No WAF / Cloudflare</span>'
+            js_badge = '<span style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:2px 8px; border-radius:999px; font-weight:600; font-size:11px;">⚡ JS Required</span>' if js_req else '<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:999px; font-weight:600; font-size:11px;">⚡ Static HTML / No JS</span>'
+            br_badge = '<span style="background:#ede9fe; color:#6d28d9; border:1px solid #ddd6fe; padding:2px 8px; border-radius:999px; font-weight:600; font-size:11px;">🎭 Browser Required</span>' if br_req else '<span style="background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; padding:2px 8px; border-radius:999px; font-weight:600; font-size:11px;">🚀 Direct HTTP (No Browser)</span>'
+
+            st.markdown(f"""
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-left:4px solid #0284c7; padding:16px 20px; border-radius:12px; margin:14px 0; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:20px;">🌐</span>
+                        <span style="font-size:14px; font-weight:700; color:#0f172a; text-transform:uppercase; letter-spacing:0.04em;">Site Analyzer Intelligence Report</span>
+                        {acc_badge}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        {cf_badge}
+                        {js_badge}
+                        {br_badge}
+                    </div>
+                </div>
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px; font-size:12.5px; color:#334155; line-height:1.5; margin-bottom:8px;">
+                    <b>💡 Recommended Approach:</b> {html.escape(rec_approach or method)}
+                </div>
+                <div style="font-size:12px; color:#64748b; line-height:1.4;">
+                    <b>Working Method:</b> <code style="color:#0284c7;">{html.escape(method)}</code> • 
+                    <b>Feasibility:</b> {html.escape(feasibility[:140])}...
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            with st.expander("🔍 Site Analyzer Detailed Evidence & Full Diagnostic Report", expanded=False):
+                if evidence:
+                    st.markdown("##### Probe Evidence")
+                    for ev in evidence:
+                        st.markdown(f"- {ev}")
+                st.markdown("##### Full Raw Response JSON")
+                st.json(raw_sa)
+        elif raw_sa and raw_sa.get("status") in ("unavailable", "timeout", "error"):
+            st.markdown(f"""
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-left:4px solid #94a3b8; padding:10px 16px; border-radius:8px; margin:12px 0; font-size:12px; color:#64748b;">
+                🌐 <b>Site Analyzer:</b> Diagnostic probe was skipped or timed out ({html.escape(str(raw_sa.get('error', '')))}). Live reconnaissance proceeded directly via Playwright MCP.
+            </div>
+            """, unsafe_allow_html=True)
+
         # Anti-Bot or Confidence Flags
         notes = (job.result or {}).get("confidence_notes", [])
         if job.anti_bot_marker or notes:
@@ -865,7 +1168,7 @@ elif nav_selection == "📊 Dashboard":
                     label="📦 Download Complete Scraper (.zip)",
                     data=zip_bytes,
                     file_name=zip_filename,
-                    mime="application/zip",
+                    mime=APPLICATION_ZIP_MIME,
                     help="Downloads complete standalone scraper package: generated_scraper.py, input.xlsx, and requirements.txt.",
                     key=f"dl_zip_top_{job.job_id}",
                 )
@@ -880,7 +1183,7 @@ elif nav_selection == "📊 Dashboard":
                     st.download_button(
                         label="📥 Download generated_scraper.py",
                         data=view_code,
-                        file_name=f"{job.job_id}_generated_scraper.py",
+                        file_name=f"{job.job_id}_{GENERATED_SCRAPER_FILENAME}",
                         mime="text/x-python",
                     )
                 with btn_c2:
@@ -889,7 +1192,7 @@ elif nav_selection == "📊 Dashboard":
                             label="📦 Download Package (.zip)",
                             data=zip_bytes,
                             file_name=zip_filename,
-                            mime="application/zip",
+                            mime=APPLICATION_ZIP_MIME,
                             help="Includes generated_scraper.py, input.xlsx, and requirements.txt",
                             key=f"dl_zip_tab_{job.job_id}",
                         )
@@ -902,7 +1205,7 @@ elif nav_selection == "📊 Dashboard":
                 st.download_button(
                     label="📥 Download requirements.txt",
                     data=view_reqs,
-                    file_name="requirements.txt",
+                    file_name=REQUIREMENTS_FILENAME,
                     mime="text/plain",
                 )
             else:
@@ -961,24 +1264,24 @@ elif nav_selection == "📊 Dashboard":
                             "outcome": None,
                             "audit_path": str(a_dir.resolve()),
                         }
-                        if (a_dir / "outcome.json").exists():
+                        if (a_dir / OUTCOME_JSON_FILENAME).exists():
                             try:
-                                entry["outcome"] = json.loads((a_dir / "outcome.json").read_text(encoding="utf-8"))
+                                entry["outcome"] = json.loads((a_dir / OUTCOME_JSON_FILENAME).read_text(encoding="utf-8"))
                             except Exception:
                                 pass
-                        if (a_dir / "agent_decisions.json").exists():
+                        if (a_dir / AGENT_DECISIONS_FILENAME).exists():
                             try:
-                                entry["agent_decisions"] = json.loads((a_dir / "agent_decisions.json").read_text(encoding="utf-8"))
+                                entry["agent_decisions"] = json.loads((a_dir / AGENT_DECISIONS_FILENAME).read_text(encoding="utf-8"))
                             except Exception:
                                 pass
-                        if (a_dir / "errors.json").exists():
+                        if (a_dir / ERRORS_JSON_FILENAME).exists():
                             try:
-                                entry["errors"] = json.loads((a_dir / "errors.json").read_text(encoding="utf-8"))
+                                entry["errors"] = json.loads((a_dir / ERRORS_JSON_FILENAME).read_text(encoding="utf-8"))
                             except Exception:
                                 pass
-                        if (a_dir / "fixes.json").exists():
+                        if (a_dir / FIXES_JSON_FILENAME).exists():
                             try:
-                                entry["fixes"] = json.loads((a_dir / "fixes.json").read_text(encoding="utf-8"))
+                                entry["fixes"] = json.loads((a_dir / FIXES_JSON_FILENAME).read_text(encoding="utf-8"))
                             except Exception:
                                 pass
                         audit_history.append(entry)
@@ -1007,13 +1310,18 @@ elif nav_selection == "📊 Dashboard":
                     ts = entry.get("timestamp", "")
                     attempt_dir = (saved_folder / "audit" / f"attempt_{att_num}") if saved_folder else None
                     outcome = entry.get("outcome") or {}
-                    if not outcome and attempt_dir and (attempt_dir / "outcome.json").exists():
+                    if not outcome and attempt_dir and (attempt_dir / OUTCOME_JSON_FILENAME).exists():
                         try:
-                            outcome = json.loads((attempt_dir / "outcome.json").read_text(encoding="utf-8"))
+                            outcome = json.loads((attempt_dir / OUTCOME_JSON_FILENAME).read_text(encoding="utf-8"))
                         except Exception:
                             pass
                     out_status = outcome.get("status", "unknown").upper()
-                    status_badge = "🟢 PASSED" if out_status == "PASSED" else ("🔴 FAILED" if out_status == "FAILED" else "⚪ RUNNING/PENDING")
+                    if out_status == "PASSED":
+                        status_badge = "🟢 PASSED"
+                    elif out_status == "FAILED":
+                        status_badge = "🔴 FAILED"
+                    else:
+                        status_badge = "⚪ RUNNING/PENDING"
 
                     with st.expander(f"Attempt #{att_num} — {phase} ({ts}) — {status_badge}", expanded=(att_num == len(audit_history))):
                         m1, m2, m3, m4 = st.columns(4)
@@ -1037,9 +1345,9 @@ elif nav_selection == "📊 Dashboard":
 
                         with t_dec:
                             dec = entry.get("agent_decisions", {})
-                            if attempt_dir and (attempt_dir / "agent_decisions.json").exists():
+                            if attempt_dir and (attempt_dir / AGENT_DECISIONS_FILENAME).exists():
                                 try:
-                                    dec = json.loads((attempt_dir / "agent_decisions.json").read_text(encoding="utf-8"))
+                                    dec = json.loads((attempt_dir / AGENT_DECISIONS_FILENAME).read_text(encoding="utf-8"))
                                 except Exception:
                                     pass
                             if dec:
@@ -1052,9 +1360,9 @@ elif nav_selection == "📊 Dashboard":
 
                         with t_err:
                             errs = entry.get("errors", {})
-                            if attempt_dir and (attempt_dir / "errors.json").exists():
+                            if attempt_dir and (attempt_dir / ERRORS_JSON_FILENAME).exists():
                                 try:
-                                    errs = json.loads((attempt_dir / "errors.json").read_text(encoding="utf-8"))
+                                    errs = json.loads((attempt_dir / ERRORS_JSON_FILENAME).read_text(encoding="utf-8"))
                                 except Exception:
                                     pass
                             if errs:
@@ -1064,9 +1372,9 @@ elif nav_selection == "📊 Dashboard":
 
                         with t_fix:
                             fixes = entry.get("fixes", {})
-                            if attempt_dir and (attempt_dir / "fixes.json").exists():
+                            if attempt_dir and (attempt_dir / FIXES_JSON_FILENAME).exists():
                                 try:
-                                    fixes = json.loads((attempt_dir / "fixes.json").read_text(encoding="utf-8"))
+                                    fixes = json.loads((attempt_dir / FIXES_JSON_FILENAME).read_text(encoding="utf-8"))
                                 except Exception:
                                     pass
                             if fixes:
@@ -1173,13 +1481,13 @@ elif nav_selection == "📊 Dashboard":
                 with st.expander("⚙️ Refinement Models & Temperature"):
                     ref_recon_model = st.selectbox(
                         "Recon Model",
-                        ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol", "gpt-4o", "gpt-4o-mini"],
+                        [MODEL_GPT_5_6_LUNA, MODEL_GPT_5_6_TERRA, MODEL_GPT_5_6_SOL, "gpt-4o", "gpt-4o-mini"],
                         index=0,
                         key=f"ref_recon_m_{job.job_id}",
                     )
                     ref_codegen_model = st.selectbox(
                         "Codegen Model",
-                        ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol", "gpt-4o", "gpt-4o-mini"],
+                        [MODEL_GPT_5_6_LUNA, MODEL_GPT_5_6_TERRA, MODEL_GPT_5_6_SOL, "gpt-4o", "gpt-4o-mini"],
                         index=0,
                         key=f"ref_codegen_m_{job.job_id}",
                     )
@@ -1401,7 +1709,7 @@ elif nav_selection == "📊 Dashboard":
                     label="📦 Download Scraper (.zip)",
                     data=zip_bytes,
                     file_name=zip_filename,
-                    mime="application/zip",
+                    mime=APPLICATION_ZIP_MIME,
                     help="Downloads generated_scraper.py, input.xlsx, and requirements.txt as a ZIP archive.",
                     key=f"dl_zip_bottom_{job.job_id}",
                 )
