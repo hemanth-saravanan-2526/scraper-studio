@@ -41,5 +41,14 @@ env/
 # Temporary files & logs
 *.log
 scratch/
-
 *.zip
+*.bak
+*.patch
+
+# Generated scraper workspaces and artifacts
+generated_scripts/
+
+# Code quality & linters
+.codacy/
+qodana.yaml
+.github/instructions/codacy.instructions.md
