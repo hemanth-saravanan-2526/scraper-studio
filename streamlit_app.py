@@ -9,6 +9,7 @@ import asyncio
 import html
 import io
 import json
+import logging
 import os
 import sys
 import time
@@ -19,20 +20,18 @@ import pandas as pd
 import streamlit as st
 from dotenv import load_dotenv
 
+logger = logging.getLogger(__name__)
+
 # Load .env variables immediately
 load_dotenv(override=False)
 
 # Ensure local imports work cleanly
 sys.path.insert(0, os.getcwd())
 
-import auth_config
-from auth_config import require_credentials_at_startup, resolve_credentials, CredentialError
-import cost_metering
-from cost_metering import JSONLCostSink, DEFAULT_MAX_BUDGET_USD, OPENAI_MODEL_PRICING
-import inspection_agent_service
+from auth_config import resolve_credentials, CredentialError
+from cost_metering import DEFAULT_MAX_BUDGET_USD, OPENAI_MODEL_PRICING
 from inspection_agent_service import (
     InspectionJob,
-    InspectionResult,
     run_inspection_job,
     get_default_model,
     get_default_recon_model,
@@ -46,7 +45,7 @@ from openpyxl import Workbook
 import importlib
 import api_service
 importlib.reload(api_service)
-from api_service import store, write_generated_files_to_disk, _build_sample_input_xlsx, TEST_RUN_MAX_PRODUCTS, CreateJobRequest, _run_test_run, refine_job_backend
+from api_service import store, _build_sample_input_xlsx, TEST_RUN_MAX_PRODUCTS, CreateJobRequest, _run_test_run, refine_job_backend
 
 GENERATED_SCRAPER_FILENAME = "generated_scraper.py"
 REQUIREMENTS_FILENAME = "requirements.txt"
@@ -77,24 +76,24 @@ def _build_scraper_zip(job_record) -> bytes:
     if folder and (folder / GENERATED_SCRAPER_FILENAME).exists():
         try:
             code_content = (folder / GENERATED_SCRAPER_FILENAME).read_text(encoding="utf-8")
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not read generated scraper file: %s", exc)
     if not code_content and job_record.result:
         code_content = job_record.result.get("generated_code", "")
 
     if code_content:
         try:
             code_content, _ = sanitize_generated_code(code_content)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not sanitize generated code for zip: %s", exc)
 
     # 2. Requirements content
     reqs_content = ""
     if folder and (folder / REQUIREMENTS_FILENAME).exists():
         try:
             reqs_content = (folder / REQUIREMENTS_FILENAME).read_text(encoding="utf-8")
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not read requirements file: %s", exc)
     if not reqs_content and job_record.result:
         reqs_content = job_record.result.get("requirements_txt", "")
     if not reqs_content:
@@ -105,13 +104,13 @@ def _build_scraper_zip(job_record) -> bytes:
     if folder and (folder / SAMPLE_INPUT_FILENAME).exists():
         try:
             input_xlsx_bytes = (folder / SAMPLE_INPUT_FILENAME).read_bytes()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not read sample_input.xlsx: %s", exc)
     elif folder and (folder / INPUT_XLSX_FILENAME).exists():
         try:
             input_xlsx_bytes = (folder / INPUT_XLSX_FILENAME).read_bytes()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not read input.xlsx: %s", exc)
 
     if not input_xlsx_bytes:
         wb = Workbook()
@@ -134,8 +133,8 @@ def _build_scraper_zip(job_record) -> bytes:
         if sanitizer_file.exists():
             try:
                 zf.writestr("output_sanitizer.py", sanitizer_file.read_text(encoding="utf-8"))
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Could not bundle output_sanitizer.py: %s", exc)
 
     return zip_buffer.getvalue()
 
@@ -810,8 +809,6 @@ if nav_selection == "⚡ Builder":
             if uploaded_excel is not None:
                 try:
                     uploaded_excel_bytes = uploaded_excel.getvalue()
-                    import io
-                    import pandas as pd
                     df_up = pd.read_excel(io.BytesIO(uploaded_excel_bytes), header=None)
                     for val in df_up.iloc[:, 0].dropna():
                         s = str(val).strip()
@@ -1122,8 +1119,8 @@ elif nav_selection == "📊 Dashboard":
         if code_str:
             try:
                 code_str, _ = sanitize_generated_code(code_str)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Could not sanitize code for view: %s", exc)
         reqs_str = res.get("requirements_txt", "")
         action_log = res.get("action_log", [])
 
@@ -1267,23 +1264,23 @@ elif nav_selection == "📊 Dashboard":
                         if (a_dir / OUTCOME_JSON_FILENAME).exists():
                             try:
                                 entry["outcome"] = json.loads((a_dir / OUTCOME_JSON_FILENAME).read_text(encoding="utf-8"))
-                            except Exception:
-                                pass
+                            except Exception as exc:
+                                logger.debug("Could not load outcome.json: %s", exc)
                         if (a_dir / AGENT_DECISIONS_FILENAME).exists():
                             try:
                                 entry["agent_decisions"] = json.loads((a_dir / AGENT_DECISIONS_FILENAME).read_text(encoding="utf-8"))
-                            except Exception:
-                                pass
+                            except Exception as exc:
+                                logger.debug("Could not load agent_decisions.json: %s", exc)
                         if (a_dir / ERRORS_JSON_FILENAME).exists():
                             try:
                                 entry["errors"] = json.loads((a_dir / ERRORS_JSON_FILENAME).read_text(encoding="utf-8"))
-                            except Exception:
-                                pass
+                            except Exception as exc:
+                                logger.debug("Could not load errors.json: %s", exc)
                         if (a_dir / FIXES_JSON_FILENAME).exists():
                             try:
                                 entry["fixes"] = json.loads((a_dir / FIXES_JSON_FILENAME).read_text(encoding="utf-8"))
-                            except Exception:
-                                pass
+                            except Exception as exc:
+                                logger.debug("Could not load fixes.json: %s", exc)
                         audit_history.append(entry)
                 audit_history.sort(key=lambda x: x.get("attempt", 0))
 
@@ -1298,8 +1295,8 @@ elif nav_selection == "📊 Dashboard":
                         mime="application/x-ndjson",
                         key=f"dl_audit_{job.job_id}",
                     )
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Could not prepare audit_trail.jsonl download: %s", exc)
 
             if not audit_history:
                 st.info("No retry audit records logged yet. Run a test run or refinement to generate audit records.")
@@ -1313,8 +1310,8 @@ elif nav_selection == "📊 Dashboard":
                     if not outcome and attempt_dir and (attempt_dir / OUTCOME_JSON_FILENAME).exists():
                         try:
                             outcome = json.loads((attempt_dir / OUTCOME_JSON_FILENAME).read_text(encoding="utf-8"))
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            logger.debug("Could not read fallback outcome.json: %s", exc)
                     out_status = outcome.get("status", "unknown").upper()
                     if out_status == "PASSED":
                         status_badge = "🟢 PASSED"
@@ -1348,8 +1345,8 @@ elif nav_selection == "📊 Dashboard":
                             if attempt_dir and (attempt_dir / AGENT_DECISIONS_FILENAME).exists():
                                 try:
                                     dec = json.loads((attempt_dir / AGENT_DECISIONS_FILENAME).read_text(encoding="utf-8"))
-                                except Exception:
-                                    pass
+                                except Exception as exc:
+                                    logger.debug("Could not read agent_decisions.json in tab: %s", exc)
                             if dec:
                                 root_c = dec.get("root_cause")
                                 if root_c:
@@ -1363,8 +1360,8 @@ elif nav_selection == "📊 Dashboard":
                             if attempt_dir and (attempt_dir / ERRORS_JSON_FILENAME).exists():
                                 try:
                                     errs = json.loads((attempt_dir / ERRORS_JSON_FILENAME).read_text(encoding="utf-8"))
-                                except Exception:
-                                    pass
+                                except Exception as exc:
+                                    logger.debug("Could not read errors.json in tab: %s", exc)
                             if errs:
                                 st.json(errs)
                             else:
@@ -1375,8 +1372,8 @@ elif nav_selection == "📊 Dashboard":
                             if attempt_dir and (attempt_dir / FIXES_JSON_FILENAME).exists():
                                 try:
                                     fixes = json.loads((attempt_dir / FIXES_JSON_FILENAME).read_text(encoding="utf-8"))
-                                except Exception:
-                                    pass
+                                except Exception as exc:
+                                    logger.debug("Could not read fixes.json in tab: %s", exc)
                             if fixes:
                                 st.json(fixes)
                             else:
@@ -1387,8 +1384,8 @@ elif nav_selection == "📊 Dashboard":
                             if attempt_dir and (attempt_dir / "diff_from_previous.patch").exists():
                                 try:
                                     diff_content = (attempt_dir / "diff_from_previous.patch").read_text(encoding="utf-8")
-                                except Exception:
-                                    pass
+                                except Exception as exc:
+                                    logger.debug("Could not read diff_from_previous.patch: %s", exc)
                             if diff_content:
                                 st.code(diff_content, language="diff")
                             else:
@@ -1523,7 +1520,7 @@ elif nav_selection == "📊 Dashboard":
                         codegen_model=ref_codegen_model,
                         on_stream_log=_on_refine_stream_log,
                     ))
-                except Exception as ref_exc:
+                except Exception:
                     importlib.reload(api_service)
                     asyncio.run(api_service.refine_job_backend(
                         job_id=job.job_id,

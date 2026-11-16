@@ -17,7 +17,10 @@ Supports backward-compatible tool aliases (e.g. browser_navigate -> navigate).
 
 import asyncio
 import json
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 try:
     from playwright.async_api import Page, BrowserContext, Browser, async_playwright
     PLAYWRIGHT_AVAILABLE = True
@@ -109,8 +112,8 @@ class CustomPlaywrightToolbox:
                         try:
                             text = await response.text()
                             body_snippet = text[:300] if text else ""
-                        except Exception:
-                            pass
+                        except Exception as exc:
+                            logger.debug("Could not read response body snippet: %s", exc)
                         self.network_logs.append({
                             "url": url,
                             "method": response.request.method,
@@ -118,8 +121,8 @@ class CustomPlaywrightToolbox:
                             "content_type": ct,
                             "sample_payload": body_snippet,
                         })
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Ignored error in _on_response handler: %s", exc)
 
             self.page.on("response", _on_response)
             self._is_initialized = True
@@ -138,8 +141,8 @@ class CustomPlaywrightToolbox:
                 await self.browser.close()
             if self.playwright:
                 await self.playwright.stop()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Ignored error closing Playwright resources: %s", exc)
         self._is_initialized = False
         self.page = None
         self.context = None

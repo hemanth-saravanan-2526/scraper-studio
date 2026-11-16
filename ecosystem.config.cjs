@@ -1,8 +1,13 @@
 const path = require("path");
 const isWin = process.platform === "win32";
-const venvBin = isWin
-  ? (exe) => path.join(__dirname, ".venv", "Scripts", `${exe}.exe`)
-  : (exe) => path.join(__dirname, ".venv", "bin", exe);
+const VENV_BINS = {
+  uvicorn: isWin
+    ? path.join(__dirname, ".venv", "Scripts", "uvicorn.exe")
+    : path.join(__dirname, ".venv", "bin", "uvicorn"),
+  streamlit: isWin
+    ? path.join(__dirname, ".venv", "Scripts", "streamlit.exe")
+    : path.join(__dirname, ".venv", "bin", "streamlit"),
+};
 
 function getMcpPort() {
   if (process.env.MCP_PORT) {
@@ -27,7 +32,7 @@ module.exports = {
   apps: [
     {
       name: "scraper-studio-api",
-      script: venvBin("uvicorn"),
+      script: VENV_BINS.uvicorn,
       args: "api_service:app --host 0.0.0.0 --port 3683",
       cwd: __dirname,
       interpreter: "none",
@@ -41,7 +46,7 @@ module.exports = {
     },
     {
       name: "scraper-studio-ui",
-      script: venvBin("streamlit"),
+      script: VENV_BINS.streamlit,
       args: "run streamlit_app.py --server.port 3682 --server.address 0.0.0.0 --server.headless true",
       cwd: __dirname,
       interpreter: "none",

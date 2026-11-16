@@ -15,7 +15,6 @@ Direct OpenAI API key is default.
 import os
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
 
 try:
     from dotenv import load_dotenv

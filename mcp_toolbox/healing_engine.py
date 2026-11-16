@@ -9,9 +9,9 @@ Provides runtime self-healing during Phase 1 Live Interactive Reconnaissance:
 """
 
 import asyncio
-import json
-import re
-from typing import Any
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MicroHealingEngine:
@@ -94,15 +94,15 @@ class MicroHealingEngine:
                     dismissed.append(sel)
                     await asyncio.sleep(0.3)
                     break
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Overlay selector check skipped (%s): %s", sel, exc)
 
         # 2. Press Escape key as a universal dialog dismisser
         try:
             await page.keyboard.press("Escape")
             await asyncio.sleep(0.2)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Escape key dismissal skipped: %s", exc)
 
         # 3. Remove lingering high z-index backdrop overlays via JS if present
         try:
@@ -117,8 +117,8 @@ class MicroHealingEngine:
             }""")
             if removed_backdrops > 0:
                 dismissed.append(f"removed_{removed_backdrops}_backdrops")
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Backdrop removal skipped: %s", exc)
 
         return dismissed
 
@@ -145,8 +145,8 @@ class MicroHealingEngine:
                 "healed": False,
                 "current_url": page.url,
             }
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Direct native click failed for %s: %s", selector, exc)
 
         # Micro-Healing Loop: Auto-Dismiss Overlay & Fallback
         dismissed = await cls.dismiss_active_overlays(page)
@@ -163,8 +163,8 @@ class MicroHealingEngine:
                 "dismissed_overlays": dismissed,
                 "current_url": page.url,
             }
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Retry click after overlay dismissal failed for %s: %s", selector, exc)
 
         # Attempt 3: JavaScript direct element click
         try:
@@ -189,8 +189,8 @@ class MicroHealingEngine:
                     "details": js_res,
                     "current_url": page.url,
                 }
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("JS direct click fallback failed for %s: %s", selector, exc)
 
         # Attempt 4: Dispatch click event fallback
         try:
@@ -213,8 +213,8 @@ class MicroHealingEngine:
                     "dismissed_overlays": dismissed,
                     "current_url": page.url,
                 }
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("JS event dispatch fallback failed for %s: %s", selector, exc)
 
         return {
             "status": "failed",
@@ -291,8 +291,8 @@ class MicroHealingEngine:
                             clicked_more = True
                             await asyncio.sleep(1.5)
                             break
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        logger.debug("Load more selector skipped (%s): %s", sel, exc)
                 if not clicked_more:
                     # Try JS search for button with 'more' text
                     clicked_more = await page.evaluate("""() => {
@@ -318,8 +318,8 @@ class MicroHealingEngine:
                             clicked_next = True
                             await asyncio.sleep(2.0)
                             break
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        logger.debug("Pagination next selector skipped (%s): %s", sel, exc)
                 if not clicked_next:
                     # Switch to URL parameter manipulation if present or stop
                     break

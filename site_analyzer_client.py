@@ -140,6 +140,9 @@ async def analyze_target_site(
             def _urllib_fetch():
                 query = urllib.parse.urlencode(params)
                 target_url = f"{target_analyzer_url}?{query}"
+                parsed_scheme = urllib.parse.urlparse(target_url).scheme.lower()
+                if parsed_scheme not in ("http", "https"):
+                    raise ValueError(f"Unsupported URL scheme: {parsed_scheme}")
                 req = urllib.request.Request(target_url, headers=headers)
                 if effective_verify is False:
                     ssl_ctx = ssl._create_unverified_context()
@@ -147,7 +150,7 @@ async def analyze_target_site(
                     ssl_ctx = ssl.create_default_context(cafile=effective_verify)
                 else:
                     ssl_ctx = ssl.create_default_context()
-                with urllib.request.urlopen(req, timeout=timeout_seconds, context=ssl_ctx) as resp:
+                with urllib.request.urlopen(req, timeout=timeout_seconds, context=ssl_ctx) as resp:  # nosec B310
                     raw = resp.read().decode("utf-8")
                     return json.loads(raw)
 

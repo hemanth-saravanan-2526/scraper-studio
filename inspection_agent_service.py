@@ -22,6 +22,7 @@ Architectural highlights:
 import ast
 import asyncio
 import json
+import logging
 import os
 import re
 import time
@@ -29,6 +30,8 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Coroutine
+
+logger = logging.getLogger(__name__)
 
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageToolCall
@@ -1796,8 +1799,8 @@ class MCPClientManager:
         if self.session:
             try:
                 await self.session.__aexit__(None, None, None)
-            except BaseException:
-                pass
+            except BaseException as exc:
+                logger.debug("Ignored error closing MCP session: %s", exc)
             self.session = None
 
 NATIVE_BROWSER_TOOLS = [
@@ -2352,8 +2355,8 @@ class ToolUseInterceptor:
         if self.on_log_entry:
             try:
                 await self.on_log_entry(entry)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Ignored error in on_log_entry callback: %s", exc)
 
         if self.call_counter["count"] > self.max_steps:
             reason = (
@@ -2457,8 +2460,8 @@ async def _run_openai_recon_session(
                 print(f"[inspection-service] Failed listing MCP tools ({exc}) - falling back to Native Playwright")
                 try:
                     await mcp_manager.close()
-                except BaseException:
-                    pass
+                except BaseException as close_exc:
+                    logger.debug("Ignored error closing mcp_manager: %s", close_exc)
                 mcp_session = None
                 openai_tools = []
 
@@ -2602,8 +2605,8 @@ async def _run_openai_recon_session(
                 active_tb = getattr(toolbox_mgr, "active_toolbox", None) or getattr(toolbox_mgr, "primary", None)
                 if active_tb and hasattr(active_tb, "network_logs"):
                     captured_network_logs = list(active_tb.network_logs)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Could not retrieve toolbox network_logs: %s", exc)
             try:
                 telemetry = toolbox_mgr.get_telemetry()
                 for h_evt in telemetry.get("in_tool_healing_events", []):
@@ -2613,15 +2616,15 @@ async def _run_openai_recon_session(
                         "micro_healing": h_evt,
                     })
                 await toolbox_mgr.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Could not close toolbox_mgr cleanly: %s", exc)
         await mcp_manager.close()
         if native_session is not None:
             try:
                 if hasattr(native_session, "network_logs") and not captured_network_logs:
                     captured_network_logs = list(native_session.network_logs)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Could not retrieve native_session network_logs: %s", exc)
             await native_session.close()
 
     usage_summary = {
@@ -2958,8 +2961,8 @@ def _extract_schema_from_code(code_str: str) -> tuple[list[str], list[str]]:
                     if kw.arg == "sheet_name" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
                         if kw.value.value not in sheets:
                             sheets.append(kw.value.value)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Could not parse AST for schema extraction: %s", exc)
     return fields, sheets
 
 

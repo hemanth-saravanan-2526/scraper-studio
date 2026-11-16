@@ -9,11 +9,13 @@ Provides:
     (e.g., CAPTCHA solvers, residential proxy rotators, LLM vision extractors)
 """
 
-import json
-from typing import Any, Protocol, runtime_checkable
+import logging
+from typing import Protocol, runtime_checkable
 
 from .custom_playwright import CustomPlaywrightToolbox
 from .legacy_adapter import LegacyPlaywrightAdapter
+
+logger = logging.getLogger(__name__)
 
 
 @runtime_checkable
@@ -83,18 +85,18 @@ class MCPToolboxManager:
         if self.primary:
             try:
                 await self.primary.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Ignored error closing primary toolbox: %s", exc)
         if self.fallback:
             try:
                 await self.fallback.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Ignored error closing fallback toolbox: %s", exc)
         for name, tb in self._third_party_tools.items():
             try:
                 await tb.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Ignored error closing third-party toolbox '%s': %s", name, exc)
 
         self.active_toolbox = None
         self.primary = None

@@ -18,6 +18,7 @@ Endpoints:
 import asyncio
 import difflib
 import json
+import logging
 import os
 import re
 import sys
@@ -25,6 +26,8 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 try:
     from dotenv import load_dotenv
@@ -54,10 +57,23 @@ REQUIREMENTS_FILENAME = "requirements.txt"
 app = FastAPI(title="Scraper Studio Inspection API")
 cost_sink = JSONLCostSink(path="cost_ledger.jsonl")
 
-# CORS middleware for local frontend development
+# CORS middleware configured via CORS_ALLOWED_ORIGINS environment variable
+_DEFAULT_CORS_ORIGINS = (
+    "http://localhost:3682,http://127.0.0.1:3682,"
+    "http://localhost:8501,http://127.0.0.1:8501,"
+    "http://localhost:3683,http://127.0.0.1:3683,"
+    "http://localhost:8000,http://127.0.0.1:8000"
+)
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https?://.*",
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -387,8 +403,8 @@ def _build_sample_input_xlsx(folder_or_path: Path, record_or_url: Any = None, ke
         try:
             shutil.copyfile(input_xlsx, path)
             return path
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not copy input.xlsx to sample_input.xlsx: %s", exc)
 
     if hasattr(record_or_url, "target_url"):
         kw = (getattr(record_or_url, "sample_keyword", "") or "").strip() or None
@@ -697,6 +713,7 @@ async def _run_test_run(job_id: str, on_log=None, max_products: int = DEFAULT_TE
     if record is None or not record.saved_to:
         return
 
+    max_products = max(1, min(int(max_products), 1000))
     folder = Path(record.saved_to)
     all_logs = []
 
@@ -714,8 +731,8 @@ async def _run_test_run(job_id: str, on_log=None, max_products: int = DEFAULT_TE
                     await on_log(entry)
                 else:
                     on_log(entry)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Ignored error in on_log callback: %s", exc)
 
     record.test_run = {
         "status": "running",
@@ -726,11 +743,19 @@ async def _run_test_run(job_id: str, on_log=None, max_products: int = DEFAULT_TE
 
     venv_dir = folder / ".venv"
     venv_python = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+    allowed_interpreters = {
+        str(Path(sys.executable).resolve()),
+        str(venv_python.resolve()),
+    }
 
-    async def _run_streaming(*args, cwd: str | None = None, phase: str = "EXEC"):
+    async def _run_streaming(program: str, *cmd_args: str, cwd: str | None = None, phase: str = "EXEC"):
+        resolved_prog = str(Path(program).resolve())
+        if resolved_prog not in allowed_interpreters:
+            raise ValueError(f"Untrusted subprocess executable: {program}")
+        safe_args = [str(arg) for arg in cmd_args]
         env = {**os.environ, "PYTHONUNBUFFERED": "1"}
-        proc = await asyncio.create_subprocess_exec(
-            *args, cwd=cwd, env=env,
+        proc = await asyncio.create_subprocess_exec(  # nosemgrep
+            resolved_prog, *safe_args, cwd=cwd, env=env,
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
         stdout_chunks = []
@@ -1152,8 +1177,8 @@ async def refine_job_backend(
         if script_path.exists():
             try:
                 prior_code = script_path.read_text(encoding="utf-8")
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Could not read prior script from disk: %s", exc)
     if not prior_code and record.result:
         prior_code = record.result.get("generated_code", "")
 
@@ -1167,8 +1192,8 @@ async def refine_job_backend(
         if reqs_path.exists():
             try:
                 prior_reqs = reqs_path.read_text(encoding="utf-8")
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Could not read prior requirements from disk: %s", exc)
     if not prior_reqs and record.result:
         prior_reqs = record.result.get("requirements_txt", "")
 
@@ -1205,8 +1230,8 @@ async def refine_job_backend(
                 res = on_stream_log(entry)
                 if asyncio.iscoroutine(res):
                     await res
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Ignored error in on_stream_log callback: %s", exc)
         await queue.put(json.dumps(entry))
 
     # 3. Build InspectionJob for refinement
@@ -1289,8 +1314,8 @@ async def refine_job_backend(
                 if sample_file.exists() and not input_file.exists():
                     import shutil
                     shutil.copyfile(sample_file, input_file)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Could not prepare sample input workbook after refinement: %s", exc)
 
             # Permanently log refinement iteration in AuditVault
             audit_entry = AuditVaultManager.record_attempt(

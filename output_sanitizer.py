@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pandas as pd
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 
 
 EXCEL_CELL_LIMIT = 32000

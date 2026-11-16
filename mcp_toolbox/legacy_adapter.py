@@ -7,9 +7,7 @@ into the unified MCPToolbox interface, ensuring 100% backward compatibility
 and seamless runtime fallback if the primary custom toolbox encounters issues.
 """
 
-import asyncio
 import json
-from typing import Any
 
 
 class LegacyPlaywrightAdapter:
