@@ -1,5 +1,5 @@
 openai>=1.40.0
-mcp>=1.28.1
+mcp>=2.2.0
 fastapi>=0.110.0
 uvicorn>=0.29.0
 pydantic>=2.6.0

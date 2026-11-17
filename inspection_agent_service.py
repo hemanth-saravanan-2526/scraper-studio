@@ -26,15 +26,13 @@ import logging
 import os
 import re
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Callable, Coroutine
 
 logger = logging.getLogger(__name__)
 
 from openai import AsyncOpenAI
-from openai.types.chat import ChatCompletionMessageToolCall
 
 from site_analyzer_client import analyze_target_site, extract_site_summary
 
@@ -45,9 +43,8 @@ except ImportError:
     pass
 
 try:
-    from mcp import ClientSession, StdioServerParameters
+    from mcp import ClientSession
     from mcp.client.sse import sse_client
-    from mcp.client.stdio import stdio_client
     MCP_AVAILABLE = True
 except ImportError:
     MCP_AVAILABLE = False
@@ -58,12 +55,9 @@ from cost_metering import (
     CostSink,
     StdoutCostSink,
     build_cost_record,
-    build_fallback_cost_record,
     combine_cost_records,
     resolve_budget_ceiling,
     split_budget_ceiling,
-    calculate_cost_usd,
-    SDK_BUDGET_SAFETY_MARGIN,
 )
 
 try:

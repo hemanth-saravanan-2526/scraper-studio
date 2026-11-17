@@ -28,14 +28,9 @@ load_dotenv(override=False)
 # Ensure local imports work cleanly
 sys.path.insert(0, os.getcwd())
 
-from auth_config import resolve_credentials, CredentialError
-from cost_metering import DEFAULT_MAX_BUDGET_USD, OPENAI_MODEL_PRICING
 from inspection_agent_service import (
     InspectionJob,
     run_inspection_job,
-    get_default_model,
-    get_default_recon_model,
-    get_default_codegen_model,
     get_default_temperature,
     sanitize_generated_code,
 )
@@ -45,7 +40,7 @@ from openpyxl import Workbook
 import importlib
 import api_service
 importlib.reload(api_service)
-from api_service import store, _build_sample_input_xlsx, TEST_RUN_MAX_PRODUCTS, CreateJobRequest, _run_test_run, refine_job_backend
+from api_service import store
 
 GENERATED_SCRAPER_FILENAME = "generated_scraper.py"
 REQUIREMENTS_FILENAME = "requirements.txt"
